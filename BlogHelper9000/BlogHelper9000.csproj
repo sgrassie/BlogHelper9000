@@ -7,4 +7,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Oakton" Version="3.2.2" />
+      <PackageReference Include="SimpleExec" Version="8.0.0" />
+      <PackageReference Include="Spectre.Console" Version="0.42.0" />
+    </ItemGroup>
+
 </Project>
