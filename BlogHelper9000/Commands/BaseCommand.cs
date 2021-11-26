@@ -17,4 +17,3 @@ namespace BlogHelper9000.Commands
         public abstract bool Run(TInput input);
     }
 }
-

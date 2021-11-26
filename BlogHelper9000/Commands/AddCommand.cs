@@ -11,12 +11,9 @@ public class AddInput
     public string? Image { get; set; }
 }
 
-public class AddCommand : OaktonCommand<AddInput>
+public class AddCommand : BaseCommand<AddInput>
 {
-    private static string _draftsPath = Path.Combine(AppContext.BaseDirectory, "_drafts");
-    private static string _postsPath = Path.Combine(AppContext.BaseDirectory, "_posts", DateTime.Now.Year.ToString());
-
-    public override bool Execute(AddInput input)
+    public override bool Run(AddInput input)
     {
         if (!ProcessInput(input)) return false;
 
@@ -54,12 +51,12 @@ public class AddCommand : OaktonCommand<AddInput>
 
         if (input.DraftFlag)
         {
-            var draftfilepath = Path.Combine(_draftsPath, fileName);
+            var draftfilepath = Path.Combine(DraftsPath, fileName);
             CreateFile(draftfilepath);
             return draftfilepath;
         }
 
-        var path = Path.Combine(_postsPath, fileName);
+        var path = Path.Combine(PostsPath, fileName);
         CreateFile(path);
         return path;
 
