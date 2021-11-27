@@ -1,19 +1,8 @@
 namespace BlogHelper9000.Commands;
 
-public class AddInput
+public class AddCommand : BaseCommand<BlogInput>
 {
-    public bool DraftFlag { get; set; }
-    public string Title { get; set; }
-    public string[] Tags { get; set; }
-    public bool IsFeaturedFlag { get; set; } = false;
-    public bool IsHiddenFlag { get; set; } = false;
-    public string LayoutFlag { get; set; } = "post";
-    public string? Image { get; set; }
-}
-
-public class AddCommand : BaseCommand<AddInput>
-{
-    public override bool Run(AddInput input)
+    public override bool Run(BlogInput input)
     {
         if (!ProcessInput(input)) return false;
 
@@ -22,30 +11,7 @@ public class AddCommand : BaseCommand<AddInput>
         return true;
     }
 
-    private bool ProcessInput(AddInput input)
-    {
-        if (!Directory.Exists(_draftsPath))
-        {
-            ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _drafts folder");
-            return false;
-        }
-
-        if (string.IsNullOrEmpty(input.Title))
-        {
-            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
-            return false;
-        }
-
-        if(input.Tags == null || !input.Tags.Any())
-        {
-            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
-            return false;
-        }
-
-        return true;
-    }
-
-    private string CreatePostFile(AddInput input)
+    private string CreatePostFile(BlogInput input)
     {
         var fileName = input.Title.Replace(" ", "-");
 

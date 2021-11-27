@@ -2,17 +2,32 @@ using System.IO;
 
 namespace BlogHelper9000.Commands;
 
-public class ListInput
+public class ListInput : BlogInput
 {
-    public string Filter { get; set; }
+    public string Filter { get; set; } = string.Empty;
 }
 
-public class ListCommand : OaktonCommand<ListInput>
+public class ListCommand : BaseCommand<ListInput>
 {
-    private const string _postsFolder = "_posts";
-    
-    public override bool Execute(ListInput input)
+    public override bool Run(ListInput input)
     {
-        var files = Directory.EnumerateFiles()
+        if (input.DraftFlag)
+        {
+            return Enumerate(DraftsPath, input);
+        }
+        else
+        {
+            return Enumerate(PostsPath, input);
+        }
+    }
+
+    private static bool Enumerate(string path, ListInput input)
+    {
+        foreach(var file in Directory.EnumerateFiles(path, input.Filter, SearchOption.AllDirectories))
+        {
+            ConsoleWriter.Write(ConsoleColor.Green, file);
+        }
+
+        return true;
     }
 }
