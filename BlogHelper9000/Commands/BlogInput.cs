@@ -2,6 +2,7 @@
 
 public class BlogInput
 {
+    public string BaseDirectoryFlag { get; set; } = AppContext.BaseDirectory;
     public bool DraftFlag { get; set; }
     public string Title { get; set; }
     public string[] Tags { get; set; }

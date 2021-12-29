@@ -4,7 +4,7 @@ namespace BlogHelper9000.Commands;
 
 public class AddCommand : BaseCommand<BlogInput>
 {
-    public override bool Run(BlogInput input)
+    protected override bool Run(BlogInput input)
     {
         var postFile = CreatePostFile(input);
         AddYamlHeader(postFile, input);

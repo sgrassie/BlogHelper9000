@@ -4,19 +4,19 @@ namespace BlogHelper9000.Commands
     public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
         where TInput : BlogInput
     {
-        private static string _draftsPath = Path.Combine(AppContext.BaseDirectory, "_drafts");
-        private static string _postsPath = Path.Combine(AppContext.BaseDirectory, "_posts", DateTime.Now.Year.ToString());
+        protected string? DraftsPath { get; private set; }
 
-        public string DraftsPath => _draftsPath;
-        public string PostsPath => _postsPath;
+        protected string? PostsPath { get; private set; }
 
         public override bool Execute(TInput input)
         {
+            DraftsPath = Path.Combine(input.BaseDirectoryFlag, "_drafts");
+            PostsPath = Path.Combine(input.BaseDirectoryFlag, "_posts");
             if (!ValidateInput(input)) return false;
             return Run(input);
         }
 
-        public abstract bool Run(TInput input);
+        protected abstract bool Run(TInput input);
 
         private bool ValidateInput(TInput input)
         {
@@ -25,7 +25,14 @@ namespace BlogHelper9000.Commands
                 ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _drafts folder");
                 return false;
             }
+            
+            if (!Directory.Exists(PostsPath))
+            {
+                ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _posts folder");
+                return false;
+            }
 
+            /*
             if (string.IsNullOrEmpty(input.Title))
             {
                 ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
@@ -37,6 +44,7 @@ namespace BlogHelper9000.Commands
                 ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
                 return false;
             }
+            */
 
             return true;
         }
