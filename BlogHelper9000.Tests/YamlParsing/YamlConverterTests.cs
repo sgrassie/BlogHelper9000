@@ -17,9 +17,9 @@ public class YamlParserTests
                      hidden: false
                      ---
                      post content that's not parsed";
-        var parser = new YamlParser();
+        var parser = new YamlConverter();
 
-        var yamlObject = parser.Parse(yaml.Split(Environment.NewLine));
+        var yamlObject = parser.Deserialise(yaml.Split(Environment.NewLine));
 
         yamlObject.Layout.Should().Be("post");
     }
