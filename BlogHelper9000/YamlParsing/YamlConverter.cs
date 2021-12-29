@@ -2,9 +2,9 @@ using System.Reflection;
 
 namespace BlogHelper9000.YamlParsing;
 
-public class YamlParser
+public static class YamlConverter
 {
-    public YamlHeader Parse(string[] fileContent)
+    public static YamlHeader Deserialise(string[] fileContent)
     {
         var headerStartMarkerFound = false;
         var headerEndMarkerFound = false;
@@ -38,7 +38,7 @@ public class YamlParser
         return new YamlHeader();
     }
 
-    private YamlHeader ParseYamlHeader(IEnumerable<string> yamlHeader)
+    private static YamlHeader ParseYamlHeader(IEnumerable<string> yamlHeader)
     {
         var parsedHeaderProperties = new Dictionary<string, string>();
         var headerProperties = GetYamlHeaderProperties();

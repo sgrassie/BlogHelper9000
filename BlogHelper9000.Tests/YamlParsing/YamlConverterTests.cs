@@ -3,7 +3,7 @@ using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Tests.YamlParsing;
 
-public class YamlParserTests
+public class YamlConverterTests
 {
     [Fact]
     public void Should_Load_YamlHeader()
@@ -17,9 +17,8 @@ public class YamlParserTests
                      hidden: false
                      ---
                      post content that's not parsed";
-        var parser = new YamlConverter();
-
-        var yamlObject = parser.Deserialise(yaml.Split(Environment.NewLine));
+        
+        var yamlObject = YamlConverter.Deserialise(yaml.Split(Environment.NewLine));
 
         yamlObject.Layout.Should().Be("post");
     }
