@@ -32,19 +32,6 @@ namespace BlogHelper9000.Commands
                 return false;
             }
 
-            /*
-            if (string.IsNullOrEmpty(input.Title))
-            {
-                ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
-                return false;
-            }
-
-            if (input.Tags == null || !input.Tags.Any())
-            {
-                ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
-                return false;
-            }
-            */
 
             return true;
         }

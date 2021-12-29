@@ -12,6 +12,23 @@ public class AddCommand : BaseCommand<BlogInput>
         return true;
     }
 
+    protected override bool ValidateInput(BlogInput input)
+    {
+        if (string.IsNullOrEmpty(input.Title))
+        {
+            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
+            return false;
+        }
+
+        if (!input.Tags.Any())
+        {
+            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
+            return false;
+        }
+
+        return base.ValidateInput(input);
+    }
+
     private string CreatePostFile(BlogInput input)
     {
         var fileName = input.Title.Replace(" ", "-");
@@ -33,7 +50,7 @@ public class AddCommand : BaseCommand<BlogInput>
         }
     }
 
-    private void AddYamlHeader(string path, BlogInput input)
+    private static void AddYamlHeader(string path, BlogInput input)
     {
         var builder = new StringBuilder();
         builder
@@ -43,6 +60,7 @@ public class AddCommand : BaseCommand<BlogInput>
             .AppendLine($"featured_image: {input.Image}")
             .AppendLine($"featured: {input.IsFeaturedFlag}")
             .AppendLine($"hidden: {input.IsHiddenFlag}")
+            .AppendLine($"published: {input.DraftFlag}")
             .AppendLine("---");
 
         File.AppendAllText(path, builder.ToString());
