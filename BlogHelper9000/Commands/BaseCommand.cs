@@ -18,7 +18,7 @@ namespace BlogHelper9000.Commands
 
         protected abstract bool Run(TInput input);
 
-        private bool ValidateInput(TInput input)
+        protected virtual bool ValidateInput(TInput input)
         {
             if (!Directory.Exists(DraftsPath))
             {
