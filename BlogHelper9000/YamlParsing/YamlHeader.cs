@@ -16,5 +16,7 @@ public class YamlHeader
     public bool IsHidden { get; set; }
     
     [YamlName("published")]
+    public DateTime PublishedOn { get; set; }
+    
     public bool IsPublished { get; set; }
 }

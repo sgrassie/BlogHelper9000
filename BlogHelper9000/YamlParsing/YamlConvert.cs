@@ -1,8 +1,9 @@
+using System.Globalization;
 using System.Reflection;
 
 namespace BlogHelper9000.YamlParsing;
 
-public static class YamlConverter
+public static class YamlConvert
 {
     public static YamlHeader Deserialise(string[] fileContent)
     {
@@ -47,7 +48,8 @@ public static class YamlConverter
         {
             var entry = line.Trim().Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
             var headerName = entry[0];
-            var headerValue = entry[1];
+            
+            var headerValue = entry.Length > 1 ? entry[1] : "<value>";
 
             if (headerProperties.ContainsKey(headerName))
             {
@@ -107,8 +109,16 @@ public static class YamlConverter
 
                if (property.PropertyType == typeof(bool))
                {
-                   var value = bool.Parse(item.Value);
+                   var value = !string.IsNullOrEmpty(item.Value) && bool.Parse(item.Value);
                    property.SetValue(yamlHeader, value, null);
+               }
+
+               if (property.PropertyType == typeof(DateTime))
+               {
+                   var date = item.Value == "draft" || item.Value == "true" || item.Value == "false" 
+                       ? DateTime.MinValue :
+                       DateTime.ParseExact(item.Value, "dd/mm/yyyy", CultureInfo.InvariantCulture);
+                   property.SetValue(yamlHeader, date, null);
                }
 
                if (property.PropertyType == typeof(List<>))
