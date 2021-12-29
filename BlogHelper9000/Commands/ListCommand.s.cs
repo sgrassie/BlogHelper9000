@@ -2,11 +2,6 @@ using System.IO;
 
 namespace BlogHelper9000.Commands;
 
-public class ListInput : BlogInput
-{
-    public string Filter { get; set; } = string.Empty;
-}
-
 public class ListCommand : BaseCommand<ListInput>
 {
     public override bool Run(ListInput input)

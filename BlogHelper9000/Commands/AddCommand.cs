@@ -1,12 +1,13 @@
+using System.Text;
+
 namespace BlogHelper9000.Commands;
 
 public class AddCommand : BaseCommand<BlogInput>
 {
     public override bool Run(BlogInput input)
     {
-        if (!ProcessInput(input)) return false;
-
         var postFile = CreatePostFile(input);
+        AddYamlHeader(postFile, input);
 
         return true;
     }
@@ -29,6 +30,27 @@ public class AddCommand : BaseCommand<BlogInput>
         void CreateFile(string fullfilePath)
         {
             File.Create(fullfilePath);
+        }
+    }
+
+    private void AddYamlHeader(string path, BlogInput input)
+    {
+        var builder = new StringBuilder();
+        builder
+            .AppendLine("---")
+            .AppendLine($"title: {input.Title}")
+            .AppendLine(TagsString(input.Tags))
+            .AppendLine($"featured_image: {input.Image}")
+            .AppendLine($"featured: {input.IsFeaturedFlag}")
+            .AppendLine($"hidden: {input.IsHiddenFlag}")
+            .AppendLine("---");
+
+        File.AppendAllText(path, builder.ToString());
+
+        string TagsString(string[] tags)
+        {
+            var result = string.Join(",", tags);
+            return result;
         }
     }
 }
