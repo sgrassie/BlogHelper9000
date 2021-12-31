@@ -7,7 +7,10 @@ public class YamlHeader
     public List<string> Tags { get; set; }
     
     [YamlName("featured_image")]
-    public string FeaturedImage { get; set; }
+    public string? FeaturedImage { get; set; }
+    
+    [YamlName("featured_image_thumbnail")]
+    public string? FeaturedImageThumbnail { get; set; }
     
     [YamlName("featured")]
     public bool IsFeatured { get; set; }
@@ -16,7 +19,10 @@ public class YamlHeader
     public bool IsHidden { get; set; }
     
     [YamlName("published")]
-    public DateTime PublishedOn { get; set; }
+    public DateTime? PublishedOn { get; set; }
     
-    public bool IsPublished { get; set; }
+    public bool? IsPublished { get; set; }
+    
+    [YamlIgnore(true)]
+    public Dictionary<string, string> Extras { get; set; }
 }

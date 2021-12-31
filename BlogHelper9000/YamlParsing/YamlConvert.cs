@@ -1,10 +1,43 @@
 using System.Globalization;
 using System.Reflection;
+using System.Text;
 
 namespace BlogHelper9000.YamlParsing;
 
 public static class YamlConvert
 {
+    public static string Serialise(YamlHeader header)
+    {
+        var dict = GetYamlHeaderProperties(header);
+
+        var builder = new StringBuilder();
+        builder.AppendLine("---");
+
+        foreach (var item in dict)
+        {
+            if(item.Value is null) continue; // don't serialise if the value is null
+            
+            if (item.Value.GetType() == typeof(List<string>))
+            {
+                builder.AppendLine($"{item.Key}: [{TagsString(item.Value)}]");
+            }
+            else
+            {
+                builder.AppendLine($"{item.Key}: {item.Value}");
+            }
+        }
+        
+        builder.Append("---");
+
+        return builder.ToString();
+        
+        string TagsString(object? tags)
+        {
+            var result = string.Join(",", (List<string>)tags);
+            return result;
+        }
+    }
+    
     public static YamlHeader Deserialise(string[] fileContent)
     {
         var headerStartMarkerFound = false;
@@ -42,6 +75,7 @@ public static class YamlConvert
     private static YamlHeader ParseYamlHeader(IEnumerable<string> yamlHeader)
     {
         var parsedHeaderProperties = new Dictionary<string, string>();
+        var extraHeaderProperties = new Dictionary<string, string>();
         var headerProperties = GetYamlHeaderProperties();
         
         foreach (var line in yamlHeader)
@@ -55,21 +89,14 @@ public static class YamlConvert
             {
                 parsedHeaderProperties.Add(headerName, headerValue);
             }
+            else
+            {
+                extraHeaderProperties.Add(headerName, headerValue);
+            }
         }
 
-        return ToYamlHeader(parsedHeaderProperties);
+        return ToYamlHeader(parsedHeaderProperties, extraHeaderProperties);
 
-        Dictionary<string, object> GetYamlHeaderProperties()
-        {
-            return typeof(YamlHeader)
-                .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
-                .ToDictionary(p =>
-                {
-                    var attr = p.GetCustomAttribute<YamlNameAttribute>();
-
-                    return attr is not null ? attr.Name.ToLower() : p.Name.ToLower();
-                }, p => new object());
-        }
 
         PropertyInfo? GetPropertyInfo(Type type, string propertyName)
         {
@@ -93,7 +120,7 @@ public static class YamlConvert
             return null;
         }
         
-        YamlHeader ToYamlHeader(IDictionary<string, string> source)
+        YamlHeader ToYamlHeader(Dictionary<string, string> source, Dictionary<string, string> extras)
         {
             var yamlHeader = new YamlHeader();
             var yamlHeaderType = yamlHeader.GetType();
@@ -132,7 +159,23 @@ public static class YamlConvert
                }
             }
 
+            yamlHeader.Extras = extras;
+            
             return yamlHeader;
         }
+    }
+
+    private static Dictionary<string, object?>? GetYamlHeaderProperties(YamlHeader? header = null)
+    {
+        var yamlHeader = header ?? new YamlHeader();
+        return yamlHeader?.GetType() 
+            .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.GetCustomAttribute<YamlIgnoreAttribute>() is null)
+            .ToDictionary(p =>
+            {
+                var attr = p.GetCustomAttribute<YamlNameAttribute>();
+
+                return attr is not null ? attr.Name.ToLower() : p.Name.ToLower();
+            }, p => p.GetValue(yamlHeader, null));
     }
 }
