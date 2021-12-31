@@ -1,4 +1,5 @@
 using System.Text;
+using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Commands;
 
@@ -52,23 +53,17 @@ public class AddCommand : BaseCommand<BlogInput>
 
     private static void AddYamlHeader(string path, BlogInput input)
     {
-        var builder = new StringBuilder();
-        builder
-            .AppendLine("---")
-            .AppendLine($"title: {input.Title}")
-            .AppendLine(TagsString(input.Tags))
-            .AppendLine($"featured_image: {input.Image}")
-            .AppendLine($"featured: {input.IsFeaturedFlag}")
-            .AppendLine($"hidden: {input.IsHiddenFlag}")
-            .AppendLine($"published: {input.DraftFlag}")
-            .AppendLine("---");
-
-        File.AppendAllText(path, builder.ToString());
-
-        string TagsString(string[] tags)
+        var yamlHeader = new YamlHeader
         {
-            var result = string.Join(",", tags);
-            return result;
-        }
+            Title = input.Title,
+            Tags = input.Tags.ToList(),
+            FeaturedImage = input.Image,
+            IsFeatured = input.IsFeaturedFlag,
+            IsHidden = input.IsHiddenFlag
+        };
+
+        var yamlHeaderText = YamlConvert.Serialise(yamlHeader);
+
+        File.AppendAllText(path, yamlHeaderText);
     }
 }
