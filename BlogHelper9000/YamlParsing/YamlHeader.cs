@@ -23,6 +23,11 @@ public class YamlHeader
     
     public bool? IsPublished { get; set; }
     
-    [YamlIgnore(true)]
+    public string? Series { get; set; }
+
+    [YamlIgnore]
+    public bool IsSeries => string.IsNullOrEmpty(Series);
+    
+    [YamlIgnore]
     public Dictionary<string, string> Extras { get; set; }
 }
