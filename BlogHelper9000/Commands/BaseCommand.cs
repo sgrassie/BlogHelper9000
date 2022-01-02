@@ -1,7 +1,7 @@
 ﻿namespace BlogHelper9000.Commands;
 
 public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
-    where TInput : BlogInput
+    where TInput : BaseInput
 {
     protected string? DraftsPath { get; private set; }
 

@@ -1,6 +1,6 @@
 ﻿namespace BlogHelper9000.Commands;
 
-public class BlogInput
+public class BaseInput
 {
     public string BaseDirectoryFlag { get; set; } = AppContext.BaseDirectory;
     public bool DraftFlag { get; set; } = true;

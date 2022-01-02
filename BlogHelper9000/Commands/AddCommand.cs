@@ -3,13 +3,13 @@ using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Commands;
 
-public class AddCommand : BaseCommand<BlogInput>
+public class AddCommand : BaseCommand<BaseInput>
 {
     public AddCommand()
     {
         Usage("Add new post").Arguments(x => x.Title, x => x.Tags);
     }
-    protected override bool Run(BlogInput input)
+    protected override bool Run(BaseInput input)
     {
         var postFile = CreatePostFilePath(input);
         AddYamlHeader(postFile, input);
@@ -17,7 +17,7 @@ public class AddCommand : BaseCommand<BlogInput>
         return true;
     }
 
-    protected override bool ValidateInput(BlogInput input)
+    protected override bool ValidateInput(BaseInput input)
     {
         if (string.IsNullOrEmpty(input.Title))
         {
@@ -34,7 +34,7 @@ public class AddCommand : BaseCommand<BlogInput>
         return base.ValidateInput(input);
     }
 
-    private string CreatePostFilePath(BlogInput input)
+    private string CreatePostFilePath(BaseInput input)
     {
         var fileName = input.Title.Replace(" ", "-");
         var newPostFilePath = input.DraftFlag
@@ -44,7 +44,7 @@ public class AddCommand : BaseCommand<BlogInput>
         return newPostFilePath;
     }
 
-    private static void AddYamlHeader(string path, BlogInput input)
+    private static void AddYamlHeader(string path, BaseInput input)
     {
         var yamlHeader = new YamlHeader
         {
@@ -54,6 +54,11 @@ public class AddCommand : BaseCommand<BlogInput>
             IsFeatured = input.IsFeaturedFlag,
             IsHidden = input.IsHiddenFlag
         };
+
+        if (input.DraftFlag)
+        {
+            yamlHeader.IsPublished = false;
+        }
 
         var yamlHeaderText = YamlConvert.Serialise(yamlHeader);
 
