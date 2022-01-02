@@ -21,6 +21,7 @@ public class YamlConvertTests
         var yamlObject = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
 
         yamlObject.Layout.Should().Be("post");
+        yamlObject.Tags.Should().NotBeEmpty();
     }
 
     [Fact]
