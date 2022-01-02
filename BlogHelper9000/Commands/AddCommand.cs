@@ -5,9 +5,13 @@ namespace BlogHelper9000.Commands;
 
 public class AddCommand : BaseCommand<BlogInput>
 {
+    public AddCommand()
+    {
+        Usage("Add new post").Arguments(x => x.Title, x => x.Tags);
+    }
     protected override bool Run(BlogInput input)
     {
-        var postFile = CreatePostFile(input);
+        var postFile = CreatePostFilePath(input);
         AddYamlHeader(postFile, input);
 
         return true;
@@ -30,25 +34,14 @@ public class AddCommand : BaseCommand<BlogInput>
         return base.ValidateInput(input);
     }
 
-    private string CreatePostFile(BlogInput input)
+    private string CreatePostFilePath(BlogInput input)
     {
         var fileName = input.Title.Replace(" ", "-");
+        var newPostFilePath = input.DraftFlag
+            ? Path.ChangeExtension(Path.Combine(DraftsPath, fileName), "md")
+            : Path.ChangeExtension(Path.Combine(PostsPath, fileName), "md");
 
-        if (input.DraftFlag)
-        {
-            var draftfilepath = Path.Combine(DraftsPath, fileName);
-            CreateFile(draftfilepath);
-            return draftfilepath;
-        }
-
-        var path = Path.Combine(PostsPath, fileName);
-        CreateFile(path);
-        return path;
-
-        void CreateFile(string fullfilePath)
-        {
-            File.Create(fullfilePath);
-        }
+        return newPostFilePath;
     }
 
     private static void AddYamlHeader(string path, BlogInput input)
@@ -57,7 +50,7 @@ public class AddCommand : BaseCommand<BlogInput>
         {
             Title = input.Title,
             Tags = input.Tags.ToList(),
-            FeaturedImage = input.Image,
+            FeaturedImage = input.ImageFlag,
             IsFeatured = input.IsFeaturedFlag,
             IsHidden = input.IsHiddenFlag
         };
