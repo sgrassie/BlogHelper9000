@@ -12,8 +12,7 @@ public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
     public override bool Execute(TInput input)
     {
         _baseHelper = BaseHelper<TInput>.Initialise(input);
-        if (!ValidateInput(input)) return false;
-        return Run(input);
+        return ValidateInput(input) && Run(input);
     }
 
     protected abstract bool Run(TInput input);
