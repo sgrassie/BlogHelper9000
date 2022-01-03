@@ -8,21 +8,32 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
     {
         Usage("Fix all of the things");
     }
-    
+
     protected override bool Run(BaseInput input)
     {
         foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories)
                      .Select(MarkdownHandler.LoadFile))
         {
             ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
-            
+
             FixPublishedStatus(file);
-            
+            FixDescription(file);
 
             MarkdownHandler.UpdateFile(file);
         }
 
         return true;
+    }
+
+    private void FixDescription(MarkdownFile file)
+    {
+        ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Check description is updated");
+        // some old posts have a metadescription tag
+        if (file.Metadata.Extras.TryGetValue("metadescription", out var metadescription))
+        {
+            ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Description date");
+            file.Metadata.Description = metadescription;
+        }
     }
 
     private void FixPublishedStatus(MarkdownFile file)
