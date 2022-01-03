@@ -4,10 +4,13 @@ public class YamlHeader
 {
     public string Layout { get; set; }
     public string Title { get; set; }
+    public string Description { get; set; }
     public List<string> Tags { get; set; }
     
     [YamlName("featured_image")]
     public string? FeaturedImage { get; set; }
+
+    public string? Image => FeaturedImage; // this is for use in jekyll-seo-tag 
     
     [YamlName("featured_image_thumbnail")]
     public string? FeaturedImageThumbnail { get; set; }
