@@ -15,8 +15,8 @@ public static class YamlConvert
 
         foreach (var item in dict)
         {
-            if(item.Value is null) continue; // don't serialise if the value is null
-            
+            if (item.Value is null) continue; // don't serialise if the value is null
+
             if (item.Value.GetType() == typeof(List<string>))
             {
                 builder.AppendLine($"{item.Key}: [{TagsString(item.Value)}]");
@@ -30,7 +30,7 @@ public static class YamlConvert
         builder.Append("---");
 
         return builder.ToString();
-        
+
         string TagsString(object? tags)
         {
             var result = string.Join(",", (List<string>)tags);
@@ -46,17 +46,15 @@ public static class YamlConvert
 
         return Deserialise(content);
     }
-    
+
     public static YamlHeader Deserialise(string[] fileContent)
     {
         var headerStartMarkerFound = false;
         var headerEndMarkerFound = false;
         var yamlBlock = new List<string>();
 
-        for (var i = 0; i < fileContent.Length; i++)
+        foreach (var line in fileContent)
         {
-            var line = fileContent[i];
-            
             if (line.Trim() == "---")
             {
                 if (!headerStartMarkerFound)
@@ -71,7 +69,7 @@ public static class YamlConvert
                     break;
                 }
             }
-            
+
             yamlBlock.Add(line);
         }
 
@@ -79,7 +77,7 @@ public static class YamlConvert
         {
             return ParseYamlHeader(yamlBlock);
         }
-        
+
         return new YamlHeader();
     }
 
@@ -88,30 +86,36 @@ public static class YamlConvert
         var parsedHeaderProperties = new Dictionary<string, object>();
         var extraHeaderProperties = new Dictionary<string, string>();
         var headerProperties = GetYamlHeaderProperties();
-        
+
         foreach (var line in yamlHeader)
         {
-            var entry = line.Trim().Split(':', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-            var headerName = entry[0];
-            
-            var headerValue = entry.Length > 1 ? entry[1] : "<value>";
+            var propertyValue = ParseHeaderTag(line);
 
-            if (headerProperties.ContainsKey(headerName))
+            if (headerProperties.ContainsKey(propertyValue.property))
             {
-                parsedHeaderProperties.Add(headerName, headerValue);
+                parsedHeaderProperties.Add(propertyValue.property, propertyValue.value);
             }
             else
             {
-                extraHeaderProperties.Add(headerName, headerValue);
+                extraHeaderProperties.Add(propertyValue.property, propertyValue.value);
             }
         }
 
         return ToYamlHeader(parsedHeaderProperties, extraHeaderProperties);
 
+        (string property, string value) ParseHeaderTag(string tag)
+        {
+            tag = tag.Trim();
+            var index = tag.IndexOf(':');
+            var property = tag.Substring(0, index);
+            var value = tag.Substring(index+1).Trim();
+            return (property, value);
+        }
 
         PropertyInfo? GetPropertyInfo(Type type, string propertyName)
         {
-            var property = type.GetProperty(propertyName, BindingFlags.IgnoreCase |  BindingFlags.Public | BindingFlags.Instance);
+            var property = type.GetProperty(propertyName,
+                BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
             if (property is not null) return property;
 
@@ -130,7 +134,7 @@ public static class YamlConvert
 
             return null;
         }
-        
+
         YamlHeader ToYamlHeader(Dictionary<string, object> source, Dictionary<string, string> extras)
         {
             var yamlHeader = new YamlHeader();
@@ -138,40 +142,48 @@ public static class YamlConvert
 
             foreach (var item in source)
             {
-               var key = item.Key.Replace("_", string.Empty);
-               var property = GetPropertyInfo(yamlHeaderType, key);
-               if (property.PropertyType == typeof(string))
-               {
-                   property.SetValue(yamlHeader, (string)item.Value, null);
-               }
+                try
+                {
+                    var key = item.Key.Replace("_", string.Empty);
+                    var property = GetPropertyInfo(yamlHeaderType, key);
+                    if (property.PropertyType == typeof(string))
+                    {
+                        property.SetValue(yamlHeader, (string)item.Value, null);
+                    }
 
-               if (property.PropertyType == typeof(bool))
-               {
-                   var value = item.Value != null ? bool.Parse((string)item.Value) : false;
-                   property.SetValue(yamlHeader, value, null);
-               }
+                    if (property.PropertyType == typeof(bool))
+                    {
+                        var value = item.Value != null ? bool.Parse((string)item.Value) : false;
+                        property.SetValue(yamlHeader, value, null);
+                    }
 
-               if (property.PropertyType == typeof(DateTime))
-               {
-                   var date = item.Value == "draft" || item.Value == "true" || item.Value == "false" 
-                       ? DateTime.MinValue :
-                       DateTime.ParseExact((string)item.Value, "dd/mm/yyyy", CultureInfo.InvariantCulture);
-                   property.SetValue(yamlHeader, date, null);
-               }
+                    if (property.PropertyType == typeof(DateTime))
+                    {
+                        var date = item.Value == "draft" || item.Value == "true" || item.Value == "false"
+                            ? DateTime.MinValue
+                            : DateTime.ParseExact((string)item.Value, "dd/mm/yyyy", CultureInfo.InvariantCulture);
+                        property.SetValue(yamlHeader, date, null);
+                    }
 
-               if (property.PropertyType == typeof(List<string>))
-               {
-                   var list = ((string)item.Value)
-                       .Replace("[", string.Empty)
-                       .Replace("]", string.Empty)
-                       .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                       .ToList();
-                   property.SetValue(yamlHeader, list, null);
-               }
+                    if (property.PropertyType == typeof(List<string>))
+                    {
+                        var list = ((string)item.Value)
+                            .Replace("[", string.Empty)
+                            .Replace("]", string.Empty)
+                            .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                            .ToList();
+                        property.SetValue(yamlHeader, list, null);
+                    }
+
+                    yamlHeader.Extras = extras;
+                }
+                catch (Exception e)
+                {
+                    var message = $"Error deserialising property '{item.Key}'";
+                    throw new YamlConvertException(message, e);
+                }
             }
 
-            yamlHeader.Extras = extras;
-            
             return yamlHeader;
         }
     }
@@ -179,7 +191,7 @@ public static class YamlConvert
     private static Dictionary<string, object?>? GetYamlHeaderProperties(YamlHeader? header = null)
     {
         var yamlHeader = header ?? new YamlHeader();
-        return yamlHeader?.GetType() 
+        return yamlHeader?.GetType()
             .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.GetCustomAttribute<YamlIgnoreAttribute>() is null)
             .ToDictionary(p =>

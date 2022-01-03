@@ -4,22 +4,22 @@ public class YamlHeader
 {
     public string Layout { get; set; }
     public string Title { get; set; }
-    public string Description { get; set; }
+    public string? Description { get; set; }
     public List<string> Tags { get; set; }
     
     [YamlName("featured_image")]
     public string? FeaturedImage { get; set; }
 
-    public string? Image => FeaturedImage; // this is for use in jekyll-seo-tag 
+    public string? Image { get; set; }
     
     [YamlName("featured_image_thumbnail")]
     public string? FeaturedImageThumbnail { get; set; }
     
     [YamlName("featured")]
-    public bool IsFeatured { get; set; }
+    public bool? IsFeatured { get; set; }
     
     [YamlName("hidden")]
-    public bool IsHidden { get; set; }
+    public bool? IsHidden { get; set; }
     
     [YamlName("published")]
     public DateTime? PublishedOn { get; set; }
