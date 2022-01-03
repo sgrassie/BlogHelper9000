@@ -81,7 +81,7 @@ public class InfoCommand : BaseCommand<BaseInput>
                     new GridColumn())
                 .AddRow("Last Post", ":", FormatPostDetail(details.LastPost))
                 .AddRow("# days since last post", ":", $"{details.DaysSinceLastPost.Days}")
-                .AddRow("# of posts", ":", $"{details.PostCount}")
+                .AddRow("# of posts", ":", $"{details.PostCount - details.UnPublishedCount}")
                 .AddRow("# of drafts", ":", $"{details.UnPublishedCount}")
                 .AddRow("Available drafts", ":", FormatPostDetail(details.Unpublished.FirstOrDefault()));
 
