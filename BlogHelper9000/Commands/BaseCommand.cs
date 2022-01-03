@@ -3,14 +3,15 @@
 public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
     where TInput : BaseInput
 {
-    protected string? DraftsPath { get; private set; }
+    private BaseHelper<TInput> _baseHelper;
 
-    protected string? PostsPath { get; private set; }
+    protected string? DraftsPath => _baseHelper.DraftsPath;
+
+    protected string? PostsPath => _baseHelper.PostsPath;
 
     public override bool Execute(TInput input)
     {
-        DraftsPath = Path.Combine(input.BaseDirectoryFlag, "_drafts");
-        PostsPath = Path.Combine(input.BaseDirectoryFlag, "_posts");
+        _baseHelper = BaseHelper<TInput>.Initialise(input);
         if (!ValidateInput(input)) return false;
         return Run(input);
     }
@@ -19,18 +20,6 @@ public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
 
     protected virtual bool ValidateInput(TInput input)
     {
-        if (!Directory.Exists(DraftsPath))
-        {
-            ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _drafts folder");
-            return false;
-        }
-
-        if (!Directory.Exists(PostsPath))
-        {
-            ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _posts folder");
-            return false;
-        }
-
-        return true;
+        return _baseHelper.ValidateInput(input);
     }
 }
