@@ -161,11 +161,12 @@ public static class YamlConvert
                         property.SetValue(yamlHeader, value, null);
                     }
 
-                    if (property.PropertyType == typeof(DateTime))
+                    if (property.PropertyType == typeof(DateTime?))
                     {
-                        var date = item.Value == "draft" || item.Value == "true" || item.Value == "false"
+                        var value = (string)item.Value;
+                        var date = value is "draft" or "true" or "false"
                             ? DateTime.MinValue
-                            : DateTime.ParseExact((string)item.Value, "dd/mm/yyyy", CultureInfo.InvariantCulture);
+                            : DateTime.ParseExact((string)item.Value, "dd/MM/yyyy", CultureInfo.InvariantCulture);
                         property.SetValue(yamlHeader, date, null);
                     }
 

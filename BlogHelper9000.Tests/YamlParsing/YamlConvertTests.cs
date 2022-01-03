@@ -40,6 +40,18 @@ categories: ReactiveUI
     }
 
     [Fact]
+    public void Should_Deserialise_DatesCorrectly()
+    {
+        var yaml = @"---
+published: 17/11/2013
+---";
+
+        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+
+        header.PublishedOn.Should().Be(new DateTime(2013, 11, 17));
+    }
+
+    [Fact]
     public void Should_Serialise_YamlHeader()
     {
         var expected = @"---
