@@ -19,11 +19,17 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
             FixPublishedStatus(file);
             FixDescription(file);
             FixTags(file);
+            UpdateIsSeries(file);
 
             MarkdownHandler.UpdateFile(file);
         }
 
         return true;
+    }
+
+    private void UpdateIsSeries(MarkdownFile file)
+    {
+        file.Metadata.IsSeries = string.IsNullOrEmpty(file.Metadata.Series);
     }
 
     private void FixTags(MarkdownFile file)
@@ -80,12 +86,15 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
             {
                 ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating IsPublished");
                 file.Metadata.IsPublished = true;
+                file.Metadata.IsHidden = false;
             }
         }
         else
         {
             // some of the posts have the incorrect published date in the header
             file.Metadata.PublishedOn = dateFromFileName;
+            file.Metadata.IsPublished = true;
+            file.Metadata.IsHidden = false;
         }
 
         DateTime ExtractPublishedDateFromFileName(string fileName)
