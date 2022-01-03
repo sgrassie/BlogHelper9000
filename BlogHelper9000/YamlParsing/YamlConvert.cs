@@ -21,6 +21,10 @@ public static class YamlConvert
             {
                 builder.AppendLine($"{item.Key}: [{TagsString(item.Value)}]");
             }
+            else if (item.Value is DateTime)
+            {
+                builder.AppendLine($"{item.Key}: {item.Value:dd/MM/yyyy}");
+            }
             else
             {
                 builder.AppendLine($"{item.Key}: {item.Value}");
