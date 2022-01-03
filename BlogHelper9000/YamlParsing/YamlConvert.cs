@@ -155,7 +155,7 @@ public static class YamlConvert
                         property.SetValue(yamlHeader, (string)item.Value, null);
                     }
 
-                    if (property.PropertyType == typeof(bool))
+                    if (property.PropertyType == typeof(bool?))
                     {
                         var value = item.Value != null ? bool.Parse((string)item.Value) : false;
                         property.SetValue(yamlHeader, value, null);
