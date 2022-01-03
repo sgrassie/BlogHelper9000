@@ -52,7 +52,8 @@ public class AddCommand : BaseCommand<BaseInput>
             Tags = input.Tags.ToList(),
             FeaturedImage = input.ImageFlag,
             IsFeatured = input.IsFeaturedFlag,
-            IsHidden = input.IsHiddenFlag
+            IsHidden = input.IsHiddenFlag,
+            IsPublished = false
         };
 
         if (input.DraftFlag)
