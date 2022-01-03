@@ -8,42 +8,43 @@ public class InfoCommand : BaseCommand<BaseInput>
     {
         Usage("Info");
     }
-    
+
     protected override bool Run(BaseInput input)
     {
         var posts = LoadsPosts();
         var blogDetails = new Details();
 
         DeterminePostCount(posts, blogDetails);
-        DetermineLatestPost(posts, blogDetails);
         DetermineDraftsInfo(posts, blogDetails);
         DetermineRecentPosts(posts, blogDetails);
-        
+        DetermineDaysSinceLastPost(blogDetails);
+
         RenderDetails(blogDetails);
 
         return true;
+    }
+
+    private void DetermineDaysSinceLastPost(Details blogDetails)
+    {
+        blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
     }
 
     private void DetermineRecentPosts(IReadOnlyList<YamlHeader> posts, Details blogDetails)
     {
         var recents = posts
             .Where(x => x.IsPublished.GetValueOrDefault())
-            .OrderBy(x => x.PublishedOn)
-            .Take(5)
+            .TakeLast(6)
+            .OrderByDescending(x => x.PublishedOn)
             .ToList();
 
-        blogDetails.LatestPosts = recents.Any() ? recents : Enumerable.Empty<YamlHeader>().ToList();
+        blogDetails.LatestPosts = recents.Any() ? recents.Skip(1).ToList() : Enumerable.Empty<YamlHeader>().ToList();
+        blogDetails.LastPost = recents.FirstOrDefault();
     }
 
     private void DetermineDraftsInfo(IReadOnlyList<YamlHeader> posts, Details blogDetails)
     {
         var unpublished = posts.Where(x => x.IsPublished == false).ToList();
         blogDetails.Unpublished = unpublished.Any() ? unpublished : Enumerable.Empty<YamlHeader>();
-    }
-
-    private void DetermineLatestPost(IReadOnlyList<YamlHeader> posts, Details blogDetails)
-    {
-        blogDetails.LastPost = posts.Where(x => x.IsPublished.GetValueOrDefault()).MaxBy(x => x.PublishedOn);
     }
 
     private void DeterminePostCount(IReadOnlyList<YamlHeader> posts, Details blogDetails)
@@ -67,8 +68,10 @@ public class InfoCommand : BaseCommand<BaseInput>
     private void RenderDetails(Details details)
     {
         var panel = RenderPanel(RenderGrid());
+
+        AnsiConsole.WriteLine();
         AnsiConsole.Write(panel);
-        
+
         Grid RenderGrid()
         {
             var grid = new Grid { Expand = true }
@@ -77,9 +80,17 @@ public class InfoCommand : BaseCommand<BaseInput>
                     new GridColumn().LeftAligned(),
                     new GridColumn())
                 .AddRow("Last Post", ":", FormatPostDetail(details.LastPost))
+                .AddRow("# days since last post", ":", $"{details.DaysSinceLastPost.Days}")
                 .AddRow("# of posts", ":", $"{details.PostCount}")
                 .AddRow("# of drafts", ":", $"{details.UnPublishedCount}")
-                .AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts.FirstOrDefault()));
+                .AddRow("Available drafts", ":", FormatPostDetail(details.Unpublished.FirstOrDefault()));
+
+            foreach (var recent in details.Unpublished.Skip(1))
+            {
+                grid.AddRow(string.Empty, string.Empty, FormatPostDetail(recent));
+            }
+
+            grid.AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts.FirstOrDefault()));
 
             foreach (var latest in details.LatestPosts.Skip(1))
             {
@@ -95,7 +106,7 @@ public class InfoCommand : BaseCommand<BaseInput>
                     : string.Empty;
                 return $"{title} ({postDate})";
             }
-            
+
             return grid;
         }
 
@@ -104,9 +115,9 @@ public class InfoCommand : BaseCommand<BaseInput>
             return new Panel(grid)
                 {
                     Border = BoxBorder.Rounded,
-                    Padding = new Padding(1,1,1,1),
+                    Padding = new Padding(1, 1, 1, 1),
                 }
-                .Header(new PanelHeader("Details", Justify.Center));
+                .Header(new PanelHeader(" Details ", Justify.Center));
         }
     }
 
