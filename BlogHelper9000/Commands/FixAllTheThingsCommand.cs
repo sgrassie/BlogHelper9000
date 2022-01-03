@@ -65,13 +65,15 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 
     private void FixPublishedStatus(MarkdownFile file)
     {
+        var dateFromFileName = ExtractPublishedDateFromFileName(file.FilePath);
+        
         if (file.Metadata.PublishedOn is null)
         {
             ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Updating published status");
             if (file.Metadata.PublishedOn is null)
             {
                 ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Published date");
-                file.Metadata.PublishedOn = ExtractPublishedDateFromFileName(file.FilePath);
+                file.Metadata.PublishedOn = dateFromFileName;
             }
 
             if (file.Metadata.PublishedOn is not null)
@@ -79,13 +81,18 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
                 ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating IsPublished");
                 file.Metadata.IsPublished = true;
             }
+        }
+        else
+        {
+            // some of the posts have the incorrect published date in the header
+            file.Metadata.PublishedOn = dateFromFileName;
+        }
 
-            DateTime ExtractPublishedDateFromFileName(string fileName)
-            {
-                var rawFileName = fileName.Split("/").Last();
-                var datePart = rawFileName.Substring(0, 10);
-                return DateTime.ParseExact(datePart, "yyyy-mm-dd", CultureInfo.InvariantCulture).Date;
-            }
+        DateTime ExtractPublishedDateFromFileName(string fileName)
+        {
+            var rawFileName = fileName.Split("/").Last();
+            var datePart = rawFileName.Substring(0, 10);
+            return DateTime.ParseExact(datePart, "yyyy-MM-dd", CultureInfo.InvariantCulture).Date;
         }
     }
 }
