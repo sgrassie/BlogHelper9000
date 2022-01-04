@@ -1,4 +1,4 @@
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.Commands.Inputs;
 
 public class ListInput : BaseInput
 {

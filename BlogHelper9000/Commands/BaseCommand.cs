@@ -1,4 +1,6 @@
-﻿namespace BlogHelper9000.Commands;
+﻿using BlogHelper9000.Commands.Inputs;
+
+namespace BlogHelper9000.Commands;
 
 public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
     where TInput : BaseInput

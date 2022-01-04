@@ -1,3 +1,5 @@
+using BlogHelper9000.Commands.Inputs;
+
 namespace BlogHelper9000.Commands;
 
 public abstract class AsyncBaseCommand<TInput> : OaktonAsyncCommand<TInput> where TInput : BaseInput

@@ -1,9 +1,16 @@
+using BlogHelper9000.Commands.Inputs;
+
 namespace BlogHelper9000.Commands;
 
-public class PublishCommand : OaktonCommand<PublishInput>
+public class PublishCommand : AsyncBaseCommand<PublishInput>
 {
-    public override bool Execute(PublishInput input)
+    public PublishCommand()
     {
-        throw new System.NotImplementedException();
+        Usage("Publish a post!").Arguments(x => x.Post);
+    }
+
+    protected override Task<bool> Run(PublishInput input)
+    {
+        throw new NotImplementedException();
     }
 }

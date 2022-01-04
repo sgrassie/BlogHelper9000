@@ -1,3 +1,5 @@
+using BlogHelper9000.Commands.Inputs;
+
 namespace BlogHelper9000.Commands;
 
 internal class BaseHelper<TInput> where TInput : BaseInput
