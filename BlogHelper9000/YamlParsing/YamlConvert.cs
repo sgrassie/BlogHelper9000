@@ -37,6 +37,7 @@ public static class YamlConvert
 
         string TagsString(object? tags)
         {
+            if (tags is null) return string.Empty;
             var result = string.Join(",", (List<string>)tags);
             return result;
         }
@@ -141,8 +142,8 @@ public static class YamlConvert
 
         YamlHeader ToYamlHeader(Dictionary<string, object> source, Dictionary<string, string> extras)
         {
-            var yamlHeader = new YamlHeader();
-            var yamlHeaderType = yamlHeader.GetType();
+            var header = new YamlHeader();
+            var yamlHeaderType = header.GetType();
 
             foreach (var item in source)
             {
@@ -150,37 +151,37 @@ public static class YamlConvert
                 {
                     var key = item.Key.Replace("_", string.Empty);
                     var property = GetPropertyInfo(yamlHeaderType, key);
-                    if (property.PropertyType == typeof(string))
+                    if (property?.PropertyType == typeof(string))
                     {
-                        property.SetValue(yamlHeader, (string)item.Value, null);
+                        property.SetValue(header, (string)item.Value, null);
                     }
 
-                    if (property.PropertyType == typeof(bool?))
+                    if (property?.PropertyType == typeof(bool?))
                     {
-                        var value = item.Value != null ? bool.Parse((string)item.Value) : false;
-                        property.SetValue(yamlHeader, value, null);
+                        var value = bool.Parse((string)item.Value);
+                        property.SetValue(header, value, null);
                     }
 
-                    if (property.PropertyType == typeof(DateTime?))
+                    if (property?.PropertyType == typeof(DateTime?))
                     {
                         var value = (string)item.Value;
                         var date = value is "draft" or "true" or "false"
                             ? DateTime.MinValue
                             : DateTime.ParseExact((string)item.Value, "dd/MM/yyyy", CultureInfo.InvariantCulture);
-                        property.SetValue(yamlHeader, date, null);
+                        property.SetValue(header, date, null);
                     }
 
-                    if (property.PropertyType == typeof(List<string>))
+                    if (property?.PropertyType == typeof(List<string>))
                     {
                         var list = ((string)item.Value)
                             .Replace("[", string.Empty)
                             .Replace("]", string.Empty)
                             .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
                             .ToList();
-                        property.SetValue(yamlHeader, list, null);
+                        property.SetValue(header, list, null);
                     }
 
-                    yamlHeader.Extras = extras;
+                    header.Extras = extras;
                 }
                 catch (Exception e)
                 {
@@ -189,14 +190,14 @@ public static class YamlConvert
                 }
             }
 
-            return yamlHeader;
+            return header;
         }
     }
 
-    private static Dictionary<string, object?>? GetYamlHeaderProperties(YamlHeader? header = null)
+    private static Dictionary<string, object?> GetYamlHeaderProperties(YamlHeader? header = null)
     {
         var yamlHeader = header ?? new YamlHeader();
-        return yamlHeader?.GetType()
+        return yamlHeader.GetType()
             .GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.GetCustomAttribute<YamlIgnoreAttribute>() is null)
             .ToDictionary(p =>

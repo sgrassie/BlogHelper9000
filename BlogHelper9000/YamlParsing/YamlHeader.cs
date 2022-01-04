@@ -2,13 +2,13 @@ namespace BlogHelper9000.YamlParsing;
 
 public class YamlHeader
 {
-    public string Layout { get; set; }
-    public string Title { get; set; }
-    public string? Description { get; set; }
-    public List<string> Tags { get; set; }
+    public string Layout { get; set; } = "Post";
+    public string Title { get; set; } = string.Empty;
+    public string? Description { get; set; } = string.Empty;
+    public List<string> Tags { get; set; } = Enumerable.Empty<string>().ToList();
     
     [YamlName("featured_image")]
-    public string? FeaturedImage { get; set; }
+    public string? FeaturedImage { get; set; } = string.Empty;
 
     public string? Image { get; set; }
     
@@ -30,7 +30,6 @@ public class YamlHeader
 
     [YamlIgnore]
     public bool IsSeries { get; set; }
-    
-    [YamlIgnore]
-    public Dictionary<string, string> Extras { get; set; }
+
+    [YamlIgnore] public Dictionary<string, string> Extras { get; set; } = new();
 }

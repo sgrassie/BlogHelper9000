@@ -2,9 +2,9 @@ namespace BlogHelper9000.Commands;
 
 internal class BaseHelper<TInput> where TInput : BaseInput
 {
-    public string? DraftsPath { get; }
+    public string DraftsPath { get; }
 
-    public string? PostsPath { get;  }
+    public string PostsPath { get;  }
 
     private BaseHelper(TInput input)
     {

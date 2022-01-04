@@ -110,12 +110,6 @@ title: ""Test Driven Development: Implementing Freecell - Part 3""
 description: Developing a Freecell rules engine, using Test Driven Development in csharp - Part 3
 series: ""TDD: Implementing Freecell""
 ---";
-        var expected = @"---
-layout: post
-title: ""Test Driven Development: Implementing Freecell - Part 3""
-description: Developing a Freecell rules engine, using Test Driven Development in csharp - Part 3
-series: ""TDD: Implementing Freecell""
----";
         var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
         var serialised = YamlConvert.Serialise(header);
 

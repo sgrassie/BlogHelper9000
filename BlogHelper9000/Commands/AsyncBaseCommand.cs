@@ -2,11 +2,11 @@ namespace BlogHelper9000.Commands;
 
 public abstract class AsyncBaseCommand<TInput> : OaktonAsyncCommand<TInput> where TInput : BaseInput
 {
-    private BaseHelper<TInput> _baseHelper;
+    private BaseHelper<TInput> _baseHelper = null!;
 
-    protected string? DraftsPath => _baseHelper.DraftsPath;
+    protected string DraftsPath => _baseHelper.DraftsPath;
 
-    protected string? PostsPath => _baseHelper.PostsPath;
+    protected string PostsPath => _baseHelper.PostsPath;
     
     public override Task<bool> Execute(TInput input)
     {

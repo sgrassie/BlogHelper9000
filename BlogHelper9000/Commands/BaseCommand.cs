@@ -3,11 +3,11 @@
 public abstract class BaseCommand<TInput> : OaktonCommand<TInput>
     where TInput : BaseInput
 {
-    private BaseHelper<TInput> _baseHelper;
+    private BaseHelper<TInput> _baseHelper = null!;
+    
+    protected string DraftsPath => _baseHelper.DraftsPath;
 
-    protected string? DraftsPath => _baseHelper.DraftsPath;
-
-    protected string? PostsPath => _baseHelper.PostsPath;
+    protected string PostsPath => _baseHelper.PostsPath;
 
     public override bool Execute(TInput input)
     {

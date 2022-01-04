@@ -26,7 +26,8 @@ public class InfoCommand : BaseCommand<BaseInput>
 
     private void DetermineDaysSinceLastPost(Details blogDetails)
     {
-        blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
+        if(blogDetails.LastPost is not null && blogDetails.LastPost.PublishedOn.HasValue)
+            blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
     }
 
     private void DetermineRecentPosts(IReadOnlyList<YamlHeader> posts, Details blogDetails)
@@ -44,6 +45,7 @@ public class InfoCommand : BaseCommand<BaseInput>
     private void DetermineDraftsInfo(IReadOnlyList<YamlHeader> posts, Details blogDetails)
     {
         var unpublished = posts.Where(x => x.IsPublished == false).ToList();
+        blogDetails.UnPublishedCount = unpublished.Count;
         blogDetails.Unpublished = unpublished.Any() ? unpublished : Enumerable.Empty<YamlHeader>();
     }
 
@@ -83,16 +85,16 @@ public class InfoCommand : BaseCommand<BaseInput>
                 .AddRow("# days since last post", ":", $"{details.DaysSinceLastPost.Days}")
                 .AddRow("# of posts", ":", $"{details.PostCount - details.UnPublishedCount}")
                 .AddRow("# of drafts", ":", $"{details.UnPublishedCount}")
-                .AddRow("Available drafts", ":", FormatPostDetail(details.Unpublished.FirstOrDefault()));
+                .AddRow("Available drafts", ":", FormatPostDetail(details.Unpublished?.FirstOrDefault()));
 
-            foreach (var recent in details.Unpublished.Skip(1))
+            foreach (var recent in details.Unpublished?.Skip(1)!)
             {
                 grid.AddRow(string.Empty, string.Empty, FormatPostDetail(recent));
             }
 
-            grid.AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts.FirstOrDefault()));
+            grid.AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts?.FirstOrDefault()));
 
-            foreach (var latest in details.LatestPosts.Skip(1))
+            foreach (var latest in details.LatestPosts?.Skip(1)!)
             {
                 grid.AddRow(string.Empty, string.Empty, FormatPostDetail(latest));
             }
@@ -125,9 +127,9 @@ public class InfoCommand : BaseCommand<BaseInput>
     {
         public int PostCount { get; set; }
         public YamlHeader? LastPost { get; set; }
-        public int UnPublishedCount => Unpublished.Count();
-        public IEnumerable<YamlHeader> Unpublished { get; set; }
-        public List<YamlHeader> LatestPosts { get; set; }
+        public int UnPublishedCount { get; set; }
+        public IEnumerable<YamlHeader>? Unpublished { get; set; }
+        public List<YamlHeader>? LatestPosts { get; set; }
         public TimeSpan DaysSinceLastPost { get; set; }
     }
 }

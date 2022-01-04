@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.IO;
 using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Commands;
@@ -23,7 +22,7 @@ public class ListCommand : BaseCommand<ListInput>
         }
     }
 
-    private static bool Enumerate(string? path, ListInput input)
+    private static bool Enumerate(string path, ListInput input)
     {
         foreach(var file in Directory.EnumerateFiles(path, input.FilterFlag, SearchOption.AllDirectories))
         {
