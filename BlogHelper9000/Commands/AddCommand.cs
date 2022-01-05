@@ -46,7 +46,7 @@ public class AddCommand : AsyncBaseCommand<AddInput>
 
     private string CreatePostFilePath(BaseInput input)
     {
-        var fileName = input.Title.Replace(" ", "-");
+        var fileName = input.Title.Replace(" ", "-").ToLowerInvariant();
         var newPostFilePath = input.DraftFlag
             ? Path.ChangeExtension(Path.Combine(DraftsPath, fileName), "md")
             : Path.ChangeExtension(Path.Combine(PostsPath, fileName), "md");
