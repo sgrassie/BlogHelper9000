@@ -89,6 +89,6 @@ public class MarkdownFile
         Metadata = metadata;
     }
 
-    public string FilePath { get; }
+    public string FilePath { get; set; }
     public YamlHeader Metadata { get; }
 }
