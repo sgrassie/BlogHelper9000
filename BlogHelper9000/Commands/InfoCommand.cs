@@ -69,9 +69,10 @@ public class InfoCommand : BaseCommand<BaseInput>
 
         YamlHeader GetHeaderWithOriginalFilename(string f)
         {
-            var fileName = Path.GetFileName(f);
             var header = YamlConvert.Deserialise(File.ReadAllLines(f));
-            header.Extras.Add("originalFilename", fileName);
+            var fileInfo = new FileInfo(f);
+            header.Extras.Add("originalFilename", fileInfo.Name);
+            header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
             return header;
         }
     }
@@ -122,9 +123,10 @@ public class InfoCommand : BaseCommand<BaseInput>
             {
                 if (header is null) return string.Empty;
 
-                if (header.Extras.TryGetValue("originalFilename", out var originalFileName))
+                if (header.Extras.TryGetValue("originalFilename", out var originalFileName)
+                    && header.Extras.TryGetValue("lastUpdated", out var lastUpdated))
                 {
-                    return originalFileName;
+                    return $"{originalFileName} (updated: {lastUpdated})";
                 }
 
                 return string.Empty;
