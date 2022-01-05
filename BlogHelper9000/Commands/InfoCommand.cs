@@ -62,10 +62,18 @@ public class InfoCommand : BaseCommand<BaseInput>
         var posts = Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories);
         var drafts = Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories);
 
-        allPosts.AddRange(posts.Select(file => YamlConvert.Deserialise(File.ReadAllLines(file))));
-        allPosts.AddRange(drafts.Select(file => YamlConvert.Deserialise(File.ReadAllLines(file))));
+        allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
+        allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));
 
         return allPosts.OrderBy(x => x.PublishedOn).ToList().AsReadOnly();
+
+        YamlHeader GetHeaderWithOriginalFilename(string f)
+        {
+            var fileName = Path.GetFileName(f);
+            var header = YamlConvert.Deserialise(File.ReadAllLines(f));
+            header.Extras.Add("originalFilename", fileName);
+            return header;
+        }
     }
 
     private void RenderDetails(Details details)
@@ -86,11 +94,11 @@ public class InfoCommand : BaseCommand<BaseInput>
                 .AddRow("# days since last post", ":", $"{details.DaysSinceLastPost.Days}")
                 .AddRow("# of posts", ":", $"{details.PostCount - details.UnPublishedCount}")
                 .AddRow("# of drafts", ":", $"{details.UnPublishedCount}")
-                .AddRow("Available drafts", ":", FormatPostDetail(details.Unpublished?.FirstOrDefault()));
+                .AddRow("Available drafts", ":", FormatDraftPostDetail(details.Unpublished?.FirstOrDefault()));
 
             foreach (var recent in details.Unpublished?.Skip(1)!)
             {
-                grid.AddRow(string.Empty, string.Empty, FormatPostDetail(recent));
+                grid.AddRow(string.Empty, string.Empty, FormatDraftPostDetail(recent));
             }
 
             grid.AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts?.FirstOrDefault()));
@@ -108,6 +116,18 @@ public class InfoCommand : BaseCommand<BaseInput>
                     ? header.PublishedOn.Value.ToShortDateString()
                     : string.Empty;
                 return $"{title} ({postDate})";
+            }
+
+            string FormatDraftPostDetail(YamlHeader? header)
+            {
+                if (header is null) return string.Empty;
+
+                if (header.Extras.TryGetValue("originalFilename", out var originalFileName))
+                {
+                    return originalFileName;
+                }
+
+                return string.Empty;
             }
 
             return grid;
