@@ -14,6 +14,7 @@ public class PublishCommand : AsyncBaseCommand<PublishInput>
         var draft = Path.Combine(DraftsPath, input.Post);
         var markdownFile = MarkdownHandler.LoadFile(draft);
         markdownFile.Metadata.IsPublished = true;
+        markdownFile.Metadata.PublishedOn = DateTime.Now;
         MarkdownHandler.UpdateFile(markdownFile);
         
         var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{input.Post}";
