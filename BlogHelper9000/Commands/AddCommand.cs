@@ -44,7 +44,7 @@ public class AddCommand : AsyncBaseCommand<AddInput>
         return base.ValidateInput(input);
     }
 
-    private string CreatePostFilePath(BaseInput input)
+    private string CreatePostFilePath(AddInput input)
     {
         var fileName = input.Title.Replace(" ", "-").ToLowerInvariant();
         var newPostFilePath = input.DraftFlag
@@ -54,7 +54,7 @@ public class AddCommand : AsyncBaseCommand<AddInput>
         return newPostFilePath;
     }
 
-    private static void AddYamlHeader(string path, BaseInput input)
+    private static void AddYamlHeader(string path, AddInput input)
     {
         var yamlHeader = new YamlHeader
         {

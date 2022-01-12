@@ -50,6 +50,13 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
             file.Metadata.Tags = SplitToQuotedList(categories.Replace("[", string.Empty).Replace("]", string.Empty));
         }
 
+        // Remove any duplicate tags and make them Title Case
+        TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+        file.Metadata.Tags = file.Metadata.Tags
+            .GroupBy(x => x)
+            .Select(x => textInfo.ToTitleCase(x.First()))
+            .ToList();
+
         List<string> SplitToQuotedList(string s)
         {
             return s

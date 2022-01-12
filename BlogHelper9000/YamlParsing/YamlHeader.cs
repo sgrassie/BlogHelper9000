@@ -2,7 +2,7 @@ namespace BlogHelper9000.YamlParsing;
 
 public class YamlHeader
 {
-    public string Layout { get; set; } = "Post";
+    public string Layout { get; set; } = "post";
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; } = string.Empty;
     public List<string> Tags { get; set; } = Enumerable.Empty<string>().ToList();
