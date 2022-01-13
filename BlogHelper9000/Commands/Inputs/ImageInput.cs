@@ -4,6 +4,9 @@ public class ImageInput : BaseInput
 {
     public string Post { get; set; } = string.Empty;
 
+    [FlagAlias("image-query", 'q')] 
+    public string ImageQuery { get; set; } = "tech";
+
     public string AuthorBrandingFlag { get; set; } = string.Empty;
     
     [FlagAlias("apply-to-drafts", true)]
