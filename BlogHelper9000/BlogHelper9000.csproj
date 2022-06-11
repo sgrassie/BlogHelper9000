@@ -8,10 +8,31 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Oakton" Version="3.2.2" />
+      <PackageReference Include="Oakton" Version="4.1.0" />
       <PackageReference Include="SimpleExec" Version="8.0.0" />
-      <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+      <PackageReference Include="SixLabors.Fonts" Version="1.0.0-beta16" />
+      <PackageReference Include="SixLabors.ImageSharp" Version="2.0.0" />
+      <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta14" />
       <PackageReference Include="Spectre.Console" Version="0.42.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Ubuntu\Ubuntu-Bold.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-Bold.ttf" />
+      <None Remove="Ubuntu\Ubuntu-BoldItalic.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-BoldItalic.ttf" />
+      <None Remove="Ubuntu\Ubuntu-Italic.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-Italic.ttf" />
+      <None Remove="Ubuntu\Ubuntu-Light.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-Light.ttf" />
+      <None Remove="Ubuntu\Ubuntu-LightItalic.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-LightItalic.ttf" />
+      <None Remove="Ubuntu\Ubuntu-Medium.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-Medium.ttf" />
+      <None Remove="Ubuntu\Ubuntu-MediumItalic.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-MediumItalic.ttf" />
+      <None Remove="Ubuntu\Ubuntu-Regular.ttf" />
+      <EmbeddedResource Include="Ubuntu\Ubuntu-Regular.ttf" />
     </ItemGroup>
 
 </Project>

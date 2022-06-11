@@ -5,15 +5,16 @@ public class ImageInput : BaseInput
     public string Post { get; set; } = string.Empty;
 
     [FlagAlias("image-query", 'q')] 
-    public string ImageQuery { get; set; } = "tech";
+    public string ImageQueryFlag { get; set; } = "tech";
 
+    [FlagAlias("logo", true)]
     public string AuthorBrandingFlag { get; set; } = string.Empty;
     
-    [FlagAlias("apply-to-drafts", true)]
-    public bool ApplyToDrafts { get; set; }
+    [FlagAlias("apply-to-drafts", 'd')]
+    public bool ApplyToDraftsFlag { get; set; }
     
     [FlagAlias("apply-to-posts", true)]
-    public bool ApplyToPosts { get; set; }
+    public bool ApplyToPostsFlag { get; set; }
     
     [FlagAlias("apply-all", true)]
     public bool ApplyAllFlag { get; set; }
