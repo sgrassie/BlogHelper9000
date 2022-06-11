@@ -16,10 +16,14 @@ public static class YamlConvert
         foreach (var item in dict)
         {
             if (item.Value is null) continue; // don't serialise if the value is null
+            if(item.Value is string s && string.IsNullOrEmpty(s)) continue;
 
-            if (item.Value.GetType() == typeof(List<string>))
+            if (item.Value is List<string> list)
             {
-                builder.AppendLine($"{item.Key}: [{TagsString(item.Value)}]");
+                if (list.Any())
+                {
+                    builder.AppendLine($"{item.Key}: [{TagsString(item.Value)}]");
+                }
             }
             else if (item.Value is DateTime)
             {
