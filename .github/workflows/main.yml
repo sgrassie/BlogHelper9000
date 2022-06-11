@@ -1,19 +1,30 @@
-name: Cake Action
-  # You may pin to the exact commit or the version.
-  # uses: cake-build/cake-action@05afcd95441a78b3e4d375a72b62bde29c8c0f60
-uses: cake-build/cake-action@v1.4.0
-  with:
-    # The path of the Cake script to run.
-    script-path: # optional, default is build.cake
-    # The name of the task to execute. Note that this argument must be supported by the script.
-    target: # optional
-    # The verbosity level with which to run the script. Valid values are: Quiet, Minimal, Normal, Verbose or Diagnostic.
-    verbosity: # optional, default is Normal
-    # Tells Cake to do a dry run of the script.
-    dry-run: # optional, default is false
-    # Any custom parameters to pass to the script. Multiple parameters are defined on separate lines.
-    arguments: # optional
-    # The version of Cake to install. Either a specific version, "latest" (default) or "tool-manifest".
-    cake-version: # optional, default is latest
-    # Flag for if Cake modules should be installed/bootstrapped.
-    cake-bootstrap: # optional, default is false
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the "master" branch
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+
+      # Runs a single command using the runners shell
+      - name: Cake Action
+      - uses: cake-build/cake-action@v1.4.0
