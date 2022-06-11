@@ -19,8 +19,8 @@ public class AddCommand : AsyncBaseCommand<AddInput>
         if (input.GitAddFlag)
         {
             ConsoleWriter.Write("Adding new post to git...");
-            var gitOutput = await Command.ReadAsync("git", "add --all", input.BaseDirectoryFlag);
-            ConsoleWriter.Write(gitOutput);
+            var (standardOut, standardError) = await Command.ReadAsync("git", "add --all", input.BaseDirectoryFlag);
+            ConsoleWriter.Write(standardOut);
             ConsoleWriter.Write(@"Don't forget to commit: git commit -m ""Added new post""");
         }
 
