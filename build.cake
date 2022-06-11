@@ -17,7 +17,7 @@ Task("Restore-NuGet-Packages")
     .IsDependentOn("Clean")
     .Does<Parameters>((context, parameters) =>
 {
-    DotNetRestore(parameters.SolutionFile, new DotNetCoreRestoreSettings
+    DotNetRestore(parameters.SolutionFile, new DotNetRestoreSettings
     {
         Verbosity = DotNetCoreVerbosity.Minimal,
         Sources = new [] { "https://api.nuget.org/v3/index.json" },
@@ -30,7 +30,7 @@ Task("Build")
 {
     // Build the solution.
     var path = MakeAbsolute(new DirectoryPath(parameters.SolutionFile));
-    DotNetBuild(path.FullPath, new DotNetCoreBuildSettings()
+    DotNetBuild(path.FullPath, new DotNetBuildSettings()
     {
         Configuration = parameters.Configuration,
         NoRestore = true
@@ -39,20 +39,15 @@ Task("Build")
 
 Task("Run-Unit-Tests")
     .IsDependentOn("Build")
-    .DoesForEach<Parameters, FilePath>(
-        () => GetFiles("./src/**/*.Tests.csproj"),
-        (parameters, project, context) =>
+    .Does<Parameters>((context, parameters) =>
 {
-    foreach(var framework in new[] { "net6.0" })
+    DotNetTest(parameters.SolutionFile, new DotNetTestSettings
     {
-        DotNetCoreTest(project.FullPath, new DotNetCoreTestSettings
-        {
-            Framework = framework,
-            NoBuild = true,
-            NoRestore = true,
-            Configuration = parameters.Configuration
-        });
-    }
+        Framework = "net6.0",
+        NoBuild = true,
+        NoRestore = true,
+        Configuration = parameters.Configuration
+    });
 });
 
 Task("Default").IsDependentOn("Build");
