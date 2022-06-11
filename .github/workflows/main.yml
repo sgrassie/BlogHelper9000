@@ -1,7 +1,7 @@
-- name: Cake Action
+name: Cake Action
   # You may pin to the exact commit or the version.
   # uses: cake-build/cake-action@05afcd95441a78b3e4d375a72b62bde29c8c0f60
-  uses: cake-build/cake-action@v1.4.0
+uses: cake-build/cake-action@v1.4.0
   with:
     # The path of the Cake script to run.
     script-path: # optional, default is build.cake
