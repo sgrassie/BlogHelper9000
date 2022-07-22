@@ -25,13 +25,13 @@ public class InfoCommand : BaseCommand<BaseInput>
         return true;
     }
 
-    private void DetermineDaysSinceLastPost(Details blogDetails)
+    private static void DetermineDaysSinceLastPost(Details blogDetails)
     {
         if(blogDetails.LastPost is not null && blogDetails.LastPost.PublishedOn.HasValue)
             blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
     }
 
-    private void DetermineRecentPosts(IReadOnlyList<YamlHeader> posts, Details blogDetails)
+    private static void DetermineRecentPosts(IEnumerable<YamlHeader> posts, Details blogDetails)
     {
         var recents = posts
             .Where(x => x.IsPublished.GetValueOrDefault())
@@ -43,14 +43,14 @@ public class InfoCommand : BaseCommand<BaseInput>
         blogDetails.LastPost = recents.FirstOrDefault();
     }
 
-    private void DetermineDraftsInfo(IReadOnlyList<YamlHeader> posts, Details blogDetails)
+    private static void DetermineDraftsInfo(IEnumerable<YamlHeader> posts, Details blogDetails)
     {
         var unpublished = posts.Where(x => x.IsPublished == false).ToList();
         blogDetails.UnPublishedCount = unpublished.Count;
         blogDetails.Unpublished = unpublished.Any() ? unpublished : Enumerable.Empty<YamlHeader>();
     }
 
-    private void DeterminePostCount(IReadOnlyList<YamlHeader> posts, Details blogDetails)
+    private static void DeterminePostCount(IReadOnlyCollection<YamlHeader> posts, Details blogDetails)
     {
         blogDetails.PostCount = posts.Count;
     }

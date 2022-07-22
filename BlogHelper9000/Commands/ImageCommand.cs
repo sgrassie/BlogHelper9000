@@ -61,7 +61,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
         if (!string.IsNullOrEmpty(input.Post))
         {
             ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for single draft...");
-            var path = Path.Combine(DraftsPath, input.Post);
+            var path = File.Exists(input.Post) ? input.Post : Path.Combine(DraftsPath, input.Post);
             yield return MarkdownHandler.LoadFile(path);
         }
         else
@@ -129,7 +129,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             {
                 ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding Unsplash attribution...");
                 var measure = TextMeasurer.Measure(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
-                
+
                 x.DrawText(
                     new DrawingOptions
                     {
@@ -188,7 +188,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             });
 
             ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Saving generated image...");
-            var (fileName,savePath) = GetSavePath(markdownFile);
+            var (fileName, savePath) = GetSavePath(markdownFile);
             var markdownPath = $"/assets/images/{fileName}";
             markdownFile.Metadata.FeaturedImage = markdownPath;
             markdownFile.Metadata.Image = markdownPath;

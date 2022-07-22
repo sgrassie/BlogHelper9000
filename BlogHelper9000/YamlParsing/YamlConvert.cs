@@ -59,7 +59,6 @@ public static class YamlConvert
     public static YamlHeader Deserialise(string[] fileContent)
     {
         var headerStartMarkerFound = false;
-        var headerEndMarkerFound = false;
         var yamlBlock = new List<string>();
 
         foreach (var line in fileContent)
@@ -72,22 +71,13 @@ public static class YamlConvert
                     continue;
                 }
 
-                if (!headerEndMarkerFound)
-                {
-                    headerEndMarkerFound = true;
-                    break;
-                }
+                break;
             }
 
             yamlBlock.Add(line);
         }
-
-        if (headerEndMarkerFound)
-        {
-            return ParseYamlHeader(yamlBlock);
-        }
-
-        return new YamlHeader();
+            
+        return ParseYamlHeader(yamlBlock);
     }
 
     private static YamlHeader ParseYamlHeader(IEnumerable<string> yamlHeader)
