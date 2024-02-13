@@ -67,7 +67,7 @@ internal sealed class AddCommand : Command
             var postFile = CreatePostFilePath(title, isDraft);
             AddYamlHeader(postFile, title, tags, featuredImage, isFeatured, isHidden, isDraft);
 
-            ConsoleWriter.Write("Added new file {0} as draft", postFile);
+            //ConsoleWriter.Write("Added new file {0} as draft", postFile);
         }
 
         private string CreatePostFilePath(string title, bool isDraft)

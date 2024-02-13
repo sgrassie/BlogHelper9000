@@ -6,6 +6,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
 using Color = SixLabors.ImageSharp.Color;
+using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
 
 namespace BlogHelper9000.Commands;
 
@@ -42,12 +43,12 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
 
     protected override async Task<bool> Run(ImageInput input)
     {
-        ConsoleWriter.Write(ConsoleColor.White, "Preparing to generate...");
+        //ConsoleWriter.Write(ConsoleColor.White, "Preparing to generate...");
         var imageProcessor = new ImageProcessor(input);
 
         foreach (var header in GetPosts(input))
         {
-            ConsoleWriter.Write(ConsoleColor.White, $"Generating image for {header.FilePath}");
+            //ConsoleWriter.Write(ConsoleColor.White, $"Generating image for {header.FilePath}");
             await using var stream = await UnsplashImageFetcher.FetchImageAsync(input.ImageQueryFlag);
             await imageProcessor.GenerateImage(header, stream);
             await Task.Delay(5000);
@@ -60,7 +61,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
     {
         if (!string.IsNullOrEmpty(input.Post))
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for single draft...");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for single draft...");
             var path = File.Exists(input.Post) ? input.Post : Path.Combine(DraftsPath, input.Post);
             yield return MarkdownHandler.LoadFile(path);
         }
@@ -68,7 +69,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
         {
             if (input.ApplyAllFlag)
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for posts and drafts...");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for posts and drafts...");
                 var posts = Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories).ToList();
                 posts.AddRange(Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories));
                 foreach (var file in posts)
@@ -78,7 +79,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             }
             else if (input.ApplyToDraftsFlag)
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all drafts...");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all drafts...");
                 foreach (var file in Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories))
                 {
                     yield return MarkdownHandler.LoadFile(file);
@@ -86,7 +87,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             }
             else
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all posts...");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all posts...");
                 foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories))
                 {
                     yield return MarkdownHandler.LoadFile(file);
@@ -109,7 +110,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
 
         public async Task GenerateImage(MarkdownFile markdownFile, Stream unsplashSource)
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image...");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image...");
 
             var unsplashAttributionFont = FontHandler.GetFont("Ubuntu", 15, FontStyle.Italic);
             var mainFont = FontHandler.GetFont("Ubuntu", 90);
@@ -120,74 +121,74 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
 
             unsplash.Mutate(x =>
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding logo...");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding logo...");
                 var position = new Point(0, 0);
                 x.DrawImage(logo, position, opacity: 1f);
             });
 
             unsplash.Mutate(x =>
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding Unsplash attribution...");
-                var measure = TextMeasurer.Measure(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding Unsplash attribution...");
+                var measure = TextMeasurer.MeasureSize(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
 
-                x.DrawText(
-                    new DrawingOptions
-                    {
-                        GraphicsOptions = new GraphicsOptions { Antialias = true },
-                    },
-                    new TextOptions(unsplashAttributionFont)
-                    {
-                        Origin = new PointF(unsplashWidth - measure.Width, unsplashHeight - measure.Height),
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    },
-                    ImagesByUnsplash,
-                    new SolidBrush(Color.WhiteSmoke),
-                    new Pen(Color.WhiteSmoke, 1)
-                );
+                // x.DrawText(
+                //     new DrawingOptions
+                //     {
+                //         GraphicsOptions = new GraphicsOptions { Antialias = true },
+                //     },
+                //     new TextOptions(unsplashAttributionFont)
+                //     {
+                //         Origin = new PointF(unsplashWidth - measure.Width, unsplashHeight - measure.Height),
+                //         HorizontalAlignment = HorizontalAlignment.Center
+                //     },
+                //     ImagesByUnsplash,
+                //     new SolidBrush(Color.WhiteSmoke),
+                //     new SolidPen(Color.WhiteSmoke, 1)
+                // );
             });
 
             // text shadow
             unsplash.Mutate(x =>
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding post description text shadow...");
-                x.DrawText(
-                    new DrawingOptions
-                    {
-                        GraphicsOptions = new GraphicsOptions { Antialias = true }
-                    },
-                    new TextOptions(mainFont)
-                    {
-                        Origin = new PointF(603, 203),
-                        WrappingLength = 1000f,
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    },
-                    markdownFile.Metadata.Title,
-                    new SolidBrush(Color.Black),
-                    new Pen(Color.Black, 1)
-                );
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding post description text shadow...");
+                // x.DrawText(
+                //     new DrawingOptions
+                //     {
+                //         GraphicsOptions = new GraphicsOptions { Antialias = true }
+                //     },
+                //     new TextOptions(mainFont)
+                //     {
+                //         Origin = new PointF(603, 203),
+                //         WrappingLength = 1000f,
+                //         HorizontalAlignment = HorizontalAlignment.Center
+                //     },
+                //     markdownFile.Metadata.Title,
+                //     new SolidBrush(Color.Black),
+                //     new Pen(Color.Black, 1)
+                // );
             });
 
             unsplash.Mutate(x =>
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding post description text...");
-                x.DrawText(
-                    new DrawingOptions
-                    {
-                        GraphicsOptions = new GraphicsOptions { Antialias = true }
-                    },
-                    new TextOptions(mainFont)
-                    {
-                        Origin = new PointF(600, 200),
-                        WrappingLength = 1000f,
-                        HorizontalAlignment = HorizontalAlignment.Center
-                    },
-                    markdownFile.Metadata.Title,
-                    new SolidBrush(Color.WhiteSmoke),
-                    new Pen(Color.WhiteSmoke, 1)
-                );
+                // ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Adding post description text...");
+                // x.DrawText(
+                //     new DrawingOptions
+                //     {
+                //         GraphicsOptions = new GraphicsOptions { Antialias = true }
+                //     },
+                //     new TextOptions(mainFont)
+                //     {
+                //         Origin = new PointF(600, 200),
+                //         WrappingLength = 1000f,
+                //         HorizontalAlignment = HorizontalAlignment.Center
+                //     },
+                //     markdownFile.Metadata.Title,
+                //     new SolidBrush(Color.WhiteSmoke),
+                //     new Pen(Color.WhiteSmoke, 1)
+                // );
             });
 
-            ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Saving generated image...");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Saving generated image...");
             var (fileName, savePath) = GetSavePath(markdownFile);
             var markdownPath = $"/assets/images/{fileName}";
             markdownFile.Metadata.FeaturedImage = markdownPath;
@@ -213,7 +214,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
 
         static FontHandler()
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Loading fonts...");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Loading fonts...");
             _fontCollection = new FontCollection();
 
             foreach (var ttf in Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".ttf")))
@@ -227,7 +228,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
         {
             if (_fontCollection.TryGet(fontName, out var family))
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, $"Loading {fontName} font with size {fontSize}...");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, $"Loading {fontName} font with size {fontSize}...");
                 return family.CreateFont(fontSize, style);
             }
 
@@ -248,7 +249,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
 
         public static Task<Stream> FetchImageAsync(string query)
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, $"Loading random Unsplah image for '{query}'...");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, $"Loading random Unsplah image for '{query}'...");
             var fetcher = new UnsplashImageFetcher(query);
             return fetcher.FetchImage();
         }

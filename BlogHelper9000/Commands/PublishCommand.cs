@@ -22,11 +22,11 @@ public class PublishCommand : AsyncBaseCommand<PublishInput>
 
         if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
         var replacementPath = Path.Combine(targetFolder, publishedFilename);
-        ConsoleWriter.Write("Publishing {0} to {1}", publishedFilename, targetFolder);
+        //ConsoleWriter.Write("Publishing {0} to {1}", publishedFilename, targetFolder);
         File.Move(draft, replacementPath);
         File.Delete(draft);
         await Command.RunAsync("git", "add --all", input.BaseDirectoryFlag, true);
-        ConsoleWriter.Write("Published file added to git index. Don't forget to commit and push to remote.");
+        //ConsoleWriter.Write("Published file added to git index. Don't forget to commit and push to remote.");
         return true;
     }
 
@@ -36,13 +36,13 @@ public class PublishCommand : AsyncBaseCommand<PublishInput>
         {
             if (!input.Post.EndsWith(".md"))
             {
-                ConsoleWriter.Write(ConsoleColor.Red, "You must specify the post file to publish");
+                //ConsoleWriter.Write(ConsoleColor.Red, "You must specify the post file to publish");
                 return false;
             }
 
             if (!File.Exists(Path.Combine(DraftsPath, input.Post)))
             {
-                ConsoleWriter.Write(ConsoleColor.Red, "You must specify the post file to publish");
+                //ConsoleWriter.Write(ConsoleColor.Red, "You must specify the post file to publish");
                 return false;
             }
 

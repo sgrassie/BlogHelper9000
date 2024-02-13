@@ -15,7 +15,7 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
         foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories)
                      .Select(MarkdownHandler.LoadFile))
         {
-            ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
+            //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
 
             FixPublishedStatus(file);
             FixDescription(file);
@@ -35,10 +35,10 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 
     private void FixTags(MarkdownFile file)
     {
-        ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Fixing Tags");
+        //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Fixing Tags");
         if (file.Metadata.Extras.TryGetValue("category", out var category))
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting category to tags");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting category to tags");
             file.Metadata.Tags = category.Contains(',')
                 ? SplitToQuotedList(category)
                 : new List<string> { $"'{category}'" };
@@ -46,7 +46,7 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 
         if (file.Metadata.Extras.TryGetValue("categories", out var categories))
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting categories to tags");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting categories to tags");
             file.Metadata.Tags = SplitToQuotedList(categories.Replace("[", string.Empty).Replace("]", string.Empty));
         }
 
@@ -68,11 +68,11 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 
     private void FixDescription(MarkdownFile file)
     {
-        ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Check description is updated");
+        //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Check description is updated");
         // some old posts have a metadescription tag
         if (file.Metadata.Extras.TryGetValue("metadescription", out var metadescription))
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Description");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Description");
             file.Metadata.Description = metadescription;
         }
     }
@@ -83,16 +83,16 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
         
         if (file.Metadata.PublishedOn is null)
         {
-            ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Updating published status");
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Updating published status");
             if (file.Metadata.PublishedOn is null)
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Published date");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Published date");
                 file.Metadata.PublishedOn = dateFromFileName;
             }
 
             if (file.Metadata.PublishedOn is not null)
             {
-                ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating IsPublished");
+                //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating IsPublished");
                 file.Metadata.IsPublished = true;
                 file.Metadata.IsHidden = false;
             }

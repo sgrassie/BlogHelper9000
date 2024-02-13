@@ -23,13 +23,13 @@ internal class BaseHelper<TInput> where TInput : BaseInput
     {
         if (!Directory.Exists(DraftsPath))
         {
-            ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _drafts folder");
+            //ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _drafts folder");
             return false;
         }
 
         if (!Directory.Exists(PostsPath))
         {
-            ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _posts folder");
+            //ConsoleWriter.Write(ConsoleColor.Red, "Unable to find blog _posts folder");
             return false;
         }
 

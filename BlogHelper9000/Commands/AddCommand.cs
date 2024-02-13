@@ -14,14 +14,14 @@ public class AddCommand : AsyncBaseCommand<AddInput>
         var postFile = CreatePostFilePath(input);
         AddYamlHeader(postFile, input);
         
-        ConsoleWriter.Write("Added new file {0} as draft", postFile);
+        //ConsoleWriter.Write("Added new file {0} as draft", postFile);
 
         if (input.GitAddFlag)
         {
-            ConsoleWriter.Write("Adding new post to git...");
+            //ConsoleWriter.Write("Adding new post to git...");
             var (standardOut, standardError) = await Command.ReadAsync("git", "add --all", input.BaseDirectoryFlag);
-            ConsoleWriter.Write(standardOut);
-            ConsoleWriter.Write(@"Don't forget to commit: git commit -m ""Added new post""");
+            //ConsoleWriter.Write(standardOut);
+            //ConsoleWriter.Write(@"Don't forget to commit: git commit -m ""Added new post""");
         }
 
         return true;
@@ -31,13 +31,13 @@ public class AddCommand : AsyncBaseCommand<AddInput>
     {
         if (string.IsNullOrEmpty(input.Title))
         {
-            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
+            //ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have a title!");
             return false;
         }
 
         if (!input.Tags.Any())
         {
-            ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
+            //ConsoleWriter.Write(ConsoleColor.Red, "The new post does not have any tags!");
             return false;
         }
 
