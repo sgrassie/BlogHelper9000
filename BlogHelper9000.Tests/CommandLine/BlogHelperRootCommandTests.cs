@@ -4,14 +4,13 @@ using BlogHelper9000.CommandLine;
 
 namespace BlogHelper9000.Tests.CommandLine;
 
-public class CommandFactoryTests
+public class BlogHelperRootCommandTests
 {
     [Fact]
     public async Task Should_Output_Help_WhenInvokingHelp()
     {
         var console = new TestConsole();
-        var commandFactory = new CommandFactory();
-        var rootCommand = commandFactory.RootCommand();
+        var rootCommand = new BlogHelperRootCommand(JekyllBlogFilesystemFactory.FileSystem);
 
         await rootCommand.InvokeAsync("-h", console);
 
@@ -28,8 +27,7 @@ public class CommandFactoryTests
     public async Task Should_Output_Commands_WhenInvokingHelp(string expectedCommand)
     {
         var console = new TestConsole();
-        var commandFactory = new CommandFactory();
-        var rootCommand = commandFactory.RootCommand();
+        var rootCommand = new BlogHelperRootCommand(JekyllBlogFilesystemFactory.FileSystem);
 
         await rootCommand.InvokeAsync("-h", console);
 
