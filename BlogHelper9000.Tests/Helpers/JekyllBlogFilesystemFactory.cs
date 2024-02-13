@@ -1,7 +1,7 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 
-namespace BlogHelper9000.Tests.CommandLine;
+namespace BlogHelper9000.Tests.Helpers;
 
 internal sealed class JekyllBlogFilesystemFactory
 {

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.IO;
 using BlogHelper9000.CommandLine;
+using BlogHelper9000.Tests.Helpers;
 
 namespace BlogHelper9000.Tests.CommandLine;
 
