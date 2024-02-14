@@ -1,4 +1,4 @@
-namespace BlogHelper9000.Commands.Inputs;
+namespace BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 
 public class PublishInput : BaseInput
 {

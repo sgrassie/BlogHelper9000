@@ -1,14 +1,10 @@
 using System.Reflection;
-using BlogHelper9000.Commands.Inputs;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 using SixLabors.Fonts;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.Processing;
-using Color = SixLabors.ImageSharp.Color;
-using HorizontalAlignment = SixLabors.Fonts.HorizontalAlignment;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 // fonts from https://fonts.google.com/specimen/Ubuntu#standard-styles
 
@@ -63,7 +59,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
         {
             //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for single draft...");
             var path = File.Exists(input.Post) ? input.Post : Path.Combine(DraftsPath, input.Post);
-            yield return MarkdownHandler.LoadFile(path);
+            yield return null; //MarkdownHandler.LoadFile(path);
         }
         else
         {
@@ -74,7 +70,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
                 posts.AddRange(Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories));
                 foreach (var file in posts)
                 {
-                    yield return MarkdownHandler.LoadFile(file);
+                    yield return null; //MarkdownHandler.LoadFile(file);
                 }
             }
             else if (input.ApplyToDraftsFlag)
@@ -82,7 +78,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
                 //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all drafts...");
                 foreach (var file in Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories))
                 {
-                    yield return MarkdownHandler.LoadFile(file);
+                    yield return null; //MarkdownHandler.LoadFile(file);
                 }
             }
             else
@@ -90,7 +86,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
                 //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all posts...");
                 foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories))
                 {
-                    yield return MarkdownHandler.LoadFile(file);
+                    yield return null; //MarkdownHandler.LoadFile(file);
                 }
             }
         }
@@ -193,7 +189,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             var markdownPath = $"/assets/images/{fileName}";
             markdownFile.Metadata.FeaturedImage = markdownPath;
             markdownFile.Metadata.Image = markdownPath;
-            MarkdownHandler.UpdateFile(markdownFile);
+            //MarkdownHandler.UpdateFile(markdownFile);
             await unsplash.SaveAsWebpAsync(savePath);
         }
 

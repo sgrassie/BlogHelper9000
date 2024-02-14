@@ -1,9 +1,9 @@
 using System.CommandLine;
 using System.CommandLine.IO;
-using BlogHelper9000.CommandLine;
+using BlogHelper9000.Commands;
 using BlogHelper9000.Tests.Helpers;
 
-namespace BlogHelper9000.Tests.CommandLine;
+namespace BlogHelper9000.Tests.Commands;
 
 public class BlogHelperRootCommandTests
 {
@@ -11,7 +11,8 @@ public class BlogHelperRootCommandTests
     public async Task Should_Output_Help_WhenInvokingHelp()
     {
         var console = new TestConsole();
-        var rootCommand = new BlogHelperRootCommand(JekyllBlogFilesystemFactory.FileSystem);
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var rootCommand = new BlogHelperRootCommand(fileSystem);
 
         await rootCommand.InvokeAsync("-h", console);
 
@@ -28,7 +29,8 @@ public class BlogHelperRootCommandTests
     public async Task Should_Output_Commands_WhenInvokingHelp(string expectedCommand)
     {
         var console = new TestConsole();
-        var rootCommand = new BlogHelperRootCommand(JekyllBlogFilesystemFactory.FileSystem);
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var rootCommand = new BlogHelperRootCommand(fileSystem);
 
         await rootCommand.InvokeAsync("-h", console);
 

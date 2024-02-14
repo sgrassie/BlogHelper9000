@@ -1,6 +1,6 @@
-using BlogHelper9000.Commands.Inputs;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 internal class BaseHelper<TInput> where TInput : BaseInput
 {

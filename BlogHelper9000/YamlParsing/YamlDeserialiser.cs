@@ -130,6 +130,7 @@ public sealed class YamlDeserialiser : SerialiserBase
 
     private static (string property, string value) ParseHeaderTag(string tag)
     {
+        if (string.IsNullOrEmpty(tag)) return ("", "");
         tag = tag.Trim();
         var index = tag.IndexOf(':');
         var property = tag.Substring(0, index);

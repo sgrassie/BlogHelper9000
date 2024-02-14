@@ -1,7 +1,7 @@
-using BlogHelper9000.Commands.Inputs;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 using BlogHelper9000.YamlParsing;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 public class InfoCommand : BaseCommand<BaseInput>
 {
@@ -69,11 +69,12 @@ public class InfoCommand : BaseCommand<BaseInput>
 
         YamlHeader GetHeaderWithOriginalFilename(string f)
         {
-            var header = YamlConvert.Deserialise(File.ReadAllLines(f));
-            var fileInfo = new FileInfo(f);
-            header.Extras.Add("originalFilename", fileInfo.Name);
-            header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
-            return header;
+            // var header = YamlConvert.Deserialise(File.ReadAllLines(f));
+            // var fileInfo = new FileInfo(f);
+            // header.Extras.Add("originalFilename", fileInfo.Name);
+            // header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
+            // return header;
+            return null;
         }
     }
 

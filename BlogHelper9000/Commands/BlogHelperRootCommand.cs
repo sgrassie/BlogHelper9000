@@ -1,7 +1,7 @@
 using System.CommandLine;
 using System.IO.Abstractions;
 
-namespace BlogHelper9000.CommandLine;
+namespace BlogHelper9000.Commands;
 
 public class BlogHelperRootCommand : RootCommand
 {
@@ -12,15 +12,15 @@ public class BlogHelperRootCommand : RootCommand
     {
         _fileSystem = fileSystem;
         
-        var baseDirectory = new Option<string>(
+        var baseDirectoryOption = new Option<string>(
             name: "--base-directory",
             description: "The base directory of the blog.");
-        baseDirectory.AddAlias("-b");
-        AddGlobalOption(baseDirectory);
+        baseDirectoryOption.AddAlias("-b");
+        AddGlobalOption(baseDirectoryOption);
         
-        AddCommand(new AddCommand(_fileSystem, baseDirectory));
+        AddCommand(new AddCommand(_fileSystem, baseDirectoryOption));
         AddCommand(new ImageCommand());
-        AddCommand(new FixCommand());
+        AddCommand(new FixCommand(_fileSystem, baseDirectoryOption));
         AddCommand(new PublishCommand());
     }
 }   

@@ -1,6 +1,6 @@
 using Command = System.CommandLine.Command;
 
-namespace BlogHelper9000.CommandLine;
+namespace BlogHelper9000.Commands;
 
 public class PublishCommand : Command
 {

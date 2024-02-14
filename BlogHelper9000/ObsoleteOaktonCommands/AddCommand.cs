@@ -1,7 +1,7 @@
-using BlogHelper9000.Commands.Inputs;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 using BlogHelper9000.YamlParsing;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 public class AddCommand : AsyncBaseCommand<AddInput>
 {
@@ -71,7 +71,7 @@ public class AddCommand : AsyncBaseCommand<AddInput>
             yamlHeader.IsPublished = false;
         }
 
-        var yamlHeaderText = YamlConvert.Serialise(yamlHeader);
+        var yamlHeaderText = ""; //YamlConvert.Serialise(yamlHeader);
 
         File.AppendAllText(path, yamlHeaderText);
     }

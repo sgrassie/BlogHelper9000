@@ -1,6 +1,6 @@
-using BlogHelper9000.Commands.Inputs;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 public class PublishCommand : AsyncBaseCommand<PublishInput>
 {
@@ -12,10 +12,10 @@ public class PublishCommand : AsyncBaseCommand<PublishInput>
     protected override async Task<bool> Run(PublishInput input)
     {
         var draft = Path.Combine(DraftsPath, input.Post);
-        var markdownFile = MarkdownHandler.LoadFile(draft);
-        markdownFile.Metadata.IsPublished = true;
-        markdownFile.Metadata.PublishedOn = DateTime.Now;
-        MarkdownHandler.UpdateFile(markdownFile);
+        //var markdownFile = MarkdownHandler.LoadFile(draft);
+        //markdownFile.Metadata.IsPublished = true;
+        //markdownFile.Metadata.PublishedOn = DateTime.Now;
+        //MarkdownHandler.UpdateFile(markdownFile);
         
         var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{input.Post}";
         var targetFolder = Path.Combine(PostsPath, $"{DateTime.Now:yyyy}");

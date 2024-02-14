@@ -1,9 +1,9 @@
 using System.CommandLine;
 using System.IO.Abstractions;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.Handlers;
 using Command = System.CommandLine.Command;
 
-namespace BlogHelper9000.CommandLine;
+namespace BlogHelper9000.Commands;
 
 internal sealed class AddCommand : Command
 {
@@ -47,57 +47,5 @@ internal sealed class AddCommand : Command
                 handler.Execute(title, tags, featuredImage, isFeatured, hidden, draft);
             }, 
             titleArgument, tagsArgument, draftOption, featuredImageOption, isFeaturedOption, isHidden, _baseDirectory, Bind.FromServiceProvider<IConsole>());
-    }
-
-    private class AddCommandHandler
-    {
-        private readonly IFileSystem _fileSystem;
-        private readonly string _blogBaseDirectory;
-        private readonly IConsole _console;
-
-        public AddCommandHandler(IFileSystem fileSystem, string blogBaseDirectory, IConsole console)
-        {
-            _fileSystem = fileSystem;
-            _blogBaseDirectory = blogBaseDirectory;
-            _console = console;
-        }
-
-        public void Execute(string title, string[] tags, string featuredImage, bool isFeatured, bool isHidden, bool isDraft)
-        {
-            var postFile = CreatePostFilePath(title, isDraft);
-            AddYamlHeader(postFile, title, tags, featuredImage, isFeatured, isHidden, isDraft);
-
-            //ConsoleWriter.Write("Added new file {0} as draft", postFile);
-        }
-
-        private string CreatePostFilePath(string title, bool isDraft)
-        {
-            var fileName = title.Replace(" ", "-").ToLowerInvariant();
-            var newPostFilePath = isDraft
-                ? _fileSystem.Path.ChangeExtension(_fileSystem.Path.Combine(_blogBaseDirectory, "_drafts", fileName),
-                    "md")
-                : _fileSystem.Path.ChangeExtension(_fileSystem.Path.Combine(_blogBaseDirectory, "_posts", fileName),
-                    "md");
-
-            return newPostFilePath;
-        }
-
-        private void AddYamlHeader(string path, string title, string[] tags, string featuredImage, bool isFeatured,
-            bool isHidden, bool isDraft)
-        {
-            var yamlHeader = new YamlHeader
-            {
-                Title = title,
-                Tags = tags.ToList(),
-                FeaturedImage = featuredImage,
-                IsFeatured = isFeatured,
-                IsHidden = isHidden,
-                IsPublished = !isDraft
-            };
-
-            var yamlHeaderText = YamlConvert.Serialise(yamlHeader);
-
-            _fileSystem.File.AppendAllText(path, yamlHeaderText);
-        }
     }
 }

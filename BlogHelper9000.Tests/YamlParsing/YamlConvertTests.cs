@@ -1,3 +1,4 @@
+using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.YamlParsing;
 
 
@@ -18,7 +19,7 @@ hidden: false
 ---
 post content that's not parsed";
         
-        var yamlObject = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+        var yamlObject = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         yamlObject.Layout.Should().Be("post");
         yamlObject.Tags.Should().NotBeEmpty();
@@ -34,7 +35,7 @@ layout: post
 categories: ReactiveUI
 ---";
 
-        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         header.Extras.Should().ContainKey("categories");
     }
@@ -46,7 +47,7 @@ categories: ReactiveUI
 published: 17/11/2013
 ---";
 
-        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         header.PublishedOn.Should().Be(new DateTime(2013, 11, 17));
     }
@@ -58,7 +59,7 @@ published: 17/11/2013
 ispublished: True
 ---";
 
-        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         header.IsPublished.Should().BeTrue();
     }
@@ -70,7 +71,7 @@ ispublished: True
 ispublished: true
 ---";
 
-        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         header.IsPublished.Should().BeTrue();
     }
@@ -96,7 +97,7 @@ hidden: False
             IsHidden = false
         };
 
-        var serialised = YamlConvert.Serialise(header);
+        var serialised = new YamlConvert(new MockFileSystem()).Serialise(header);
 
         serialised.Should().Match(expected);
     }
@@ -110,8 +111,8 @@ title: ""Test Driven Development: Implementing Freecell - Part 3""
 description: Developing a Freecell rules engine, using Test Driven Development in csharp - Part 3
 series: ""TDD: Implementing Freecell""
 ---";
-        var header = YamlConvert.Deserialise(yaml.Split(Environment.NewLine));
-        var serialised = YamlConvert.Serialise(header);
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
+        var serialised = new YamlConvert(new MockFileSystem()).Serialise(header);
 
         serialised.Should().Match(yaml);
     }

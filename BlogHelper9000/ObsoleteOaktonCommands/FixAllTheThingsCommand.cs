@@ -1,7 +1,7 @@
 using System.Globalization;
-using BlogHelper9000.Commands.Inputs;
+using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 {
@@ -12,18 +12,18 @@ public class FixAllTheThingsCommand : BaseCommand<BaseInput>
 
     protected override bool Run(BaseInput input)
     {
-        foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories)
-                     .Select(MarkdownHandler.LoadFile))
-        {
-            //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
-
-            FixPublishedStatus(file);
-            FixDescription(file);
-            FixTags(file);
-            UpdateIsSeries(file);
-
-            MarkdownHandler.UpdateFile(file);
-        }
+        // foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories)
+        //              .Select((s) => _))
+        // {
+        //     //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
+        //
+        //     FixPublishedStatus(file);
+        //     FixDescription(file);
+        //     FixTags(file);
+        //     UpdateIsSeries(file);
+        //
+        //     //MarkdownHandler.UpdateFile(file);
+        // }
 
         return true;
     }

@@ -1,7 +1,7 @@
 using System.CommandLine;
 using Command = System.CommandLine.Command;
 
-namespace BlogHelper9000.CommandLine;
+namespace BlogHelper9000.Commands;
 
 internal sealed class ImageCommand : Command
 {
