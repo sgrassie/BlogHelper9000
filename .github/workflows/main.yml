@@ -27,6 +27,6 @@ jobs:
 
       # Runs a single command using the runners shell
       - name: Cake Action
-        uses: cake-build/cake-action@v1.4.0
+        uses: cake-build/cake-action@v2
         with:
           target: tests
