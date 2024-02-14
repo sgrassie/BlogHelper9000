@@ -43,10 +43,10 @@ Task("Run-Unit-Tests")
 {
     DotNetTest(parameters.SolutionFile, new DotNetTestSettings
     {
+        Configuration = parameters.Configuration,
         Framework = "net8.0",
         NoBuild = true,
         NoRestore = true,
-        Configuration = parameters.Configuration
     });
 });
 
