@@ -20,10 +20,10 @@ public class FixCommandHandler
         {
             //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
 
-            FixPublishedStatus(file);
-            // FixDescription(file);
-            // FixTags(file);
-            // UpdateIsSeries(file);
+            if(status) FixPublishedStatus(file);
+            if(description) FixDescription(file);
+            if(tags) FixTags(file);
+            if(series) UpdateIsSeries(file);
 
             _fileSystemHelper.Markdown.UpdateFile(file);
         }
@@ -64,5 +64,52 @@ public class FixCommandHandler
             return DateTime.ParseExact(datePart, "yyyy-MM-dd", CultureInfo.InvariantCulture).Date;
         }
     }
+    private void FixDescription(MarkdownFile file)
+    {
+        //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Check description is updated");
+        // some old posts have a metadescription tag
+        if (file.Metadata.Extras.TryGetValue("metadescription", out var metadescription))
+        {
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Description");
+            file.Metadata.Description = metadescription;
+        }
+    }
 
+    private void FixTags(MarkdownFile file)
+    {
+        //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Fixing Tags");
+        if (file.Metadata.Extras.TryGetValue("category", out var category))
+        {
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting category to tags");
+            file.Metadata.Tags = category.Contains(',')
+                ? SplitToQuotedList(category)
+                : new List<string> { $"'{category}'" };
+        }
+
+        if (file.Metadata.Extras.TryGetValue("categories", out var categories))
+        {
+            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting categories to tags");
+            file.Metadata.Tags = SplitToQuotedList(categories.Replace("[", string.Empty).Replace("]", string.Empty));
+        }
+
+        // Remove any duplicate tags and make them Title Case
+        TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+        file.Metadata.Tags = file.Metadata.Tags
+            .GroupBy(x => x)
+            .Select(x => textInfo.ToTitleCase(x.First()))
+            .ToList();
+
+        List<string> SplitToQuotedList(string s)
+        {
+            return s
+                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => $"'{s}'")
+                .ToList();
+        }
+    }
+    
+    private void UpdateIsSeries(MarkdownFile file)
+    {
+        file.Metadata.IsSeries = string.IsNullOrEmpty(file.Metadata.Series);
+    }
 }

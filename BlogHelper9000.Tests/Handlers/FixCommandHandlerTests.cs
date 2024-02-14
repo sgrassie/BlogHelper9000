@@ -10,11 +10,11 @@ public class FixCommandHandlerTests
     [Fact]
     public void Should_Update_PublishedOn_To_DateInFilename()
     {
-        var header = @"
----
-published: 01/01/2000
----
-";
+        var header = """
+                     ---
+                     published: 01/01/2000
+                     ---
+                     """;
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFiles(new Dictionary<string, MockFileData>
             {
@@ -27,8 +27,60 @@ published: 01/01/2000
         
         sut.Execute(true, false, false, false);
 
-        var contents = fileSystem.File.ReadAllText("/blog/_posts/2024-02-13-a-post.md");
+        var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
-        contents.Should().Contain("13/02/2024");
+        contents.Should().Contain(x => x == "published: 13/02/2024");
+    }
+    
+    [Fact]
+    public void Should_Update_Description_ToUseCorrectProperty()
+    {
+        var header = """
+                     ---
+                     layout: post
+                     metadescription: writing-a-generic-plugin-manager-in-c
+                     ---
+                     """;
+        var fileSystem = new JekyllBlogFilesystemBuilder()
+            .AddFiles(new Dictionary<string, MockFileData>
+            {
+                { "/blog/_posts/2024-02-13-a-post.md", new MockFileData(header) }
+            })
+            .BuildFileSystem();
+        
+        var console = new TestConsole();
+        var sut = new FixCommandHandler(fileSystem, "/blog", console);
+        
+        sut.Execute(false, true, false, false);
+
+        var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
+
+        contents.Should().Contain(x => x == "description: writing-a-generic-plugin-manager-in-c");
+    }
+    
+    [Fact]
+    public void Should_Update_UpdateCategory_ToUseCorrectTagProperty()
+    {
+        var header = """
+                     ---
+                     layout: post
+                     category: C#,C#,Coding,Plugin Manager
+                     ---
+                     """;
+        var fileSystem = new JekyllBlogFilesystemBuilder()
+            .AddFiles(new Dictionary<string, MockFileData>
+            {
+                { "/blog/_posts/2024-02-13-a-post.md", new MockFileData(header) }
+            })
+            .BuildFileSystem();
+        
+        var console = new TestConsole();
+        var sut = new FixCommandHandler(fileSystem, "/blog", console);
+        
+        sut.Execute(false, false, true, false);
+
+        var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
+
+        contents.Should().Contain(x => x == "tags: ['C#','Coding','Plugin Manager']");
     }
 }
