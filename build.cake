@@ -19,7 +19,7 @@ Task("Restore-NuGet-Packages")
 {
     DotNetRestore(parameters.SolutionFile, new DotNetRestoreSettings
     {
-        Verbosity = DotNetCoreVerbosity.Minimal,
+        Verbosity = DotNetVerbosity.Minimal,
         Sources = new [] { "https://api.nuget.org/v3/index.json" },
     });
 });
@@ -43,7 +43,7 @@ Task("Run-Unit-Tests")
 {
     DotNetTest(parameters.SolutionFile, new DotNetTestSettings
     {
-        Framework = "net6.0",
+        Framework = "net8.0",
         NoBuild = true,
         NoRestore = true,
         Configuration = parameters.Configuration
