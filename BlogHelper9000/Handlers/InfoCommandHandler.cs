@@ -18,27 +18,27 @@ public class InfoCommandHandler
         _fileSystemHelper = new FileSystemHelper(_fileSystem, _baseDirectory);
     }
 
-    public void Execute()
+    public BlogMetaInformation Execute()
     {
         var posts = LoadsPosts();
-        var blogDetails = new Details();
+        var blogDetails = new BlogMetaInformation();
 
         DeterminePostCount(posts, blogDetails);
         DetermineDraftsInfo(posts, blogDetails);
         DetermineRecentPosts(posts, blogDetails);
         DetermineDaysSinceLastPost(blogDetails);
 
-        RenderDetails(blogDetails);
-        
+        return blogDetails;
+        // RenderDetails(blogDetails);
     }
     
-    private static void DetermineDaysSinceLastPost(Details blogDetails)
+    private static void DetermineDaysSinceLastPost(BlogMetaInformation blogBlogMetaInformation)
     {
-        if(blogDetails.LastPost is not null && blogDetails.LastPost.PublishedOn.HasValue)
-            blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
+        if(blogBlogMetaInformation.LastPost is not null && blogBlogMetaInformation.LastPost.PublishedOn.HasValue)
+            blogBlogMetaInformation.DaysSinceLastPost = DateTime.Now - blogBlogMetaInformation.LastPost.PublishedOn.Value;
     }
 
-    private static void DetermineRecentPosts(IEnumerable<YamlHeader> posts, Details blogDetails)
+    private static void DetermineRecentPosts(IEnumerable<YamlHeader> posts, BlogMetaInformation blogBlogMetaInformation)
     {
         var recents = posts
             .Where(x => x.IsPublished.GetValueOrDefault())
@@ -46,28 +46,28 @@ public class InfoCommandHandler
             .OrderByDescending(x => x.PublishedOn)
             .ToList();
 
-        blogDetails.LatestPosts = recents.Any() ? recents.Skip(1).ToList() : Enumerable.Empty<YamlHeader>().ToList();
-        blogDetails.LastPost = recents.FirstOrDefault();
+        blogBlogMetaInformation.LatestPosts = recents.Any() ? recents.Skip(1).ToList() : Enumerable.Empty<YamlHeader>().ToList();
+        blogBlogMetaInformation.LastPost = recents.FirstOrDefault();
     }
 
-    private static void DetermineDraftsInfo(IEnumerable<YamlHeader> posts, Details blogDetails)
+    private static void DetermineDraftsInfo(IEnumerable<YamlHeader> posts, BlogMetaInformation blogBlogMetaInformation)
     {
         var unpublished = posts.Where(x => x.IsPublished == false).ToList();
-        blogDetails.UnPublishedCount = unpublished.Count;
-        blogDetails.Unpublished = unpublished.Any() ? unpublished : Enumerable.Empty<YamlHeader>();
+        blogBlogMetaInformation.UnPublishedCount = unpublished.Count;
+        blogBlogMetaInformation.Unpublished = unpublished.Any() ? unpublished : Enumerable.Empty<YamlHeader>();
     }
 
-    private static void DeterminePostCount(IReadOnlyCollection<YamlHeader> posts, Details blogDetails)
+    private static void DeterminePostCount(IReadOnlyCollection<YamlHeader> posts, BlogMetaInformation blogBlogMetaInformation)
     {
-        blogDetails.PostCount = posts.Count;
+        blogBlogMetaInformation.PostCount = posts.Count;
     }
 
     private IReadOnlyList<YamlHeader> LoadsPosts()
     {
         var allPosts = new List<YamlHeader>();
 
-        var posts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Posts, "*.md", SearchOption.AllDirectories);
-        var drafts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Posts, "*.md", SearchOption.AllDirectories);
+        var posts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Drafts, "*.md", SearchOption.AllDirectories).ToList();
+        var drafts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Posts, "*.md", SearchOption.AllDirectories).ToList();
 
         allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
         allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));
@@ -76,7 +76,8 @@ public class InfoCommandHandler
 
         YamlHeader GetHeaderWithOriginalFilename(string f)
         {
-            var header = _fileSystemHelper.YamlConvert.Deserialise(File.ReadAllLines(f));
+            var lines = _fileSystemHelper.FileSystem.File.ReadAllLines(f);
+            var header = _fileSystemHelper.YamlConvert.Deserialise(lines);
             var fileInfo = new FileInfo(f);
             header.Extras.Add("originalFilename", fileInfo.Name);
             header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
@@ -84,7 +85,7 @@ public class InfoCommandHandler
         }
     }
 
-    private void RenderDetails(Details details)
+    private void RenderDetails(BlogMetaInformation blogMetaInformation)
     {
         var panel = RenderPanel(RenderGrid());
 
@@ -98,20 +99,20 @@ public class InfoCommandHandler
                     new GridColumn().LeftAligned(),
                     new GridColumn().LeftAligned(),
                     new GridColumn())
-                .AddRow("Last Post", ":", FormatPostDetail(details.LastPost))
-                .AddRow("# days since last post", ":", $"{details.DaysSinceLastPost.Days}")
-                .AddRow("# of posts", ":", $"{details.PostCount - details.UnPublishedCount}")
-                .AddRow("# of drafts", ":", $"{details.UnPublishedCount}")
-                .AddRow("Available drafts", ":", FormatDraftPostDetail(details.Unpublished?.FirstOrDefault()));
+                .AddRow("Last Post", ":", FormatPostDetail(blogMetaInformation.LastPost))
+                .AddRow("# days since last post", ":", $"{blogMetaInformation.DaysSinceLastPost.Days}")
+                .AddRow("# of posts", ":", $"{blogMetaInformation.PostCount - blogMetaInformation.UnPublishedCount}")
+                .AddRow("# of drafts", ":", $"{blogMetaInformation.UnPublishedCount}")
+                .AddRow("Available drafts", ":", FormatDraftPostDetail(blogMetaInformation.Unpublished?.FirstOrDefault()));
 
-            foreach (var recent in details.Unpublished?.Skip(1)!)
+            foreach (var recent in blogMetaInformation.Unpublished?.Skip(1)!)
             {
                 grid.AddRow(string.Empty, string.Empty, FormatDraftPostDetail(recent));
             }
 
-            grid.AddRow("Recent posts", ":", FormatPostDetail(details.LatestPosts?.FirstOrDefault()));
+            grid.AddRow("Recent posts", ":", FormatPostDetail(blogMetaInformation.LatestPosts?.FirstOrDefault()));
 
-            foreach (var latest in details.LatestPosts?.Skip(1)!)
+            foreach (var latest in blogMetaInformation.LatestPosts?.Skip(1)!)
             {
                 grid.AddRow(string.Empty, string.Empty, FormatPostDetail(latest));
             }
@@ -151,15 +152,5 @@ public class InfoCommandHandler
                 }
                 .Header(new PanelHeader(" Details ", Justify.Center));
         }
-    }
-
-    private class Details
-    {
-        public int PostCount { get; set; }
-        public YamlHeader? LastPost { get; set; }
-        public int UnPublishedCount { get; set; }
-        public IEnumerable<YamlHeader>? Unpublished { get; set; }
-        public List<YamlHeader>? LatestPosts { get; set; }
-        public TimeSpan DaysSinceLastPost { get; set; }
     }
 }
