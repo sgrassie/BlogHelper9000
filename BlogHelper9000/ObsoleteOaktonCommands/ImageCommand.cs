@@ -8,36 +8,36 @@ namespace BlogHelper9000.ObsoleteOaktonCommands;
 
 // fonts from https://fonts.google.com/specimen/Ubuntu#standard-styles
 
-public class ImageCommand : AsyncBaseCommand<ImageInput>
+public class ImageCommand 
 {
     public ImageCommand()
     {
-        Usage("Default").Arguments(a => a.Post)
-            .ValidFlags(
-                f => f.AuthorBrandingFlag,
-                f => f.ImageQueryFlag,
-                f => f.BaseDirectoryFlag);
-        Usage("Update images across all posts and drafts")
-            .ValidFlags(
-                f => f.AuthorBrandingFlag,
-                a => a.ImageQueryFlag,
-                a => a.ApplyAllFlag,
-                a => a.BaseDirectoryFlag);
-        Usage("Update images across all posts")
-            .ValidFlags(
-                f => f.AuthorBrandingFlag,
-                a => a.ImageQueryFlag,
-                a => a.ApplyToPostsFlag,
-                a => a.BaseDirectoryFlag);
-        Usage("Update images across all drafts")
-            .ValidFlags(
-                f => f.AuthorBrandingFlag,
-                a => a.ImageQueryFlag,
-                a => a.ApplyToDraftsFlag,
-                a => a.BaseDirectoryFlag);
+        // Usage("Default").Arguments(a => a.Post)
+        //     .ValidFlags(
+        //         f => f.AuthorBrandingFlag,
+        //         f => f.ImageQueryFlag,
+        //         f => f.BaseDirectoryFlag);
+        // Usage("Update images across all posts and drafts")
+        //     .ValidFlags(
+        //         f => f.AuthorBrandingFlag,
+        //         a => a.ImageQueryFlag,
+        //         a => a.ApplyAllFlag,
+        //         a => a.BaseDirectoryFlag);
+        // Usage("Update images across all posts")
+        //     .ValidFlags(
+        //         f => f.AuthorBrandingFlag,
+        //         a => a.ImageQueryFlag,
+        //         a => a.ApplyToPostsFlag,
+        //         a => a.BaseDirectoryFlag);
+        // Usage("Update images across all drafts")
+        //     .ValidFlags(
+        //         f => f.AuthorBrandingFlag,
+        //         a => a.ImageQueryFlag,
+        //         a => a.ApplyToDraftsFlag,
+        //         a => a.BaseDirectoryFlag);
     }
 
-    protected override async Task<bool> Run(ImageInput input)
+    protected async Task<bool> Run(ImageInput input)
     {
         //ConsoleWriter.Write(ConsoleColor.White, "Preparing to generate...");
         var imageProcessor = new ImageProcessor(input);
@@ -58,7 +58,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
         if (!string.IsNullOrEmpty(input.Post))
         {
             //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for single draft...");
-            var path = File.Exists(input.Post) ? input.Post : Path.Combine(DraftsPath, input.Post);
+            var path = File.Exists(input.Post) ? input.Post : Path.Combine("drafts", input.Post);
             yield return null; //MarkdownHandler.LoadFile(path);
         }
         else
@@ -66,8 +66,8 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             if (input.ApplyAllFlag)
             {
                 //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for posts and drafts...");
-                var posts = Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories).ToList();
-                posts.AddRange(Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories));
+                var posts = Directory.EnumerateFiles("drafts", "*.md", SearchOption.AllDirectories).ToList();
+                posts.AddRange(Directory.EnumerateFiles("posts", "*.md", SearchOption.AllDirectories));
                 foreach (var file in posts)
                 {
                     yield return null; //MarkdownHandler.LoadFile(file);
@@ -76,7 +76,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             else if (input.ApplyToDraftsFlag)
             {
                 //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all drafts...");
-                foreach (var file in Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories))
+                foreach (var file in Directory.EnumerateFiles("drafts", "*.md", SearchOption.AllDirectories))
                 {
                     yield return null; //MarkdownHandler.LoadFile(file);
                 }
@@ -84,7 +84,7 @@ public class ImageCommand : AsyncBaseCommand<ImageInput>
             else
             {
                 //ConsoleWriter.WriteWithIndent(ConsoleColor.Cyan, 5, "Generating image for all posts...");
-                foreach (var file in Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories))
+                foreach (var file in Directory.EnumerateFiles("posts", "*.md", SearchOption.AllDirectories))
                 {
                     yield return null; //MarkdownHandler.LoadFile(file);
                 }

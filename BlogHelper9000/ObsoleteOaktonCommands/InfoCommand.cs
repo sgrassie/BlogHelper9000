@@ -3,14 +3,14 @@ using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.ObsoleteOaktonCommands;
 
-public class InfoCommand : BaseCommand<BaseInput>
+public class InfoCommand
 {
     public InfoCommand()
     {
-        Usage("Info");
+        // Usage("Info");
     }
 
-    protected override bool Run(BaseInput input)
+    protected bool Run(BaseInput input)
     {
         var posts = LoadsPosts();
         var blogDetails = new Details();
@@ -59,8 +59,8 @@ public class InfoCommand : BaseCommand<BaseInput>
     {
         var allPosts = new List<YamlHeader>();
 
-        var posts = Directory.EnumerateFiles(PostsPath, "*.md", SearchOption.AllDirectories);
-        var drafts = Directory.EnumerateFiles(DraftsPath, "*.md", SearchOption.AllDirectories);
+        var posts = Directory.EnumerateFiles("posts", "*.md", SearchOption.AllDirectories);
+        var drafts = Directory.EnumerateFiles("drafts", "*.md", SearchOption.AllDirectories);
 
         allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
         allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));

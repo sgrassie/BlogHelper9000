@@ -2,37 +2,37 @@ using BlogHelper9000.ObsoleteOaktonCommands.Inputs;
 
 namespace BlogHelper9000.ObsoleteOaktonCommands;
 
-public class PublishCommand : AsyncBaseCommand<PublishInput>
+public class PublishCommand 
 {
     public PublishCommand()
     {
-        Usage("Publish a post!").Arguments(x => x.Post);
+        // Usage("Publish a post!").Arguments(x => x.Post);
     }
 
-    protected override async Task<bool> Run(PublishInput input)
+    protected async Task<bool> Run(PublishInput input)
     {
-        var draft = Path.Combine(DraftsPath, input.Post);
+        var draft = Path.Combine("drafts", input.Post);
         //var markdownFile = MarkdownHandler.LoadFile(draft);
         //markdownFile.Metadata.IsPublished = true;
         //markdownFile.Metadata.PublishedOn = DateTime.Now;
         //MarkdownHandler.UpdateFile(markdownFile);
         
         var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{input.Post}";
-        var targetFolder = Path.Combine(PostsPath, $"{DateTime.Now:yyyy}");
+        var targetFolder = Path.Combine("posts", $"{DateTime.Now:yyyy}");
 
         if (!Directory.Exists(targetFolder)) Directory.CreateDirectory(targetFolder);
         var replacementPath = Path.Combine(targetFolder, publishedFilename);
         //ConsoleWriter.Write("Publishing {0} to {1}", publishedFilename, targetFolder);
         File.Move(draft, replacementPath);
         File.Delete(draft);
-        await Command.RunAsync("git", "add --all", input.BaseDirectoryFlag, true);
+        //await Command.RunAsync("git", "add --all", input.BaseDirectoryFlag, true);
         //ConsoleWriter.Write("Published file added to git index. Don't forget to commit and push to remote.");
         return true;
     }
 
-    protected override bool ValidateInput(PublishInput input)
+    protected bool ValidateInput(PublishInput input)
     {
-        if (base.ValidateInput(input))
+        if (true)//uase.ValidateInput(input))
         {
             if (!input.Post.EndsWith(".md"))
             {
@@ -40,7 +40,7 @@ public class PublishCommand : AsyncBaseCommand<PublishInput>
                 return false;
             }
 
-            if (!File.Exists(Path.Combine(DraftsPath, input.Post)))
+            if (!File.Exists(Path.Combine("drafts", input.Post)))
             {
                 //ConsoleWriter.Write(ConsoleColor.Red, "You must specify the post file to publish");
                 return false;

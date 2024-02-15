@@ -1,8 +1,5 @@
-﻿using System.Reflection;
+﻿using BlogHelper9000.Commands;
 
-var executor = CommandExecutor.For(_ =>{
-    _.RegisterCommands(typeof(Program).GetTypeInfo().Assembly);
-});
+var rootCommand = new BlogHelperRootCommand(new FileSystem());
 
-var result = await executor.ExecuteAsync(args);
-return result;
+return await rootCommand.InvokeAsync(args);
