@@ -46,7 +46,7 @@ Task("Run-Unit-Tests")
         Configuration = parameters.Configuration,
         NoBuild = true,
         ArgumentCustomization = args => args
-                                        .Append("--logger trx;LogFileName=coverage.xml")
+                                        .Append("--collect:\"Code Coverage\"")
     });
 });
 
