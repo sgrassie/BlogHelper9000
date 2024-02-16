@@ -35,4 +35,4 @@ jobs:
         uses: coverallsapp/github-action@master   
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }} 
-          path-to-lcov: ${{ github.workspace }}/**/TestResults/**/*.coverage
+          file: ${{ github.workspace }}/BlogHelper9000.Tests/TestResults/**/*.xml

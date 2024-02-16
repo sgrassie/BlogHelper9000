@@ -46,7 +46,7 @@ Task("Run-Unit-Tests")
         Configuration = parameters.Configuration,
         NoBuild = true,
         ArgumentCustomization = args => args
-                                        .Append("--collect:\"Code Coverage\"")
+                                        .Append("--collect:\"XPlat Code Coverage\"")
     });
 });
 
