@@ -44,7 +44,9 @@ Task("Run-Unit-Tests")
     DotNetTest(parameters.SolutionFile, new DotNetTestSettings
     {
         Configuration = parameters.Configuration,
-        NoBuild = true
+        NoBuild = true,
+        ArgumentCustomization = args => args
+                                        .Append("--collect:\"Code Coverage\"")
     });
 });
 
