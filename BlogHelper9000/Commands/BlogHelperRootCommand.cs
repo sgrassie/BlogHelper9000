@@ -21,7 +21,7 @@ public class BlogHelperRootCommand : RootCommand
         AddCommand(new AddCommand(_fileSystem, baseDirectoryOption));
         AddCommand(new InfoCommand(_fileSystem, baseDirectoryOption));
         AddCommand(new ImageCommand());
-        AddCommand(new PublishCommand());
+        AddCommand(new PublishCommand(_fileSystem, baseDirectoryOption));
         AddCommand(new FixCommand(_fileSystem, baseDirectoryOption));
     }
 }   

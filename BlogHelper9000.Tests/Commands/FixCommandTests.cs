@@ -35,8 +35,7 @@ public class FixCommandTests : CommandTestsBase
         command.AddOption(option);
         await command.InvokeAsync("fix -h", console);
 
-        var lines = console.Out.ToString()
-            .Split(Environment.NewLine, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        var lines = console.AsLines()
             .Where(line => line.StartsWith("-")).ToList();
 
         lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));

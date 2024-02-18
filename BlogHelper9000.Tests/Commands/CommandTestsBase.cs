@@ -4,7 +4,7 @@ namespace BlogHelper9000.Tests.Commands;
 
 public abstract class CommandTestsBase
 {
-    public Option<string> BasePathOption()
+    protected Option<string> BasePathOption()
     {
         var option = new Option<string>(
             name: "--base-directory",
