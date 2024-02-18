@@ -33,7 +33,7 @@ public class PublishCommandHandlerTests
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_drafts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
-        var fileSystemHelper = new FileSystemHelper(fileSystem, "/blog");
+        var fileSystemHelper = new PostManager(fileSystem, "/blog");
         var console = new TestConsole();
         var sut = new PublishCommandHandler(fileSystem, "/blog", console);
         
@@ -59,7 +59,7 @@ public class PublishCommandHandlerTests
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_posts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
-        var fileSystemHelper = new FileSystemHelper(fileSystem, "/blog");
+        var fileSystemHelper = new PostManager(fileSystem, "/blog");
         var console = new TestConsole();
         var sut = new PublishCommandHandler(fileSystem, "/blog", console);
         

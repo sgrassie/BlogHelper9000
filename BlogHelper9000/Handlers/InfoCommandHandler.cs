@@ -8,14 +8,14 @@ public class InfoCommandHandler
     private readonly IFileSystem _fileSystem;
     private readonly string _baseDirectory;
     private readonly IConsole _console;
-    private FileSystemHelper _fileSystemHelper;
+    private PostManager _postManager;
 
     public InfoCommandHandler(IFileSystem fileSystem, string baseDirectory, IConsole console)
     {
         _fileSystem = fileSystem;
         _baseDirectory = baseDirectory;
         _console = console;
-        _fileSystemHelper = new FileSystemHelper(_fileSystem, _baseDirectory);
+        _postManager = new PostManager(_fileSystem, _baseDirectory);
     }
 
     public BlogMetaInformation Execute()
@@ -66,8 +66,8 @@ public class InfoCommandHandler
     {
         var allPosts = new List<YamlHeader>();
 
-        var posts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Drafts, "*.md", SearchOption.AllDirectories).ToList();
-        var drafts = _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Posts, "*.md", SearchOption.AllDirectories).ToList();
+        var posts = _postManager.FileSystem.Directory.EnumerateFiles(_postManager.Drafts, "*.md", SearchOption.AllDirectories).ToList();
+        var drafts = _postManager.FileSystem.Directory.EnumerateFiles(_postManager.Posts, "*.md", SearchOption.AllDirectories).ToList();
 
         allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
         allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));
@@ -76,8 +76,8 @@ public class InfoCommandHandler
 
         YamlHeader GetHeaderWithOriginalFilename(string f)
         {
-            var lines = _fileSystemHelper.FileSystem.File.ReadAllLines(f);
-            var header = _fileSystemHelper.YamlConvert.Deserialise(lines);
+            var lines = _postManager.FileSystem.File.ReadAllLines(f);
+            var header = _postManager.YamlConvert.Deserialise(lines);
             var fileInfo = new FileInfo(f);
             header.Extras.Add("originalFilename", fileInfo.Name);
             header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");

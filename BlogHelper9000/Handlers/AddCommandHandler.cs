@@ -7,12 +7,12 @@ namespace BlogHelper9000.Handlers;
 
 public class AddCommandHandler
 {
-    private FileSystemHelper _fileSystemHelper;
+    private PostManager _postManager;
     private readonly IConsole _console;
 
     public AddCommandHandler(IFileSystem fileSystem, string blogBaseDirectory, IConsole console)
     {
-        _fileSystemHelper = new FileSystemHelper(fileSystem, blogBaseDirectory);
+        _postManager = new PostManager(fileSystem, blogBaseDirectory);
         _console = console;
     }
 
@@ -27,8 +27,8 @@ public class AddCommandHandler
     private string CreatePostFilePath(string title, bool isDraft)
     {
         var newPostFilePath = isDraft
-            ? _fileSystemHelper.CreateDraftPath(title)
-            : _fileSystemHelper.CreatePostPath(title);
+            ? _postManager.CreateDraftPath(title)
+            : _postManager.CreatePostPath(title);
 
         return newPostFilePath;
     }
@@ -46,8 +46,8 @@ public class AddCommandHandler
             IsPublished = !isDraft
         };
 
-        var yamlHeaderText = _fileSystemHelper.YamlConvert.Serialise(yamlHeader);
+        var yamlHeaderText = _postManager.YamlConvert.Serialise(yamlHeader);
 
-        _fileSystemHelper.FileSystem.File.AppendAllText(path, yamlHeaderText);
+        _postManager.FileSystem.File.AppendAllText(path, yamlHeaderText);
     }
 }

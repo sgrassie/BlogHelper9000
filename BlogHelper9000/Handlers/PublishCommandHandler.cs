@@ -8,7 +8,7 @@ public class PublishCommandHandler
     private readonly string _baseDirectory;
     private readonly IConsole _console;
 
-    private readonly FileSystemHelper _fileSystemHelper;
+    private readonly PostManager _postManager;
 
     public PublishCommandHandler(IFileSystem fileSystem, string baseDirectory, IConsole console)
     {
@@ -16,7 +16,7 @@ public class PublishCommandHandler
         _baseDirectory = baseDirectory;
         _console = console;
 
-        _fileSystemHelper = new FileSystemHelper(fileSystem, baseDirectory);
+        _postManager = new PostManager(fileSystem, baseDirectory);
     }
 
     public void Execute(string post)
@@ -28,16 +28,16 @@ public class PublishCommandHandler
                 var currentPath = postMarkdown.FilePath;
                 postMarkdown.Metadata.IsPublished = true;
                 postMarkdown.Metadata.PublishedOn = DateTime.Now;
-                _fileSystemHelper.Markdown.UpdateFile(postMarkdown);
+                _postManager.Markdown.UpdateFile(postMarkdown);
 
                 var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{post}";
-                var targetFolder = _fileSystemHelper.FileSystem.Path.Combine(_fileSystemHelper.Posts, $"{DateTime.Now:yyyy}");
+                var targetFolder = _postManager.FileSystem.Path.Combine(_postManager.Posts, $"{DateTime.Now:yyyy}");
 
-                if (!_fileSystemHelper.FileSystem.Directory.Exists(targetFolder)) _fileSystemHelper.FileSystem.Directory.CreateDirectory(targetFolder);
-                var replacementPath = _fileSystemHelper.FileSystem.Path.Combine(targetFolder, publishedFilename);
+                if (!_postManager.FileSystem.Directory.Exists(targetFolder)) _postManager.FileSystem.Directory.CreateDirectory(targetFolder);
+                var replacementPath = _postManager.FileSystem.Path.Combine(targetFolder, publishedFilename);
                 //ConsoleWriter.Write("Publishing {0} to {1}", publishedFilename, targetFolder);
-                _fileSystemHelper.FileSystem.File.Move(currentPath, replacementPath);
-                _fileSystemHelper.FileSystem.File.Delete(currentPath);
+                _postManager.FileSystem.File.Move(currentPath, replacementPath);
+                _postManager.FileSystem.File.Delete(currentPath);
                 //await Command.RunAsync("git", "add --all", input.BaseDirectoryFlag, true);
                 //ConsoleWriter.Write("Published file added to git index. Don't forget to commit and push to remote.");
             }
@@ -50,18 +50,18 @@ public class PublishCommandHandler
 
     private bool TryFindPublishablePost(string title, out MarkdownFile? markdownFile)
     {
-        var potentialDraftPath = _fileSystemHelper.CreateDraftPath(title);
-        var potentialPostsPath = _fileSystemHelper.CreatePostPath(title);
+        var potentialDraftPath = _postManager.CreateDraftPath(title);
+        var potentialPostsPath = _postManager.CreatePostPath(title);
         
-        if (_fileSystemHelper.FileSystem.File.Exists(potentialDraftPath))
+        if (_postManager.FileSystem.File.Exists(potentialDraftPath))
         {
-            markdownFile = _fileSystemHelper.Markdown.LoadFile(potentialDraftPath);
+            markdownFile = _postManager.Markdown.LoadFile(potentialDraftPath);
             return true;
         }
 
-        if (_fileSystemHelper.FileSystem.File.Exists(potentialPostsPath))
+        if (_postManager.FileSystem.File.Exists(potentialPostsPath))
         {
-            markdownFile = _fileSystemHelper.Markdown.LoadFile(potentialPostsPath);
+            markdownFile = _postManager.Markdown.LoadFile(potentialPostsPath);
             return true;
         }
 

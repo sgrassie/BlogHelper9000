@@ -1,22 +1,20 @@
-using System.CommandLine;
 using System.Globalization;
-using System.IO.Abstractions;
 using BlogHelper9000.Helpers;
 
 namespace BlogHelper9000.Handlers;
 
 public class FixCommandHandler
 {
-    private readonly FileSystemHelper _fileSystemHelper;
+    private readonly PostManager _postManager;
     public FixCommandHandler(IFileSystem fileSystem, string baseDirectory, IConsole console)
     {
-        _fileSystemHelper = new FileSystemHelper(fileSystem, baseDirectory);
+        _postManager = new PostManager(fileSystem, baseDirectory);
     }
 
     public void Execute(bool status, bool description, bool tags, bool series)
     {
-        foreach (var file in _fileSystemHelper.FileSystem.Directory.EnumerateFiles(_fileSystemHelper.Posts, "*.md", SearchOption.AllDirectories)
-                     .Select(_fileSystemHelper.Markdown.LoadFile))
+        foreach (var file in _postManager.FileSystem.Directory.EnumerateFiles(_postManager.Posts, "*.md", SearchOption.AllDirectories)
+                     .Select(_postManager.Markdown.LoadFile))
         {
             //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
 
@@ -25,7 +23,7 @@ public class FixCommandHandler
             if(tags) FixTags(file);
             if(series) UpdateIsSeries(file);
 
-            _fileSystemHelper.Markdown.UpdateFile(file);
+            _postManager.Markdown.UpdateFile(file);
         }
     }
     
@@ -83,7 +81,7 @@ public class FixCommandHandler
             //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Converting category to tags");
             file.Metadata.Tags = category.Contains(',')
                 ? SplitToQuotedList(category)
-                : new List<string> { $"'{category}'" };
+                : [$"'{category}'"];
         }
 
         if (file.Metadata.Extras.TryGetValue("categories", out var categories))

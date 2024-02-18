@@ -1,5 +1,3 @@
-using System.CommandLine;
-using System.IO.Abstractions;
 using BlogHelper9000.Handlers;
 using Command = System.CommandLine.Command;
 

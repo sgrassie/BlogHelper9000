@@ -3,14 +3,14 @@ using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Helpers;
 
-public class FileSystemHelper
+public class PostManager
 {
     private const string DraftsFolder = "_drafts";
     private const string PostsFolder = "_posts";
 
     private MarkdownHandler _markdownHandler;
     
-    public FileSystemHelper(IFileSystem fileSystem, string basePath)
+    public PostManager(IFileSystem fileSystem, string basePath)
     {
         FileSystem = fileSystem;
         BasePath = basePath;
