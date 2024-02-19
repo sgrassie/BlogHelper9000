@@ -25,6 +25,14 @@ public class PostManager
     public string Drafts => $"{BasePath}/{DraftsFolder}";
     public string Posts => $"{BasePath}/{PostsFolder}";
 
+    public IEnumerable<MarkdownFile> GetAllPosts()
+    {
+        return FileSystem
+            .Directory
+            .EnumerateFiles(Posts, "*.md", SearchOption.AllDirectories)
+            .Select(Markdown.LoadFile);
+    }
+
     public string CreateDraftPath(string title)
     {
         var fileName = MakeFileName(title);

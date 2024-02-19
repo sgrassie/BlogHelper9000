@@ -6,15 +6,14 @@ namespace BlogHelper9000.Handlers;
 public class FixCommandHandler
 {
     private readonly PostManager _postManager;
-    public FixCommandHandler(IFileSystem fileSystem, string baseDirectory, IConsole console)
+    public FixCommandHandler(PostManager postManager, IConsole console)
     {
-        _postManager = new PostManager(fileSystem, baseDirectory);
+        _postManager = postManager;
     }
 
     public void Execute(bool status, bool description, bool tags, bool series)
     {
-        foreach (var file in _postManager.FileSystem.Directory.EnumerateFiles(_postManager.Posts, "*.md", SearchOption.AllDirectories)
-                     .Select(_postManager.Markdown.LoadFile))
+        foreach (var file in _postManager.GetAllPosts())
         {
             //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
 
@@ -30,30 +29,9 @@ public class FixCommandHandler
     private void FixPublishedStatus(MarkdownFile file)
     {
         var dateFromFileName = ExtractPublishedDateFromFileName(file.FilePath);
-        
-        if (file.Metadata.PublishedOn is null)
-        {
-            //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Updating published status");
-            if (file.Metadata.PublishedOn is null)
-            {
-                //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating Published date");
-                file.Metadata.PublishedOn = dateFromFileName;
-            }
-
-            if (file.Metadata.PublishedOn is not null)
-            {
-                //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 10, "Updating IsPublished");
-                file.Metadata.IsPublished = true;
-                file.Metadata.IsHidden = false;
-            }
-        }
-        else
-        {
-            // some of the posts have the incorrect published date in the header
-            file.Metadata.PublishedOn = dateFromFileName;
-            file.Metadata.IsPublished = true;
-            file.Metadata.IsHidden = false;
-        }
+        file.Metadata.PublishedOn = dateFromFileName;
+        file.Metadata.IsPublished = true;
+        file.Metadata.IsHidden = false;
 
         DateTime ExtractPublishedDateFromFileName(string fileName)
         {

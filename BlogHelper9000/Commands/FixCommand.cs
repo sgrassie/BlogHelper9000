@@ -1,4 +1,5 @@
 using BlogHelper9000.Handlers;
+using BlogHelper9000.Helpers;
 using Command = System.CommandLine.Command;
 
 namespace BlogHelper9000.Commands;
@@ -33,7 +34,7 @@ public class FixCommand : Command
         
         this.SetHandler((status, description, tags, series, baseDirectory, console) =>
         {
-            var fixCommandHandler = new FixCommandHandler(fileSystem, baseDirectory, console);
+            var fixCommandHandler = new FixCommandHandler(new PostManager(fileSystem, baseDirectory), console);
             fixCommandHandler.Execute(status, description, tags, series);
         }, statusOption, descriptionOption, tagsOption, seriesOption, baseDirectoryOption, Bind.FromServiceProvider<IConsole>());
     }
