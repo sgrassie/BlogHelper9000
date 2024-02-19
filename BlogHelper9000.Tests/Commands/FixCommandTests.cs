@@ -25,7 +25,6 @@ public class FixCommandTests : CommandTestsBase
     [InlineData("-s, --status", "Fix the published status of a post")]
     [InlineData("-d, --description", "Fix the description of a post")]
     [InlineData("-t, --tags", "Fix the tags of a post")]
-    [InlineData("-i, --series", "Fix the series of a post")]
     public async Task Should_Output_Options(string optionName, string optionHelp)
     {
         var console = new TestConsole();

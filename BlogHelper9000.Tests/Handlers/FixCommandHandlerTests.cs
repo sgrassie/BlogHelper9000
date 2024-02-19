@@ -27,7 +27,7 @@ public class FixCommandHandlerTests
         var console = new TestConsole();
         var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
         
-        sut.Execute(true, false, false, false);
+        sut.Execute(true, false, false);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -52,7 +52,7 @@ public class FixCommandHandlerTests
         var console = new TestConsole();
         var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
         
-        sut.Execute(true, false, false, false);
+        sut.Execute(true, false, false);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -78,7 +78,7 @@ public class FixCommandHandlerTests
         var console = new TestConsole();
         var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
         
-        sut.Execute(false, true, false, false);
+        sut.Execute(false, true, false);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -104,7 +104,7 @@ public class FixCommandHandlerTests
         var console = new TestConsole();
         var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
         
-        sut.Execute(false, false, true, false);
+        sut.Execute(false, false, true);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -130,7 +130,7 @@ public class FixCommandHandlerTests
         var console = new TestConsole();
         var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
         
-        sut.Execute(false, false, true, false);
+        sut.Execute(false, false, true);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 

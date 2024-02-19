@@ -28,8 +28,5 @@ public class YamlHeader
     
     public string? Series { get; set; }
 
-    [YamlIgnore]
-    public bool IsSeries { get; set; }
-
     [YamlIgnore] public Dictionary<string, string> Extras { get; set; } = new();
 }

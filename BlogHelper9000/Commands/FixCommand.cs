@@ -25,17 +25,11 @@ public class FixCommand : Command
             description: "Fix the tags of a post");
         tagsOption.AddAlias("-t");
         AddOption(tagsOption);
-
-        var seriesOption = new Option<bool>(
-            name: "--series",
-            description: "Fix the series of a post");
-        seriesOption.AddAlias("-i");
-        AddOption(seriesOption);
         
-        this.SetHandler((status, description, tags, series, baseDirectory, console) =>
+        this.SetHandler((status, description, tags, baseDirectory, console) =>
         {
             var fixCommandHandler = new FixCommandHandler(new PostManager(fileSystem, baseDirectory), console);
-            fixCommandHandler.Execute(status, description, tags, series);
-        }, statusOption, descriptionOption, tagsOption, seriesOption, baseDirectoryOption, Bind.FromServiceProvider<IConsole>());
+            fixCommandHandler.Execute(status, description, tags);
+        }, statusOption, descriptionOption, tagsOption, baseDirectoryOption, Bind.FromServiceProvider<IConsole>());
     }
 }

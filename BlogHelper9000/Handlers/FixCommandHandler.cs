@@ -11,7 +11,7 @@ public class FixCommandHandler
         _postManager = postManager;
     }
 
-    public void Execute(bool status, bool description, bool tags, bool series)
+    public void Execute(bool status, bool description, bool tags)
     {
         foreach (var file in _postManager.GetAllPosts())
         {
@@ -20,7 +20,6 @@ public class FixCommandHandler
             if(status) FixPublishedStatus(file);
             if(description) FixDescription(file);
             if(tags) FixTags(file);
-            if(series) UpdateIsSeries(file);
 
             _postManager.Markdown.UpdateFile(file);
         }
@@ -82,10 +81,5 @@ public class FixCommandHandler
                 .Select(s => $"'{s}'")
                 .ToList();
         }
-    }
-    
-    private void UpdateIsSeries(MarkdownFile file)
-    {
-        file.Metadata.IsSeries = string.IsNullOrEmpty(file.Metadata.Series);
     }
 }
