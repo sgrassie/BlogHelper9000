@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.IO.Abstractions;
+using BlogHelper9000.Commands.Binders;
 using BlogHelper9000.Handlers;
 using Command = System.CommandLine.Command;
 
@@ -8,13 +9,11 @@ namespace BlogHelper9000.Commands;
 internal sealed class AddCommand : Command
 {
     private readonly IFileSystem _fileSystem;
-    private readonly Option<string> _baseDirectory;
-
-    public AddCommand(IFileSystem fileSystem, Option<string> baseDirectory)
+    
+    public AddCommand(IFileSystem fileSystem)
         : base("add", "Adds a new blog post")
     {
         _fileSystem = fileSystem;
-        _baseDirectory = baseDirectory;
         var titleArgument = new Argument<string>("title", "The title of the new blog post");
         var tagsArgument = new Argument<string[]>("tags", "The tags for the new blog post");
         AddArgument(titleArgument);
@@ -46,6 +45,6 @@ internal sealed class AddCommand : Command
                 var handler = new AddCommandHandler(_fileSystem, blogBaseDir, console);
                 handler.Execute(title, tags, featuredImage, isFeatured, hidden, draft);
             }, 
-            titleArgument, tagsArgument, draftOption, featuredImageOption, isFeaturedOption, isHidden, _baseDirectory, Bind.FromServiceProvider<IConsole>());
+            titleArgument, tagsArgument, draftOption, featuredImageOption, isFeaturedOption, isHidden, GlobalOptions.BaseDirectoryOption, Bind.FromServiceProvider<IConsole>());
     }
 }

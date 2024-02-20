@@ -1,6 +1,6 @@
 using System.CommandLine.Binding;
 
-namespace BlogHelper9000.Commands;
+namespace BlogHelper9000.Commands.Binders;
 
 internal static class Bind
 {

@@ -46,6 +46,29 @@ public class PostManager
         var path = FileSystem.Path.ChangeExtension(FileSystem.Path.Combine(Posts, fileName), "md");
         return path;
     }
+    
+    public IReadOnlyList<YamlHeader> LoadYamlHeaderForAllPosts()
+    {
+        var allPosts = new List<YamlHeader>();
+
+        var posts = FileSystem.Directory.EnumerateFiles(Drafts, "*.md", SearchOption.AllDirectories).ToList();
+        var drafts = FileSystem.Directory.EnumerateFiles(Posts, "*.md", SearchOption.AllDirectories).ToList();
+
+        allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
+        allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));
+
+        return allPosts.OrderBy(x => x.PublishedOn).ToList().AsReadOnly();
+
+        YamlHeader GetHeaderWithOriginalFilename(string f)
+        {
+            var lines = FileSystem.File.ReadAllLines(f);
+            var header = YamlConvert.Deserialise(lines);
+            var fileInfo = new FileInfo(f);
+            header.Extras.Add("originalFilename", fileInfo.Name);
+            header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
+            return header;
+        }
+    }
 
     private string MakeFileName(string title)
     {

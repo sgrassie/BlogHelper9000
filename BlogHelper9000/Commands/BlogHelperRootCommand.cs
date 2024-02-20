@@ -12,16 +12,12 @@ public class BlogHelperRootCommand : RootCommand
     {
         _fileSystem = fileSystem;
         
-        var baseDirectoryOption = new Option<string>(
-            name: "--base-directory",
-            description: "The base directory of the blog.");
-        baseDirectoryOption.AddAlias("-b");
-        AddGlobalOption(baseDirectoryOption);
+        AddGlobalOption(GlobalOptions.BaseDirectoryOption);
 
-        AddCommand(new AddCommand(_fileSystem, baseDirectoryOption));
-        AddCommand(new InfoCommand(_fileSystem, baseDirectoryOption));
+        AddCommand(new AddCommand(_fileSystem));
+        AddCommand(new InfoCommand(_fileSystem));
         AddCommand(new ImageCommand());
-        AddCommand(new PublishCommand(_fileSystem, baseDirectoryOption));
-        AddCommand(new FixCommand(_fileSystem, baseDirectoryOption));
+        AddCommand(new PublishCommand(_fileSystem));
+        AddCommand(new FixCommand(_fileSystem));
     }
 }   

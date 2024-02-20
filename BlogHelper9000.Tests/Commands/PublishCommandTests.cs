@@ -11,10 +11,8 @@ public class PublishCommandTests : CommandTestsBase
     public async Task Should_Output_Help()
     {
         var console = new TestConsole();
-        var option = BasePathOption();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new PublishCommand(fileSystem, option);
-        command.AddOption(option);
+        var command = new PublishCommand(fileSystem);
 
         await command.InvokeAsync("publish -h", console);
 

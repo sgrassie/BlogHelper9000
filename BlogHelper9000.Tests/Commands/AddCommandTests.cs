@@ -11,10 +11,8 @@ public class AddCommandTests : CommandTestsBase
     public async Task Should_Output_Help()
     {
         var console = new TestConsole();
-        var option = BasePathOption();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new AddCommand(fileSystem, option);
-        command.AddOption(option);
+        var command = new AddCommand(fileSystem);
         
         await command.InvokeAsync("add -h", console);
         
@@ -31,10 +29,8 @@ public class AddCommandTests : CommandTestsBase
     public async Task Should_Output_Options(string optionName, string optionHelp)
     {
         var console = new TestConsole();
-        var option = BasePathOption();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new AddCommand(fileSystem, option);
-        command.AddOption(option);
+        var command = new AddCommand(fileSystem);
         await command.InvokeAsync("add -h", console);
 
         var lines = console.Out.ToString()

@@ -1,6 +1,6 @@
 using BlogHelper9000.YamlParsing;
 
-namespace BlogHelper9000.Handlers;
+namespace BlogHelper9000.Models;
 
 public class BlogMetaInformation
 {

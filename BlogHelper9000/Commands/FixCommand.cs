@@ -1,3 +1,4 @@
+using BlogHelper9000.Commands.Binders;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using Command = System.CommandLine.Command;
@@ -6,7 +7,7 @@ namespace BlogHelper9000.Commands;
 
 public class FixCommand : Command
 {
-    public FixCommand(IFileSystem fileSystem, Option<string> baseDirectoryOption) : base("fix", "Fixes various things about the blog posts")
+    public FixCommand(IFileSystem fileSystem) : base("fix", "Fixes various things about the blog posts")
     {
         var statusOption = new Option<bool>(
             name: "--status",
@@ -30,6 +31,6 @@ public class FixCommand : Command
         {
             var fixCommandHandler = new FixCommandHandler(new PostManager(fileSystem, baseDirectory), console);
             fixCommandHandler.Execute(status, description, tags);
-        }, statusOption, descriptionOption, tagsOption, baseDirectoryOption, Bind.FromServiceProvider<IConsole>());
+        }, statusOption, descriptionOption, tagsOption, GlobalOptions.BaseDirectoryOption, Bind.FromServiceProvider<IConsole>());
     }
 }

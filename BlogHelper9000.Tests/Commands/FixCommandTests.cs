@@ -11,10 +11,9 @@ public class FixCommandTests : CommandTestsBase
     public async Task Should_Output_Help()
     {
         var console = new TestConsole();
-        var option = BasePathOption();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new FixCommand(fileSystem, option);
-        command.AddOption(option);
+        var command = new FixCommand(fileSystem);
+        //command.AddOption(option);
         await command.InvokeAsync("fix -h", console);
 
         console.Out.ToString()
@@ -28,10 +27,9 @@ public class FixCommandTests : CommandTestsBase
     public async Task Should_Output_Options(string optionName, string optionHelp)
     {
         var console = new TestConsole();
-        var option = BasePathOption();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new FixCommand(fileSystem, option);
-        command.AddOption(option);
+        var command = new FixCommand(fileSystem);
+        //command.AddOption(option);
         await command.InvokeAsync("fix -h", console);
 
         var lines = console.AsLines()
