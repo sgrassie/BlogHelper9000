@@ -1,7 +1,6 @@
-using System.CommandLine;
-using System.IO.Abstractions;
 using BlogHelper9000.Commands.Binders;
 using BlogHelper9000.Handlers;
+using BlogHelper9000.Helpers;
 using Command = System.CommandLine.Command;
 
 namespace BlogHelper9000.Commands;
@@ -40,11 +39,20 @@ internal sealed class AddCommand : Command
         AddOption(isHidden);
         AddOption(featuredImageOption);
 
-        this.SetHandler((title, tags, draft, featuredImage, isFeatured, hidden, blogBaseDir, console) =>
+        this.SetHandler((title, tags, draft, featuredImage, isFeatured, hidden, blogBaseDir, logger) =>
             {
-                var handler = new AddCommandHandler(_fileSystem, blogBaseDir, console);
+                logger.LogTrace("{Command}.SetHandler", nameof(AddCommand));
+                var handler = new AddCommandHandler(logger, new PostManager(fileSystem, blogBaseDir));
+                logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(AddCommandHandler), nameof(AddCommand));
                 handler.Execute(title, tags, featuredImage, isFeatured, hidden, draft);
             }, 
-            titleArgument, tagsArgument, draftOption, featuredImageOption, isFeaturedOption, isHidden, GlobalOptions.BaseDirectoryOption, Bind.FromServiceProvider<IConsole>());
+            titleArgument, 
+            tagsArgument, 
+            draftOption, 
+            featuredImageOption, 
+            isFeaturedOption, 
+            isHidden, 
+            GlobalOptions.BaseDirectoryOption, 
+            new LoggingBinder());
     }
 }
