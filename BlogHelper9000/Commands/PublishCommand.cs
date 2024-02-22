@@ -5,7 +5,7 @@ using Command = System.CommandLine.Command;
 
 namespace BlogHelper9000.Commands;
 
-public class PublishCommand : Command
+internal sealed class PublishCommand : Command
 {
     public PublishCommand(IFileSystem fileSystem) : base("publish", "Publishes a blog post")
     {

@@ -33,8 +33,7 @@ public class AddCommandTests : CommandTestsBase
         var command = new AddCommand(fileSystem);
         await command.InvokeAsync("add -h", console);
 
-        var lines = console.Out.ToString()
-            .Split(Environment.NewLine, StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+        var lines = console.AsLines()
             .Where(line => line.StartsWith("--")).ToList();
 
         lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));
