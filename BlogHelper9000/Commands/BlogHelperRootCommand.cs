@@ -13,6 +13,7 @@ public class BlogHelperRootCommand : RootCommand
         _fileSystem = fileSystem;
         
         AddGlobalOption(GlobalOptions.BaseDirectoryOption);
+        AddGlobalOption(GlobalOptions.VerbosityOption);
 
         AddCommand(new AddCommand(_fileSystem));
         AddCommand(new InfoCommand(_fileSystem));
