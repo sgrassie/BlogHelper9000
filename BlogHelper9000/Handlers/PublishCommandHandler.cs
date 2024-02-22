@@ -4,19 +4,13 @@ namespace BlogHelper9000.Handlers;
 
 public class PublishCommandHandler
 {
-    private readonly IFileSystem _fileSystem;
-    private readonly string _baseDirectory;
-    private readonly IConsole _console;
-
+    private readonly ILogger _logger;
     private readonly PostManager _postManager;
 
-    public PublishCommandHandler(IFileSystem fileSystem, string baseDirectory, IConsole console)
+    public PublishCommandHandler(ILogger logger, PostManager postManager)
     {
-        _fileSystem = fileSystem;
-        _baseDirectory = baseDirectory;
-        _console = console;
-
-        _postManager = new PostManager(fileSystem, baseDirectory);
+        _logger = logger;
+        _postManager = postManager;
     }
 
     public void Execute(string post)
@@ -25,6 +19,8 @@ public class PublishCommandHandler
         {
             if (postMarkdown != null)
             {
+                _logger.LogDebug("Found a publishable post at {PostFilePath}", postMarkdown.FilePath);
+                
                 var currentPath = postMarkdown.FilePath;
                 postMarkdown.Metadata.IsPublished = true;
                 postMarkdown.Metadata.PublishedOn = DateTime.Now;
@@ -33,8 +29,14 @@ public class PublishCommandHandler
                 var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{post}";
                 var targetFolder = _postManager.FileSystem.Path.Combine(_postManager.Posts, $"{DateTime.Now:yyyy}");
 
-                if (!_postManager.FileSystem.Directory.Exists(targetFolder)) _postManager.FileSystem.Directory.CreateDirectory(targetFolder);
+                if (!_postManager.FileSystem.Directory.Exists(targetFolder))
+                {
+                    _logger.LogDebug("Creating folder for post at {PostPublishTarget}", targetFolder);
+                    _postManager.FileSystem.Directory.CreateDirectory(targetFolder);
+                }
+                
                 var replacementPath = _postManager.FileSystem.Path.Combine(targetFolder, publishedFilename);
+                
                 //ConsoleWriter.Write("Publishing {0} to {1}", publishedFilename, targetFolder);
                 _postManager.FileSystem.File.Move(currentPath, replacementPath);
                 _postManager.FileSystem.File.Delete(currentPath);
@@ -44,7 +46,7 @@ public class PublishCommandHandler
         }
         else
         {
-            _console.WriteLine("Could not find specified post to publish");
+            _logger.LogError("Could not find {Post} to publish", post);
         }
     }
 

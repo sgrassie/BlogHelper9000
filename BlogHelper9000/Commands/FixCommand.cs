@@ -27,10 +27,17 @@ public class FixCommand : Command
         tagsOption.AddAlias("-t");
         AddOption(tagsOption);
         
-        this.SetHandler((status, description, tags, baseDirectory, console) =>
+        this.SetHandler((status, description, tags, baseDirectory, logger) =>
         {
-            var fixCommandHandler = new FixCommandHandler(new PostManager(fileSystem, baseDirectory), console);
+            logger.LogTrace("{Command}.SetHandler", nameof(FixCommand));
+            var fixCommandHandler = new FixCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
+            logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(FixCommandHandler), nameof(FixCommand));
             fixCommandHandler.Execute(status, description, tags);
-        }, statusOption, descriptionOption, tagsOption, GlobalOptions.BaseDirectoryOption, Bind.FromServiceProvider<IConsole>());
+        },
+            statusOption, 
+            descriptionOption, 
+            tagsOption, 
+            GlobalOptions.BaseDirectoryOption, 
+            new LoggingBinder());
     }
 }

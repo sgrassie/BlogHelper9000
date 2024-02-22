@@ -5,20 +5,12 @@ using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Handlers;
 
-public class InfoCommandHandler
+public class InfoCommandHandler(ILogger logger, PostManager postManager)
 {
-    private readonly IConsole _console;
-    private PostManager _postManager;
-
-    public InfoCommandHandler(PostManager postManager, IConsole console)
-    {
-        _console = console;
-        _postManager = postManager;
-    }
-
     public void Execute(InfoCommandReporter? reporter = null)
     {
-        var posts = _postManager.LoadYamlHeaderForAllPosts();
+        logger.LogDebug("Loading all posts yaml headers");
+        var posts = postManager.LoadYamlHeaderForAllPosts();
         var blogDetails = new BlogMetaInformation();
 
         DeterminePostCount(posts, blogDetails);

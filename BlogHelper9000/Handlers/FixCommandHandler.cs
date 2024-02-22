@@ -3,25 +3,19 @@ using BlogHelper9000.Helpers;
 
 namespace BlogHelper9000.Handlers;
 
-public class FixCommandHandler
+public class FixCommandHandler(ILogger logger, PostManager postManager)
 {
-    private readonly PostManager _postManager;
-    public FixCommandHandler(PostManager postManager, IConsole console)
-    {
-        _postManager = postManager;
-    }
-
     public void Execute(bool status, bool description, bool tags)
     {
-        foreach (var file in _postManager.GetAllPosts())
+        foreach (var file in postManager.GetAllPosts())
         {
-            //ConsoleWriter.Write("Updating metadata for {0}", file.Metadata.Title);
+            logger.LogInformation("Updating metadata for {PostTitle}", file.Metadata.Title);
 
             if(status) FixPublishedStatus(file);
             if(description) FixDescription(file);
             if(tags) FixTags(file);
 
-            _postManager.Markdown.UpdateFile(file);
+            postManager.Markdown.UpdateFile(file);
         }
     }
     

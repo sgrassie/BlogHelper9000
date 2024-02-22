@@ -1,7 +1,10 @@
 using System.CommandLine;
 using System.CommandLine.IO;
 using BlogHelper9000.Handlers;
+using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
@@ -14,7 +17,7 @@ public class AddCommandHandlerTests
     {
         var console = new TestConsole();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var sut = new AddCommandHandler(fileSystem, BaseDir, console);
+        var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
 
         sut.Execute("Some shiny new blog post", Array.Empty<string>(), string.Empty, false, false, false);
 
@@ -26,7 +29,7 @@ public class AddCommandHandlerTests
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var console = new TestConsole();
-        var sut = new AddCommandHandler(fileSystem, BaseDir, console);
+        var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
 
         sut.Execute("New post in draft", Array.Empty<string>(), string.Empty, false, false, true);
 
@@ -41,7 +44,7 @@ public class AddCommandHandlerTests
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var console = new TestConsole();
-        var sut = new AddCommandHandler(fileSystem, BaseDir, console);
+        var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
 
         sut.Execute("New post in posts", Array.Empty<string>(), string.Empty, false, false, false);
 

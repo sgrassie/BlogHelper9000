@@ -11,10 +11,12 @@ public class InfoCommand : Command
     public InfoCommand(IFileSystem fileSystem) 
         : base("info", "Useful information and metrics about the blog")
     {
-        this.SetHandler((baseDirectory, console) =>
+        this.SetHandler((baseDirectory, logger) =>
         {
-            var handler = new InfoCommandHandler(new PostManager(fileSystem, baseDirectory), console);
+            logger.LogTrace("{Command}.SetHandler", nameof(InfoCommand));
+            var handler = new InfoCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
+            logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(InfoCommandHandler), nameof(InfoCommand));
             handler.Execute(new InfoCommandReporter());
-        }, GlobalOptions.BaseDirectoryOption, Bind.FromServiceProvider<IConsole>());
+        }, GlobalOptions.BaseDirectoryOption, new LoggingBinder());
     }
 }

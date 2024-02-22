@@ -1,8 +1,8 @@
-using System.CommandLine.IO;
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
@@ -24,8 +24,7 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var console = new TestConsole();
-        var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
+        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute(true, false, false);
 
@@ -49,8 +48,7 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var console = new TestConsole();
-        var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
+        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute(true, false, false);
 
@@ -75,8 +73,7 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var console = new TestConsole();
-        var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
+        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute(false, true, false);
 
@@ -101,8 +98,7 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var console = new TestConsole();
-        var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
+        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute(false, false, true);
 
@@ -127,8 +123,7 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var console = new TestConsole();
-        var sut = new FixCommandHandler(new PostManager(fileSystem, "/blog"), console);
+        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute(false, false, true);
 

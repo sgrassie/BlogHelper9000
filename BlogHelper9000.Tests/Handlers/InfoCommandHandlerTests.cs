@@ -3,6 +3,7 @@ using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
@@ -28,8 +29,7 @@ public class InfoCommandHandlerTests
                 { "/blog/_posts/2000-01-01-first-post.md", new MockFileData(_file1) },
                 { "/blog/_posts/2000-02-01-second-post.md", new MockFileData(_file2) }
             }).BuildFileSystem();
-        var testConsole = new TestConsole();
-        var sut = new InfoCommandHandler(new PostManager(fileSystem, "/blog"), testConsole);
+        var sut = new InfoCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute();
     }
