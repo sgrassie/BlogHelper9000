@@ -1,8 +1,10 @@
-using System.CommandLine.IO;
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using NSubstitute;
 
 namespace BlogHelper9000.Tests.Handlers;
 
@@ -12,14 +14,13 @@ public class PublishCommandHandlerTests
     public void Should_OutputError_WhenPostToPublish_IsNotFound()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var console = new TestConsole();
-        var sut = new PublishCommandHandler(fileSystem, "/blog", console);
+        var logger = Substitute.For<MockLogger<PublishCommandHandler>>();
+        var sut = new PublishCommandHandler(logger, new PostManager(fileSystem, "/blog"));
         
         sut.Execute("file-does-not-exist.md");
 
-        var lines = console.AsLines();
-
-        lines.Should().Contain(x => x == "Could not find specified post to publish");
+        logger.Received()
+            .Log(LogLevel.Error, "Could not find file-does-not-exist.md to publish");
     }
 
     [Fact]
@@ -34,8 +35,7 @@ public class PublishCommandHandlerTests
             .AddFile("/blog/_drafts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
         var fileSystemHelper = new PostManager(fileSystem, "/blog");
-        var console = new TestConsole();
-        var sut = new PublishCommandHandler(fileSystem, "/blog", console);
+        var sut = new PublishCommandHandler(NullLogger.Instance,new PostManager(fileSystem, "/blog"));
         
         sut.Execute("a-test-post.md");
         var publishedPost = fileSystemHelper.FileSystem.Directory
@@ -60,8 +60,7 @@ public class PublishCommandHandlerTests
             .AddFile("/blog/_posts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
         var fileSystemHelper = new PostManager(fileSystem, "/blog");
-        var console = new TestConsole();
-        var sut = new PublishCommandHandler(fileSystem, "/blog", console);
+        var sut = new PublishCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
         sut.Execute("a-test-post.md");
         var publishedPost = fileSystemHelper.FileSystem.Directory
