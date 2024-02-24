@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Abstractions;
 using BlogHelper9000.YamlParsing;
 
@@ -68,6 +69,27 @@ public class PostManager
             header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
             return header;
         }
+    }
+    
+    public bool TryFindPost(string title, [NotNullWhen(returnValue: true)]out MarkdownFile? markdownFile)
+    {
+        var potentialDraftPath = CreateDraftPath(title);
+        var potentialPostsPath = CreatePostPath(title);
+        
+        if (FileSystem.File.Exists(potentialDraftPath))
+        {
+            markdownFile = Markdown.LoadFile(potentialDraftPath);
+            return true;
+        }
+
+        if (FileSystem.File.Exists(potentialPostsPath))
+        {
+            markdownFile = Markdown.LoadFile(potentialPostsPath);
+            return true;
+        }
+
+        markdownFile = null;
+        return false;
     }
 
     private string MakeFileName(string title)

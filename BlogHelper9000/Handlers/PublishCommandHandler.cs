@@ -7,7 +7,7 @@ public class PublishCommandHandler(ILogger logger, PostManager postManager)
 {
     public void Execute(string post)
     {
-        if (TryFindPublishablePost(post, out var postMarkdown))
+        if (postManager.TryFindPost(post, out var postMarkdown))
         {
             logger.LogDebug("Found a publishable post at {PostFilePath}", postMarkdown.FilePath);
 
@@ -40,24 +40,4 @@ public class PublishCommandHandler(ILogger logger, PostManager postManager)
         }
     }
 
-    private bool TryFindPublishablePost(string title, [NotNullWhen(returnValue: true)]out MarkdownFile? markdownFile)
-    {
-        var potentialDraftPath = postManager.CreateDraftPath(title);
-        var potentialPostsPath = postManager.CreatePostPath(title);
-        
-        if (postManager.FileSystem.File.Exists(potentialDraftPath))
-        {
-            markdownFile = postManager.Markdown.LoadFile(potentialDraftPath);
-            return true;
-        }
-
-        if (postManager.FileSystem.File.Exists(potentialPostsPath))
-        {
-            markdownFile = postManager.Markdown.LoadFile(potentialPostsPath);
-            return true;
-        }
-
-        markdownFile = null;
-        return false;
-    }
 }
