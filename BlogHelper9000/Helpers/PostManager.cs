@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using System.IO.Abstractions;
 using BlogHelper9000.YamlParsing;
 
 namespace BlogHelper9000.Helpers;
@@ -8,6 +7,7 @@ public class PostManager
 {
     private const string DraftsFolder = "_drafts";
     private const string PostsFolder = "_posts";
+    private const string ImagesFolder = "assets/images";
 
     private MarkdownHandler _markdownHandler;
     
@@ -25,6 +25,7 @@ public class PostManager
     public string BasePath { get; }
     public string Drafts => $"{BasePath}/{DraftsFolder}";
     public string Posts => $"{BasePath}/{PostsFolder}";
+    public string Images => $"{BasePath}/{ImagesFolder}";
 
     public IEnumerable<MarkdownFile> GetAllPosts()
     {
@@ -90,6 +91,19 @@ public class PostManager
 
         markdownFile = null;
         return false;
+    }
+
+    public void UpdateMarkdown(MarkdownFile postMarkdown)
+    {
+        Markdown.UpdateFile(postMarkdown);
+    }
+
+    public (string fileName, string savePath) CreateImageFilePathForPost(MarkdownFile postMarkdown)
+    {
+        var fileName = FileSystem.Path.GetFileName(postMarkdown.FilePath);
+        fileName = FileSystem.Path.ChangeExtension(fileName, "webp");
+        var savePath = FileSystem.Path.Combine(Images, fileName);
+        return (fileName, savePath);
     }
 
     private string MakeFileName(string title)

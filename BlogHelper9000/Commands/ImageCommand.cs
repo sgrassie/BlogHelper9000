@@ -1,5 +1,8 @@
 using System.CommandLine;
 using BlogHelper9000.Commands.Binders;
+using BlogHelper9000.Handlers;
+using BlogHelper9000.Helpers;
+using BlogHelper9000.Imager;
 using Command = System.CommandLine.Command;
 
 namespace BlogHelper9000.Commands;
@@ -35,6 +38,18 @@ internal sealed class ImageCommand : Command
         {
             AddArgument(ImageCommandSharedOptions.PostArg);
             AddArgument(ImageCommandSharedOptions.QueryArg);
+            
+            this.SetHandler(async (post, query, branding, logger, baseDirectory) =>
+                {
+                    var postManager = new PostManager(fileSystem, baseDirectory);
+                    var handler = new ImageCommandAddSubCommandHandler(logger, postManager, new UnsplashClient(logger), new ImageProcessor(logger, postManager));
+                    await handler.Execute(post, query, branding);
+                }, 
+                ImageCommandSharedOptions.PostArg,
+                ImageCommandSharedOptions.QueryArg,
+                ImageCommandSharedOptions.AuthorBrandingOption,
+                new LoggingBinder(),
+                GlobalOptions.BaseDirectoryOption);
         }
     }
 
