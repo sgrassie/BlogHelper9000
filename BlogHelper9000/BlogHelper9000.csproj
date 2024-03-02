@@ -6,6 +6,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>bh</ToolCommandName>
+        <PackageId>BlogHelper9000</PackageId>
+        <PackageOutputPath>./nupkg</PackageOutputPath>
     </PropertyGroup>
     
     <ItemGroup>
