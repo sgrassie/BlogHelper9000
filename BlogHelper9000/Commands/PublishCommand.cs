@@ -7,20 +7,20 @@ namespace BlogHelper9000.Commands;
 
 internal sealed class PublishCommand : Command
 {
-    public PublishCommand(IFileSystem fileSystem) : base("publish", "Publishes a blog post")
+    public PublishCommand() : base("publish", "Publishes a blog post")
     {
         var postArgument = new Argument<string>(
             name: "post",
             description: "The post to publish");
         AddArgument(postArgument);
 
-        this.SetHandler((post, baseDirectory, logger) =>
+        this.SetHandler((post, fileSystem, baseDirectory, logger) =>
         {
             logger.LogTrace("{Command}.SetHandler", nameof(PublishCommand));
             var handler = new PublishCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
             logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(PublishCommandHandler),
                 nameof(PublishCommand));
             handler.Execute(post);
-        }, postArgument, new BaseDirectoryBinder(), new LoggingBinder());
+        }, postArgument, new FileSystemBinder(), new BaseDirectoryBinder(), new LoggingBinder());
     }
 }

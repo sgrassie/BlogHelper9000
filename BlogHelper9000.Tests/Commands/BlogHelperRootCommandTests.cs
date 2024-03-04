@@ -11,8 +11,7 @@ public class BlogHelperRootCommandTests
     public async Task Should_Output_Help_WhenInvokingHelp()
     {
         var console = new TestConsole();
-        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var rootCommand = new BlogHelperRootCommand(fileSystem);
+        var rootCommand = new BlogHelperRootCommand();
 
         await rootCommand.InvokeAsync("-h", console);
 
@@ -29,8 +28,7 @@ public class BlogHelperRootCommandTests
     public async Task Should_Output_Commands_WhenInvokingHelp(string expectedCommand)
     {
         var console = new TestConsole();
-        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var rootCommand = new BlogHelperRootCommand(fileSystem);
+        var rootCommand = new BlogHelperRootCommand();
 
         await rootCommand.InvokeAsync("-h", console);
 
