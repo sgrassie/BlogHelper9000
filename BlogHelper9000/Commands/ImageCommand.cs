@@ -1,4 +1,3 @@
-using System.CommandLine;
 using BlogHelper9000.Commands.Binders;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
@@ -9,11 +8,11 @@ namespace BlogHelper9000.Commands;
 
 internal sealed class ImageCommand : Command
 {
-    public ImageCommand(IFileSystem fileSystem) 
+    public ImageCommand() 
         : base("image", "Manipulate images in blog posts")
     {
-        AddCommand(new AddSubCommand(fileSystem));
-        AddCommand(new UpdateSubCommand(fileSystem));
+        AddCommand(new AddSubCommand());
+        AddCommand(new UpdateSubCommand());
     }
 
     private static class ImageCommandSharedOptions
@@ -33,13 +32,13 @@ internal sealed class ImageCommand : Command
     
     private class AddSubCommand : Command
     {
-        public AddSubCommand(IFileSystem fileSystem) 
+        public AddSubCommand() 
             : base("add", "Add an image to a post")
         {
             AddArgument(ImageCommandSharedOptions.PostArg);
             AddArgument(ImageCommandSharedOptions.QueryArg);
             
-            this.SetHandler(async (post, query, branding, logger, baseDirectory) =>
+            this.SetHandler(async (post, query, branding, fileSystem, logger, baseDirectory) =>
                 {
                     var postManager = new PostManager(fileSystem, baseDirectory);
                     var handler = new ImageCommandAddSubCommandHandler(logger, postManager, new UnsplashClient(logger), new ImageProcessor(logger, postManager));
@@ -48,6 +47,7 @@ internal sealed class ImageCommand : Command
                 ImageCommandSharedOptions.PostArg,
                 ImageCommandSharedOptions.QueryArg,
                 ImageCommandSharedOptions.AuthorBrandingOption,
+                new FileSystemBinder(),
                 new LoggingBinder(),
                 new BaseDirectoryBinder());
         }
@@ -55,11 +55,11 @@ internal sealed class ImageCommand : Command
 
     private class UpdateSubCommand : Command
     {
-        public UpdateSubCommand(IFileSystem fileSystem) 
+        public UpdateSubCommand() 
             : base("update", "Update images in posts")
         {
-            AddCommand(new UpdatePostSubCommand(fileSystem));
-            AddCommand(new UpdateAllSubCommand(fileSystem));
+            // AddCommand(new UpdatePostSubCommand(fileSystem));
+            // AddCommand(new UpdateAllSubCommand(fileSystem));
             AddGlobalOption(ImageCommandSharedOptions.AuthorBrandingOption);
         }
 

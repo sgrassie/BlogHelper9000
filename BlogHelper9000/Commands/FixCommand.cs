@@ -7,7 +7,7 @@ namespace BlogHelper9000.Commands;
 
 public class FixCommand : Command
 {
-    public FixCommand(IFileSystem fileSystem) : base("fix", "Fixes various things about the blog posts")
+    public FixCommand() : base("fix", "Fixes various things about the blog posts")
     {
         var statusOption = new Option<bool>(
             name: "--status",
@@ -27,7 +27,7 @@ public class FixCommand : Command
         tagsOption.AddAlias("-t");
         AddOption(tagsOption);
         
-        this.SetHandler((status, description, tags, baseDirectory, logger) =>
+        this.SetHandler((status, description, tags, fileSystem, baseDirectory, logger) =>
         {
             logger.LogTrace("{Command}.SetHandler", nameof(FixCommand));
             var fixCommandHandler = new FixCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
@@ -36,7 +36,8 @@ public class FixCommand : Command
         },
             statusOption, 
             descriptionOption, 
-            tagsOption, 
+            tagsOption,
+            new FileSystemBinder(),
             new BaseDirectoryBinder(), 
             new LoggingBinder());
     }
