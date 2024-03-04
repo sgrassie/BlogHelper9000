@@ -37,7 +37,7 @@ public class FixCommand : Command
             statusOption, 
             descriptionOption, 
             tagsOption, 
-            GlobalOptions.BaseDirectoryOption, 
+            new BaseDirectoryBinder(), 
             new LoggingBinder());
     }
 }

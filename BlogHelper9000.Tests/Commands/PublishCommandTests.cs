@@ -16,7 +16,7 @@ public class PublishCommandTests : CommandTestsBase
 
         await command.InvokeAsync("publish -h", console);
 
-        var lines = console.AsLines();
+        var lines = console.AsLines().ToList();
 
         lines.Should().Contain(x => x.StartsWith("Description:"));
         lines.Should().Contain(x => x.StartsWith("Arguments:"));

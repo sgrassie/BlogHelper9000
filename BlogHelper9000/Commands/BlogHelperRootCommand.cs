@@ -15,7 +15,7 @@ public class BlogHelperRootCommand : RootCommand
         AddGlobalOption(GlobalOptions.BaseDirectoryOption);
         AddGlobalOption(GlobalOptions.VerbosityOption);
 
-        AddCommand(new AddCommand(_fileSystem));
+        AddCommand(new AddCommand());
         AddCommand(new InfoCommand(_fileSystem));
         AddCommand(new ImageCommand(_fileSystem));
         AddCommand(new PublishCommand(_fileSystem));

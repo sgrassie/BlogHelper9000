@@ -21,6 +21,6 @@ internal sealed class PublishCommand : Command
             logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(PublishCommandHandler),
                 nameof(PublishCommand));
             handler.Execute(post);
-        }, postArgument, GlobalOptions.BaseDirectoryOption, new LoggingBinder());
+        }, postArgument, new BaseDirectoryBinder(), new LoggingBinder());
     }
 }

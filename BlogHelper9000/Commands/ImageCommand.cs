@@ -49,7 +49,7 @@ internal sealed class ImageCommand : Command
                 ImageCommandSharedOptions.QueryArg,
                 ImageCommandSharedOptions.AuthorBrandingOption,
                 new LoggingBinder(),
-                GlobalOptions.BaseDirectoryOption);
+                new BaseDirectoryBinder());
         }
     }
 

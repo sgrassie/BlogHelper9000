@@ -1,8 +1,7 @@
-using System.IO.Abstractions;
 using System.Text;
 using BlogHelper9000.YamlParsing;
 
-namespace BlogHelper9000;
+namespace BlogHelper9000.Helpers;
 
 public class MarkdownHandler
 {

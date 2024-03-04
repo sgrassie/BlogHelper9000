@@ -17,6 +17,6 @@ public class InfoCommand : Command
             var handler = new InfoCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
             logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(InfoCommandHandler), nameof(InfoCommand));
             handler.Execute(new InfoCommandReporter());
-        }, GlobalOptions.BaseDirectoryOption, new LoggingBinder());
+        }, new BaseDirectoryBinder(), new LoggingBinder());
     }
 }

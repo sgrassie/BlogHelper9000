@@ -13,7 +13,6 @@ public class FixCommandTests : CommandTestsBase
         var console = new TestConsole();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var command = new FixCommand(fileSystem);
-        //command.AddOption(option);
         await command.InvokeAsync("fix -h", console);
 
         console.Out.ToString()
@@ -29,7 +28,6 @@ public class FixCommandTests : CommandTestsBase
         var console = new TestConsole();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var command = new FixCommand(fileSystem);
-        //command.AddOption(option);
         await command.InvokeAsync("fix -h", console);
 
         var lines = console.AsLines()

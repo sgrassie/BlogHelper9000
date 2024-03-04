@@ -7,12 +7,9 @@ namespace BlogHelper9000.Commands;
 
 internal sealed class AddCommand : Command
 {
-    private readonly IFileSystem _fileSystem;
-    
-    public AddCommand(IFileSystem fileSystem)
+    public AddCommand()
         : base("add", "Adds a new blog post")
     {
-        _fileSystem = fileSystem;
         var titleArgument = new Argument<string>("title", "The title of the new blog post");
         var tagsArgument = new Argument<string[]>("tags", "The tags for the new blog post");
         AddArgument(titleArgument);
@@ -39,20 +36,22 @@ internal sealed class AddCommand : Command
         AddOption(isHidden);
         AddOption(featuredImageOption);
 
-        this.SetHandler((title, tags, draft, featuredImage, isFeatured, hidden, blogBaseDir, logger) =>
+        this.SetHandler((options, fileSystem, blogBaseDir, logger) =>
             {
                 logger.LogTrace("{Command}.SetHandler", nameof(AddCommand));
                 var handler = new AddCommandHandler(logger, new PostManager(fileSystem, blogBaseDir));
                 logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(AddCommandHandler), nameof(AddCommand));
-                handler.Execute(title, tags, featuredImage, isFeatured, hidden, draft);
-            }, 
+                handler.Execute(options);
+            },
+            new AddCommandOptionsBinder(
             titleArgument, 
             tagsArgument, 
             draftOption, 
             featuredImageOption, 
             isFeaturedOption, 
-            isHidden, 
-            GlobalOptions.BaseDirectoryOption, 
+            isHidden),
+            new FileSystemBinder(),
+            new BaseDirectoryBinder(),
             new LoggingBinder());
     }
 }

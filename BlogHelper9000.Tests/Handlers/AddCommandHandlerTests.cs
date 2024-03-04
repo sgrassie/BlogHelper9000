@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.IO;
+using BlogHelper9000.Commands;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
@@ -18,8 +19,9 @@ public class AddCommandHandlerTests
         var console = new TestConsole();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
+        var options = new AddOptions("Some shiny new blog post", Array.Empty<string>(), string.Empty, false, false, false);
 
-        sut.Execute("Some shiny new blog post", Array.Empty<string>(), string.Empty, false, false, false);
+        sut.Execute(options);
 
         console.Out.ToString().Should().NotBeNull();
     }
@@ -28,10 +30,10 @@ public class AddCommandHandlerTests
     public void Should_Add_NewPost_AsDraft()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var console = new TestConsole();
         var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
+        var options = new AddOptions("New post in draft", Array.Empty<string>(), string.Empty, false, false, true);
 
-        sut.Execute("New post in draft", Array.Empty<string>(), string.Empty, false, false, true);
+        sut.Execute(options);
 
         fileSystem
             .File
@@ -43,10 +45,10 @@ public class AddCommandHandlerTests
     public void Should_Add_NewPost_StraightToPosts()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var console = new TestConsole();
         var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
+        var options = new AddOptions("New post in posts", Array.Empty<string>(), string.Empty, false, false, false);
 
-        sut.Execute("New post in posts", Array.Empty<string>(), string.Empty, false, false, false);
+        sut.Execute(options);
 
         fileSystem
             .File

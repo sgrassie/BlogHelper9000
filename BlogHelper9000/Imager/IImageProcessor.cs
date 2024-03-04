@@ -1,3 +1,5 @@
+using BlogHelper9000.Helpers;
+
 namespace BlogHelper9000.Imager;
 
 public interface IImageProcessor
