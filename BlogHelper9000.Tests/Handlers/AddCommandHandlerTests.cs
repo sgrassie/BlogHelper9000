@@ -1,18 +1,14 @@
-using System.CommandLine;
 using System.CommandLine.IO;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
 public class AddCommandHandlerTests
 {
-    private const string BaseDir = "/blog";
-
     [Fact]
     public void Should_Accept_PostTitle()
     {
@@ -31,13 +27,13 @@ public class AddCommandHandlerTests
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        var options = new AddOptions("New post in draft", Array.Empty<string>(), string.Empty, false, false, true);
+        var options = new AddOptions("New post in draft", Array.Empty<string>(), string.Empty, true, false, true);
 
         sut.Execute(options);
 
         fileSystem
             .File
-            .Exists(Path.Combine(JekyllBlogFilesystemBuilder.Drafts, "new-post-in-draft.md"))
+            .Exists(fileSystem.Path.Combine(JekyllBlogFilesystemBuilder.Drafts, "new-post-in-draft.md"))
             .Should().BeTrue();
     }
 

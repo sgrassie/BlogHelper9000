@@ -25,8 +25,7 @@ public class ImageCommandTests
             "update              Update images in posts"
         };
         var console = new TestConsole();
-        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new ImageCommand(fileSystem);
+        var command = new ImageCommand();
         command.AddOption(GlobalOptions.BaseDirectoryOption);
 
         await command.InvokeAsync("image -h", console);
@@ -53,8 +52,7 @@ public class ImageCommandTests
             "all <query>          Updates all images in all posts [default: programming]"
         };
         var console = new TestConsole();
-        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
-        var command = new ImageCommand(fileSystem);
+        var command = new ImageCommand();
         command.AddOption(GlobalOptions.BaseDirectoryOption);
 
         await command.InvokeAsync("image update -h", console);
