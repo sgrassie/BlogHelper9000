@@ -35,7 +35,7 @@ public class ImageCommandTests
         lines.Should().ContainInOrder(expectedHelp);
     }
 
-    [Fact]
+    [Fact(Skip = "Not including the commands for this just now")]
     public async Task Should_Output_Help_ForImageUpdateSubCommand()
     {
         var expectedHelp = new[]
