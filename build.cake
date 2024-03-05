@@ -38,7 +38,6 @@ Task("Build")
 });
 
 Task("Run-Unit-Tests")
-    .IsDependentOn("Build")
     .Does<Parameters>((context, parameters) =>
 {
     DotNetTest(parameters.SolutionFile, new DotNetTestSettings
@@ -50,7 +49,27 @@ Task("Run-Unit-Tests")
     });
 });
 
+Task("PackedIt")
+    .WithCriteria<Parameters>((context, parameters) => parameters.Configuration == "release")
+    .Does<Parameters>((context, parameters) =>
+    {
+        var settings = new DotNetPackSettings
+         {
+             NoBuild = true,
+             NoLogo = true,
+             Configuration = "Release",
+             OutputDirectory = "./releases/"
+         };
+        
+         DotNetPack(parameters.SolutionFile, settings);
+    });
+
 Task("Default").IsDependentOn("Build");
 Task("Tests").IsDependentOn("Run-Unit-Tests");
+Task("Pack")
+    .IsDependentOn("Build")
+    .IsDependentOn("Run-Unit-Tests")
+    .IsDependentOn("PackedIt");
+    
 
 RunTarget(Argument("target", "Default"));

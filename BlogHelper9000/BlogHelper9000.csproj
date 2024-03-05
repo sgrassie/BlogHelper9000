@@ -9,7 +9,8 @@
         <PackAsTool>true</PackAsTool>
         <ToolCommandName>bh</ToolCommandName>
         <PackageId>BlogHelper9000</PackageId>
-        <PackageOutputPath>./nupkg</PackageOutputPath>
+        <PackageOutputPath>./releases</PackageOutputPath>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>
     
     <ItemGroup>
@@ -48,6 +49,12 @@
       <EmbeddedResource Include="Ubuntu\Ubuntu-MediumItalic.ttf" />
       <None Remove="Ubuntu\Ubuntu-Regular.ttf" />
       <EmbeddedResource Include="Ubuntu\Ubuntu-Regular.ttf" />
+      <EmbeddedResource Remove="nupkg\**" />
+      <None Remove="nupkg\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="nupkg\**" />
     </ItemGroup>
 
 </Project>
