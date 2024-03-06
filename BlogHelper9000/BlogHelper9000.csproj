@@ -15,6 +15,7 @@
     
     <ItemGroup>
         <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+        <None Include="..\README.md" Pack="true" PackagePath="\" />
     </ItemGroup>
 
     <ItemGroup>
