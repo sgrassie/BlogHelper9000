@@ -27,5 +27,7 @@ public abstract class MockLogger<T> : ILogger<T>
         return true;
     }
 
+#pragma warning disable CS8633 // Nullability in constraints for type parameter doesn't match the constraints for type parameter in implicitly implemented interface method'.
     public abstract IDisposable BeginScope<TState>(TState state);
+#pragma warning restore CS8633 // Nullability in constraints for type parameter doesn't match the constraints for type parameter in implicitly implemented interface method'.
 }

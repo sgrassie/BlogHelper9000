@@ -1,19 +1,9 @@
-using System.IO.Abstractions;
-
 namespace BlogHelper9000.YamlParsing;
 
-public class YamlConvert
+public class YamlConvert(IFileSystem fileSystem)
 {
-    private readonly IFileSystem _fileSystem;
-    private static YamlSerialiser Serialiser;
-    private static YamlDeserialiser Deserialiser;
-    
-    public YamlConvert(IFileSystem fileSystem)
-    {
-        _fileSystem = fileSystem;
-        Serialiser = new YamlSerialiser();
-        Deserialiser = new YamlDeserialiser();
-    }
+    private static YamlSerialiser Serialiser = new YamlSerialiser();
+    private static YamlDeserialiser Deserialiser = new YamlDeserialiser();
     
     public string Serialise(YamlHeader header)
     {
@@ -22,9 +12,9 @@ public class YamlConvert
 
     public YamlHeader Deserialise(string filePath)
     {
-        if (!_fileSystem.File.Exists(filePath)) throw new FileNotFoundException("Unable to find specified file", filePath);
+        if (!fileSystem.File.Exists(filePath)) throw new FileNotFoundException("Unable to find specified file", filePath);
 
-        var content = _fileSystem.File.ReadAllLines(filePath);
+        var content = fileSystem.File.ReadAllLines(filePath);
 
         return Deserialise(content);
     }
