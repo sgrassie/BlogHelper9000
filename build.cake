@@ -65,7 +65,9 @@ Task("PackedIt")
     });
 
 Task("Default").IsDependentOn("Build");
-Task("Tests").IsDependentOn("Run-Unit-Tests");
+Task("Tests")
+    .IsDependentOn("Build")
+    .IsDependentOn("Run-Unit-Tests");
 Task("Pack")
     .IsDependentOn("Build")
     .IsDependentOn("Run-Unit-Tests")
