@@ -11,6 +11,7 @@ Task("Clean")
 {
     CleanDirectories("./src/**/bin/" + parameters.Configuration);
     CleanDirectories("./src/**/obj");
+    CleanDirectories("./releases");
 });
 
 Task("Restore-NuGet-Packages")

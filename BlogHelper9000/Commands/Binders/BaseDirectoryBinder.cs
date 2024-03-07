@@ -12,7 +12,7 @@ public class BaseDirectoryBinder : BinderBase<string>
 
         if (string.IsNullOrEmpty(baseDirectory))
         {
-            return AppDomain.CurrentDomain.BaseDirectory;
+            return Environment.CurrentDirectory;
         }
 
         return baseDirectory;
