@@ -50,5 +50,31 @@ public class ImageCommand
 
             await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>());
         }
+        
+        [Theory]
+        [InlineData("2000-01-01-first-post.md")]
+        [InlineData("/_posts/2000-01-01-first-post.md")]
+        [InlineData("/blog/_posts/2000-01-01-first-post.md")]
+        public async Task Should_IgnoreFindThePost_(string postNameToFind)
+        {
+            var fileData = """
+                           ---
+                           layout: post
+                           title: test post
+                           ---
+                           """;
+            var fileSystem = new JekyllBlogFilesystemBuilder()
+                .AddFile("/blog/_posts/2000-01-01-first-post.md", new MockFileData(fileData))
+                .BuildFileSystem();
+            var logger = Substitute.For<MockLogger<ImageCommandAddSubCommandHandler>>();
+            var imageProcessor = Substitute.For<IImageProcessor>();
+            var postManager = new PostManager(fileSystem, "/blog");
+            var mockClient = Substitute.For<IUnsplashClient>();
+            var sut = new ImageCommandAddSubCommandHandler(logger, postManager, mockClient, imageProcessor);
+
+            await sut.Execute(postNameToFind, "unit tests", "test");
+
+            await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>());
+        }
     }
 }

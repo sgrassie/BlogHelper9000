@@ -72,25 +72,58 @@ public class PostManager
         }
     }
     
-    public bool TryFindPost(string title, [NotNullWhen(returnValue: true)]out MarkdownFile? markdownFile)
+    public bool TryFindPost(string post, [NotNullWhen(returnValue: true)]out MarkdownFile? markdownFile)
     {
-        var potentialDraftPath = CreateDraftPath(title);
-        var potentialPostsPath = CreatePostPath(title);
-        
-        if (FileSystem.File.Exists(potentialDraftPath))
+        if (IsDraft(post, out var actualDraftPath))
         {
-            markdownFile = Markdown.LoadFile(potentialDraftPath);
+            markdownFile = Markdown.LoadFile(actualDraftPath);
             return true;
         }
 
-        if (FileSystem.File.Exists(potentialPostsPath))
+        if (IsPost(post, out var actualPostPath))
         {
-            markdownFile = Markdown.LoadFile(potentialPostsPath);
+            markdownFile = Markdown.LoadFile(actualPostPath);
             return true;
         }
 
         markdownFile = null;
         return false;
+
+        bool IsDraft(string possiblePath, out string draftPath)
+        {
+            if (FileSystem.File.Exists(possiblePath))
+            {
+                draftPath = possiblePath;
+                return true;
+            }
+
+            draftPath = $"{Drafts}/{FileSystem.Path.GetFileName(possiblePath)}";
+            
+            if (FileSystem.File.Exists(draftPath))
+            {
+                return true;
+            }
+
+            return false;
+        }
+        
+        bool IsPost(string possiblePath, out string postPath)
+        {
+            if (FileSystem.File.Exists(possiblePath))
+            {
+                postPath = possiblePath;
+                return true;
+            }
+
+            postPath = $"{Posts}/{FileSystem.Path.GetFileName(possiblePath)}";
+            
+            if (FileSystem.File.Exists(postPath))
+            {
+                return true;
+            }
+
+            return false;
+        }
     }
 
     public void UpdateMarkdown(MarkdownFile postMarkdown)
