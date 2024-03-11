@@ -7,8 +7,7 @@
         <Nullable>enable</Nullable>
         <LangVersion>latest</LangVersion>
         <PackAsTool>true</PackAsTool>
-        <ToolCommandName>bh</ToolCommandName>
-        <PackageId>BlogHelper9000</PackageId>
+        <ToolCommandName>bloghelper</ToolCommandName>
         <PackageOutputPath>./releases</PackageOutputPath>
         <PackageReadmeFile>README.md</PackageReadmeFile>
     </PropertyGroup>

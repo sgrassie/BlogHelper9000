@@ -44,7 +44,7 @@ public class FixCommandHandler(ILogger logger, PostManager postManager)
         }
     }
 
-    private void FixTags(MarkdownFile file)
+    private static void FixTags(MarkdownFile file)
     {
         //ConsoleWriter.WriteWithIndent(ConsoleColor.White, 5, "Fixing Tags");
         if (file.Metadata.Extras.TryGetValue("category", out var category))
@@ -62,7 +62,7 @@ public class FixCommandHandler(ILogger logger, PostManager postManager)
         }
 
         // Remove any duplicate tags and make them Title Case
-        TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
         file.Metadata.Tags = file.Metadata.Tags
             .GroupBy(x => x)
             .Select(x => textInfo.ToTitleCase(x.First()))
