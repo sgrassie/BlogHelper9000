@@ -25,8 +25,7 @@ internal sealed class ImageCommand : Command
         );
 
         public static readonly Option<string> AuthorBrandingOption = new(
-            new []{"--branding", "-b"}, description: "Optionally provide author branding.",
-            getDefaultValue: () => "/assets/images/branding_logo.png"
+            new []{"--branding"}, description: "Optionally provide author branding."
         );
     }
     

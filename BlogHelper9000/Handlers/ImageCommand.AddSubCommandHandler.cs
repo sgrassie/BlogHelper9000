@@ -9,8 +9,15 @@ public class ImageCommandAddSubCommandHandler(ILogger logger, PostManager postMa
     {
         if (postManager.TryFindPost(post, out var postMarkdown))
         {
-            await using var stream = await unsplashClient.LoadImageAsync(imageQuery);
-            await imageProcessor.Process(postMarkdown, stream, authorBranding);
+            if (postManager.TryFindAuthorBranding(authorBranding, out var brandingPath))
+            {
+                await using var stream = await unsplashClient.LoadImageAsync(imageQuery);
+                await imageProcessor.Process(postMarkdown, stream, brandingPath);
+            }
+            else
+            {
+                logger.LogError("Could not load author branding image {AuthorBranding}", authorBranding);
+            }
         }
         else
         {

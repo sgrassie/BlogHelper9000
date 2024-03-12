@@ -1,28 +1,22 @@
 using System.Diagnostics.CodeAnalysis;
 using BlogHelper9000.YamlParsing;
+using SixLabors.ImageSharp;
 
 namespace BlogHelper9000.Helpers;
 
-public class PostManager
+public class PostManager(IFileSystem fileSystem, string basePath)
 {
+    private const string DefaultAuthorBrandingFile = "branding_logo.png";
     private const string DraftsFolder = "_drafts";
     private const string PostsFolder = "_posts";
     private const string ImagesFolder = "assets/images";
 
-    private MarkdownHandler _markdownHandler;
-    
-    public PostManager(IFileSystem fileSystem, string basePath)
-    {
-        FileSystem = fileSystem;
-        BasePath = basePath;
+    private MarkdownHandler _markdownHandler = new(fileSystem);
 
-        _markdownHandler = new MarkdownHandler(fileSystem);
-    }
-
-    public IFileSystem FileSystem { get; }
+    public IFileSystem FileSystem { get; } = fileSystem;
     public MarkdownHandler Markdown => _markdownHandler;
     public YamlConvert YamlConvert => _markdownHandler.YamlConvert;
-    public string BasePath { get; }
+    public string BasePath { get; } = basePath;
     public string Drafts => $"{BasePath}/{DraftsFolder}";
     public string Posts => $"{BasePath}/{PostsFolder}";
     public string Images => $"{BasePath}/{ImagesFolder}";
@@ -137,6 +131,37 @@ public class PostManager
         fileName = FileSystem.Path.ChangeExtension(fileName, "webp");
         var savePath = FileSystem.Path.Combine(Images, fileName);
         return (fileName, savePath);
+    }
+
+    public bool TryFindAuthorBranding(string branding, out string brandingPath)
+    {
+        if (!string.IsNullOrEmpty(branding))
+        {
+            if (FileSystem.File.Exists(branding))
+            {
+                brandingPath = branding;
+                return true;
+            }
+
+            var path = FileSystem.Path.Combine(Images, FileSystem.Path.GetFileName(branding));
+
+            if (FileSystem.File.Exists(path))
+            {
+                brandingPath = path;
+                return true;
+            }
+        }
+
+        var defaultBrandingPath = FileSystem.Path.Combine(Images, DefaultAuthorBrandingFile);
+        
+        if (FileSystem.File.Exists(defaultBrandingPath))
+        {
+            brandingPath = defaultBrandingPath;
+            return true;
+        }
+
+        brandingPath = string.Empty;
+        return false;
     }
 
     private string MakeFileName(string title)
