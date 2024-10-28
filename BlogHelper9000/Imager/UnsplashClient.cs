@@ -49,7 +49,7 @@ public class UnsplashClient(ILogger logger) : IDisposable, IUnsplashClient
     
     private AppDataModel? LoadCredentials()
     {
-        var credentialsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "bloghelper9000.json");
+        var credentialsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "bloghelper9000.json");
         if (!File.Exists(credentialsPath))
         {
             logger.LogError("Could not find Unsplash credentials file at {CredentialsPath}", credentialsPath);
