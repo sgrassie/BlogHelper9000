@@ -13,6 +13,7 @@ internal sealed class ImageCommand : Command
     {
         AddCommand(new AddSubCommand());
         AddCommand(new UpdateSubCommand());
+        AddCommand(new UnsplashCredentialsCommand());
     }
 
     private static class ImageCommandSharedOptions
@@ -27,6 +28,25 @@ internal sealed class ImageCommand : Command
         public static readonly Option<string> AuthorBrandingOption = new(
             new []{"--branding"}, description: "Optionally provide author branding."
         );
+    }
+
+    private class UnsplashCredentialsCommand : Command
+    {
+        public UnsplashCredentialsCommand()
+            : base("credentials", "Set the Unsplash credentials")
+        {
+            var accessKeyArg = new Argument<string>("accessKey", "The Unsplash access key");
+            AddArgument(accessKeyArg);
+            var secretKeyArg = new Argument<string>("secretKey", "The Unsplash secret key");
+            AddArgument(secretKeyArg);
+            
+            this.SetHandler((accessKey, secretKey, fileSystem, logger) =>
+            {
+                var handler = new UnsplashCredentialsCommandHandler(fileSystem, logger);
+                handler.Execute(accessKey, secretKey);
+            }, 
+                accessKeyArg, secretKeyArg, new FileSystemBinder(), new LoggingBinder());
+        }
     }
     
     private class AddSubCommand : Command
