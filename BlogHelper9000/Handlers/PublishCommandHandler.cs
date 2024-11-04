@@ -16,7 +16,8 @@ public class PublishCommandHandler(ILogger logger, PostManager postManager)
             postMarkdown.Metadata.PublishedOn = DateTime.Now;
             postManager.Markdown.UpdateFile(postMarkdown);
 
-            var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{post}";
+            var fileName = postManager.FileSystem.Path.GetFileName(postMarkdown.FilePath);
+            var publishedFilename = $"{DateTime.Now:yyyy-MM-dd}-{fileName}";
             var targetFolder = postManager.FileSystem.Path.Combine(postManager.Posts, $"{DateTime.Now:yyyy}");
 
             if (!postManager.FileSystem.Directory.Exists(targetFolder))
