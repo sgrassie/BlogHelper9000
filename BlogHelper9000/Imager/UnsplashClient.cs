@@ -8,21 +8,22 @@ namespace BlogHelper9000.Imager;
 
 public class UnsplashClient(ILogger logger) : IDisposable, IUnsplashClient
 {
-    private const string UnsplashApiUrl = "https://api.unsplash.com/photos/random?client_id=Ey17V904djPIM7J-KeFxmxVShTF_NCx5hFXu2lxkPeE&query=";
+    private const string UnsplashApiUrl = "https://api.unsplash.com/photos/random";
     private const string UnsplashRequestVersion = "v1";
     private readonly HttpClient _httpClient = new();
 
     public async Task<Stream> LoadImageAsync(string query)
     {
-        var client = CreateUnsplashClient();
+        var (client, clientId) = CreateUnsplashClient();
         if (client != null)
         {
-            var request = UnsplashApiUrl + query;
+            var queryUrl = AddQueryTooUrl(query);
+            var fullUrl = AddClientIdToUrl(queryUrl, clientId);
             logger.LogInformation("Loading random Unsplash image for the query '{ImageQuery}'", query);
-            var unsplashData = await _httpClient.GetFromJsonAsync<UnsplashData>(request);
+            var unsplashData = await _httpClient.GetFromJsonAsync<UnsplashData>(fullUrl);
             if (unsplashData != null)
             {
-                var imageUrl = unsplashData.Urls.Regular;
+                var imageUrl = $"{unsplashData.Urls.Raw}&w=1280&h=720&fit=min";
                 var imageStream = await _httpClient.GetStreamAsync(imageUrl);
                 return imageStream;
             }
@@ -30,6 +31,16 @@ public class UnsplashClient(ILogger logger) : IDisposable, IUnsplashClient
 
         logger.LogError("Could not load Unsplash image because credentials are missing");
         return Stream.Null;
+
+        string AddQueryTooUrl(string query)
+        {
+            return $"{UnsplashApiUrl}?query=programming";
+        }
+        
+        string AddClientIdToUrl(string url, string clientId)
+        {
+            return $"{url}&client_id={clientId}";
+        }
     }
     
     public void Dispose()
@@ -38,7 +49,7 @@ public class UnsplashClient(ILogger logger) : IDisposable, IUnsplashClient
         _httpClient.Dispose();
     }
     
-    private HttpClient? CreateUnsplashClient()
+    private (HttpClient? httpClient, string clientId) CreateUnsplashClient()
     {
         var credentials = LoadCredentials();
         if (credentials != null)
@@ -48,13 +59,11 @@ public class UnsplashClient(ILogger logger) : IDisposable, IUnsplashClient
             var client = new HttpClient();
             client.BaseAddress = new Uri(UnsplashApiUrl);
             client.DefaultRequestHeaders.Add("Accept-Version", UnsplashRequestVersion);
-            //client.DefaultRequestHeaders.Add("Authorization", $"Client-ID {credentialParts[0]}");
-            client.DefaultRequestHeaders.Authorization = new("Client-ID", clientId);
-            return client;
+            return (client, clientId);
         }
 
         logger.LogError("Could not create Unsplash client because credentials are missing");
-        return null;
+        return (null, string.Empty);
     }
     
     private AppDataModel? LoadCredentials()
