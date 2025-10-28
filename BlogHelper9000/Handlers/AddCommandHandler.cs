@@ -1,9 +1,6 @@
-using System.CommandLine;
-using System.IO.Abstractions;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.YamlParsing;
-using Microsoft.Extensions.Logging;
 
 namespace BlogHelper9000.Handlers;
 

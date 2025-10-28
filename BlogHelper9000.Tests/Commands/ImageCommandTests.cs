@@ -1,7 +1,4 @@
-using System.CommandLine;
-using System.CommandLine.IO;
 using BlogHelper9000.Commands;
-using BlogHelper9000.Tests.Helpers;
 
 namespace BlogHelper9000.Tests.Commands;
 
@@ -24,15 +21,15 @@ public class ImageCommandTests
             "add <post> <query>  Add an image to a post [default: programming]",
             "update              Update images in posts"
         };
-        var console = new TestConsole();
-        var command = new ImageCommand();
-        command.AddOption(GlobalOptions.BaseDirectoryOption);
-
-        await command.InvokeAsync("image -h", console);
-
-        var lines = console.AsLines();
-
-        lines.Should().ContainInOrder(expectedHelp);
+        // var console = new TestConsole();
+        // var command = new ImageCommand();
+        // command.AddOption(GlobalOptions.BaseDirectoryOption);
+        //
+        // await command.InvokeAsync("image -h", console);
+        //
+        // var lines = console.AsLines();
+        //
+        // lines.Should().ContainInOrder(expectedHelp);
     }
 
     [Fact(Skip = "Not including the commands for this just now")]
@@ -51,14 +48,14 @@ public class ImageCommandTests
             "post <post> <query>  Updates the image in a specific post [default: programming]",
             "all <query>          Updates all images in all posts [default: programming]"
         };
-        var console = new TestConsole();
-        var command = new ImageCommand();
-        command.AddOption(GlobalOptions.BaseDirectoryOption);
-
-        await command.InvokeAsync("image update -h", console);
-
-        var lines = console.AsLines();
-
-        lines.Should().ContainInOrder(expectedHelp);
+        // var console = new TestConsole();
+        // var command = new ImageCommand();
+        // command.AddOption(GlobalOptions.BaseDirectoryOption);
+        //
+        // await command.InvokeAsync("image update -h", console);
+        //
+        // var lines = console.AsLines();
+        //
+        // lines.Should().ContainInOrder(expectedHelp);
     }
 }

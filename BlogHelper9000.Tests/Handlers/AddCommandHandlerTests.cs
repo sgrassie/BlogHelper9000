@@ -1,4 +1,3 @@
-using System.CommandLine.IO;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
@@ -12,14 +11,12 @@ public class AddCommandHandlerTests
     [Fact]
     public void Should_Accept_PostTitle()
     {
-        var console = new TestConsole();
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var sut = new AddCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         var options = new AddOptions("Some shiny new blog post", Array.Empty<string>(), string.Empty, false, false, false);
 
         sut.Execute(options);
 
-        console.Out.ToString().Should().NotBeNull();
     }
 
     [Fact]

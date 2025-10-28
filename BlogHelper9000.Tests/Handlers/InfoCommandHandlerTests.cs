@@ -1,4 +1,3 @@
-using System.CommandLine.IO;
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
