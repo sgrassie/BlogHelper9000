@@ -14,7 +14,6 @@ internal sealed class AddCommand : IRequest
     public bool IsHidden { get; set; }
     public string FeaturedImage { get; set; }
 
-
     public sealed class Handler(ILogger<Handler> logger, IFileSystem fileSystem)
         : IRequestHandler<AddCommand>
     {
