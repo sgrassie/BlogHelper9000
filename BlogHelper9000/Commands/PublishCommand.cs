@@ -1,21 +1,54 @@
+using BlogHelper9000.Helpers;
+using TimeWarp.Mediator;
+
 namespace BlogHelper9000.Commands;
 
-internal sealed class PublishCommand 
+public sealed class PublishCommand : IRequest
 {
-    public PublishCommand() 
+    public string BaseDirectory { get; set; }
+    public string Post { get; set; }
+
+    public class Handler(ILogger<Handler> logger, IFileSystem fileSystem, TimeProvider timeProvider) : IRequestHandler<PublishCommand>
     {
-        // var postArgument = new Argument<string>(
-        //     name: "post",
-        //     description: "The post to publish");
-        // AddArgument(postArgument);
-        //
-        // this.SetHandler((post, fileSystem, baseDirectory, logger) =>
-        // {
-        //     logger.LogTrace("{Command}.SetHandler", nameof(PublishCommand));
-        //     var handler = new PublishCommandHandler(logger, new PostManager(fileSystem, baseDirectory));
-        //     logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(PublishCommandHandler),
-        //         nameof(PublishCommand));
-        //     handler.Execute(post);
-        // }, postArgument, new FileSystemBinder(), new BaseDirectoryBinder(), new LoggingBinder());
+        public Task Handle(PublishCommand request, CancellationToken cancellationToken)
+        {
+            var postManager = new PostManager(fileSystem, request.BaseDirectory);
+            
+            if (postManager.TryFindPost(request.Post, out var postMarkdown))
+            {
+                logger.LogDebug("Found a publishable post at {PostFilePath}", postMarkdown.FilePath);
+
+                var currentPath = postMarkdown.FilePath;
+                postMarkdown.Metadata.IsPublished = true;
+                postMarkdown.Metadata.PublishedOn = timeProvider.GetLocalNow().DateTime;
+                postManager.Markdown.UpdateFile(postMarkdown);
+
+                var fileName = postManager.FileSystem.Path.GetFileName(postMarkdown.FilePath);
+                var publishedFilename = $"{timeProvider.GetLocalNow().DateTime:yyyy-MM-dd}-{fileName}";
+                var targetFolder = postManager.FileSystem.Path.Combine(postManager.Posts, $"{timeProvider.GetLocalNow().DateTime:yyyy}");
+
+                if (!postManager.FileSystem.Directory.Exists(targetFolder))
+                {
+                    logger.LogDebug("Creating folder for post at {PostPublishTarget}", targetFolder);
+                    postManager.FileSystem.Directory.CreateDirectory(targetFolder);
+                }
+
+                var replacementPath = postManager.FileSystem.Path.Combine(targetFolder, publishedFilename);
+
+                logger.LogInformation("Publishing {PublishedFileName} to {TargetFolder}", publishedFilename,
+                    targetFolder);
+                postManager.FileSystem.File.Move(currentPath, replacementPath);
+                postManager.FileSystem.File.Delete(currentPath);
+
+                //await Command.RunAsync("git", "add --all", input.BaseDirectoryFlag, true);
+                //ConsoleWriter.Write("Published file added to git index. Don't forget to commit and push to remote.");
+            }
+            else
+            {
+                logger.LogError("Could not find {Post} to publish", request.Post);
+            }
+            
+            return Task.CompletedTask;
+        }
     }
 }
