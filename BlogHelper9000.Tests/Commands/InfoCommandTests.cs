@@ -1,12 +1,9 @@
 using System.IO.Abstractions.TestingHelpers;
-using BlogHelper9000.Handlers;
-using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
-using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
-public class InfoCommandHandlerTests
+public class InfoCommandTests
 {
     private const string _file1 = """
                                   ---
