@@ -14,6 +14,9 @@ NuruApp app = new NuruAppBuilder()
     .AddRoute<InfoCommand>(
         pattern: "info --base-directory {basedirectory}",
         description: "Provides information about the blog.")
+    .AddRoute<AddCommand>(
+        pattern: "add {title} {tags?} --base-directory {basedirectory} --is-draft {draft?} --is-featured {isfeatured?} --is-hidden {ishidden?} --featured-image {featuredImage?}",
+        description: "Adds a blog post.")
     .Build();
 
 return await app.RunAsync(args);

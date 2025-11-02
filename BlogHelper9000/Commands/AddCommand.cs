@@ -1,51 +1,58 @@
+using BlogHelper9000.Helpers;
+using BlogHelper9000.YamlParsing;
+using TimeWarp.Mediator;
+
 namespace BlogHelper9000.Commands;
 
-internal sealed class AddCommand 
+internal sealed class AddCommand : IRequest
 {
-    public AddCommand()
+    public string Title { get; set; }
+    public string Tags { get; set; }
+    public string BaseDirectory { get; set; }
+    public bool IsDraft { get; set; }
+    public bool IsFeatured { get; set; }
+    public bool IsHidden { get; set; }
+    public string FeaturedImage { get; set; }
+
+
+    public sealed class Handler(ILogger<Handler> logger, IFileSystem fileSystem)
+        : IRequestHandler<AddCommand>
     {
-        // var titleArgument = new Argument<string>("title", "The title of the new blog post");
-        // var tagsArgument = new Argument<string[]>("tags", "The tags for the new blog post");
-        // AddArgument(titleArgument);
-        // AddArgument(tagsArgument);
-        //
-        // var draftOption = new Option<bool>(
-        //     name: "--draft",
-        //     description: "Adds the post as a draft");
-        //
-        // var isFeaturedOption = new Option<bool>(
-        //     name: "--is-featured",
-        //     description: "Sets the post as a featured post");
-        //
-        // var isHidden = new Option<bool>(
-        //     name: "--is-hidden",
-        //     description: "Sets whether the post is hidden or not");
-        //
-        // var featuredImageOption = new Option<string>(
-        //     name: "--featured-image",
-        //     description: "Sets the featured image path");
-        //
-        // AddOption(draftOption);
-        // AddOption(isFeaturedOption);
-        // AddOption(isHidden);
-        // AddOption(featuredImageOption);
-        //
-        // this.SetHandler((options, fileSystem, blogBaseDir, logger) =>
-        //     {
-        //         logger.LogTrace("{Command}.SetHandler", nameof(AddCommand));
-        //         var handler = new AddCommandHandler(logger, new PostManager(fileSystem, blogBaseDir));
-        //         logger.LogDebug("Executing {CommandHandler} from {Command}", nameof(AddCommandHandler), nameof(AddCommand));
-        //         handler.Execute(options);
-        //     },
-        //     new AddCommandOptionsBinder(
-        //     titleArgument, 
-        //     tagsArgument, 
-        //     draftOption, 
-        //     featuredImageOption, 
-        //     isFeaturedOption, 
-        //     isHidden),
-        //     new FileSystemBinder(),
-        //     new BaseDirectoryBinder(),
-        //     new LoggingBinder());
+        private PostManager _postManager;
+        public Task Handle(AddCommand request, CancellationToken cancellationToken)
+        {
+            _postManager = new PostManager(fileSystem, request.BaseDirectory);
+            var postFile = CreatePostFilePath(request.Title, request.IsDraft);
+            AddYamlHeader(postFile, request);
+
+            logger.LogInformation("Added new post at {File}", postFile);
+            return Task.CompletedTask;
+        }
+
+        private string CreatePostFilePath(string title, bool isDraft)
+        {
+            var newPostFilePath = isDraft
+                ? _postManager.CreateDraftPath(title)
+                : _postManager.CreatePostPath(title);
+
+            return newPostFilePath;
+        }
+
+        private void AddYamlHeader(string filePath, AddCommand command)
+        {
+            var yamlHeader = new YamlHeader
+            {
+                Title = command.Title,
+                Tags = [],//command.Tags.ToList(),
+                FeaturedImage = command.FeaturedImage,
+                IsFeatured = command.IsFeatured,
+                IsHidden = command.IsHidden,
+                IsPublished = !command.IsDraft
+            };
+
+            var yamlHeaderText = _postManager.YamlConvert.Serialise(yamlHeader);
+
+            _postManager.FileSystem.File.AppendAllText(filePath, yamlHeaderText);
+        }
     }
 }

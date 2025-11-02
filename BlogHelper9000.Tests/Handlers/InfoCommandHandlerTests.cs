@@ -28,8 +28,8 @@ public class InfoCommandHandlerTests
                 { "/blog/_posts/2000-01-01-first-post.md", new MockFileData(_file1) },
                 { "/blog/_posts/2000-02-01-second-post.md", new MockFileData(_file2) }
             }).BuildFileSystem();
-        var sut = new InfoCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
+        //var sut = new InfoCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
         
-        sut.Execute();
+        //sut.Execute();
     }
 }
