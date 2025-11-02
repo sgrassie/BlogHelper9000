@@ -1,6 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
-using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Imager;
 using BlogHelper9000.Tests.Helpers;
