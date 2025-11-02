@@ -1,4 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
+using BlogHelper9000.Commands;
 using BlogHelper9000.Handlers;
 using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
@@ -6,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace BlogHelper9000.Tests.Handlers;
 
-public class FixCommandHandlerTests
+public class FixCommandTests
 {
     [Fact]
     public void Should_AddPublishedOnFromDateInFilename_WhenPublishedOnIsMissing()
@@ -23,10 +24,15 @@ public class FixCommandHandlerTests
                 { "/blog/_posts/2024-02-13-a-post.md", new MockFileData(header) }
             })
             .BuildFileSystem();
-        
-        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        
-        sut.Execute(true, false, false);
+
+        var command = new FixCommand
+        {
+            BaseDirectory = "/blog",
+            Status = true
+        };
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, fileSystem);
+
+        sut.Handle(command, CancellationToken.None);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -48,9 +54,14 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        
-        sut.Execute(true, false, false);
+        var command = new FixCommand
+        {
+            BaseDirectory = "/blog",
+            Status = true
+        };
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, fileSystem);
+
+        sut.Handle(command, CancellationToken.None);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -73,9 +84,14 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        
-        sut.Execute(false, true, false);
+        var command = new FixCommand
+        {
+            BaseDirectory = "/blog",
+            Description = true
+        };
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, fileSystem);
+
+        sut.Handle(command, CancellationToken.None);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -98,9 +114,14 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        
-        sut.Execute(false, false, true);
+        var command = new FixCommand
+        {
+            BaseDirectory = "/blog",
+            Tags = true
+        };
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, fileSystem);
+
+        sut.Handle(command, CancellationToken.None);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
@@ -123,9 +144,14 @@ public class FixCommandHandlerTests
             })
             .BuildFileSystem();
         
-        var sut = new FixCommandHandler(NullLogger.Instance, new PostManager(fileSystem, "/blog"));
-        
-        sut.Execute(false, false, true);
+        var command = new FixCommand
+        {
+            BaseDirectory = "/blog",
+            Tags = true
+        };
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, fileSystem);
+
+        sut.Handle(command, CancellationToken.None);
 
         var contents = fileSystem.FileContentsAsArray("/blog/_posts/2024-02-13-a-post.md");
 
