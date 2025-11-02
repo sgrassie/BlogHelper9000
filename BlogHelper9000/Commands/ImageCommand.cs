@@ -1,3 +1,4 @@
+
 namespace BlogHelper9000.Commands;
 
 internal sealed class ImageCommand 
@@ -24,24 +25,6 @@ internal sealed class ImageCommand
     //     );
     // }
     //
-    // private class UnsplashCredentialsCommand : Command
-    // {
-    //     public UnsplashCredentialsCommand()
-    //         : base("credentials", "Set the Unsplash credentials")
-    //     {
-    //         var accessKeyArg = new Argument<string>("accessKey", "The Unsplash access key");
-    //         AddArgument(accessKeyArg);
-    //         var secretKeyArg = new Argument<string>("secretKey", "The Unsplash secret key");
-    //         AddArgument(secretKeyArg);
-    //         
-    //         this.SetHandler((accessKey, secretKey, fileSystem, logger) =>
-    //         {
-    //             var handler = new UnsplashCredentialsCommandHandler(fileSystem, logger);
-    //             handler.Execute(accessKey, secretKey);
-    //         }, 
-    //             accessKeyArg, secretKeyArg, new FileSystemBinder(), new LoggingBinder());
-    //     }
-    // }
     //
     //
     // private class UpdateSubCommand : Command
