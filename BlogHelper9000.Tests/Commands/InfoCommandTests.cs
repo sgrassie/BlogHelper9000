@@ -1,7 +1,7 @@
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Tests.Helpers;
 
-namespace BlogHelper9000.Tests.Handlers;
+namespace BlogHelper9000.Tests.Commands;
 
 public class InfoCommandTests
 {
