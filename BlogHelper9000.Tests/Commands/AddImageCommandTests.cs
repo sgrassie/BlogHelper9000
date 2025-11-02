@@ -56,6 +56,7 @@ public class AddImageCommandTests
                        """;
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_posts/2000-01-01-first-post.md", new MockFileData(fileData))
+            .AddFile("/blog/assets/images/branding_logo.png", new MockFileData(string.Empty))
             .BuildFileSystem();
         var imageProcessor = Substitute.For<IImageProcessor>();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
@@ -63,7 +64,8 @@ public class AddImageCommandTests
         
         var command = new AddImageCommand
         {
-            Post = "2000-01-01-first-post.md"
+            Post = "2000-01-01-first-post.md",
+            AuthorBranding = "branding_logo.png"
         };
         var sut = new AddImageCommand.Handler(NullLogger<AddImageCommand.Handler>.Instance, postManager, mockClient, imageProcessor);
 
@@ -86,13 +88,15 @@ public class AddImageCommandTests
                        """;
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_posts/2000-01-01-first-post.md", new MockFileData(fileData))
+            .AddFile("/blog/assets/images/branding_logo.png", new MockFileData(string.Empty))
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var imageProcessor = Substitute.For<IImageProcessor>();
         var mockClient = Substitute.For<IUnsplashClient>();
         var command = new AddImageCommand
         {
-            Post = "2000-01-01-first-post.md"
+            Post = "2000-01-01-first-post.md",
+            AuthorBranding = "branding_logo.png"
         };
         var sut = new AddImageCommand.Handler(NullLogger<AddImageCommand.Handler>.Instance, postManager, mockClient, imageProcessor);
 
