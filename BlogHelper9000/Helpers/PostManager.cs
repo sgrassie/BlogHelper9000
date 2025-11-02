@@ -1,22 +1,32 @@
 using System.Diagnostics.CodeAnalysis;
 using BlogHelper9000.YamlParsing;
+using Microsoft.Extensions.Options;
 using SixLabors.ImageSharp;
 
 namespace BlogHelper9000.Helpers;
 
-public class PostManager(IFileSystem fileSystem, string basePath)
+public class PostManager
 {
+    public PostManager(IFileSystem fileSystem, MarkdownHandler markdownHandler, IOptions<BlogHelperOptions> options)
+    {
+        _fileSystem = fileSystem;
+        _markdownHandler = markdownHandler;
+        _basePath = options.Value.BaseDirectory;
+    }
+
+    private IFileSystem _fileSystem;
+    private readonly MarkdownHandler _markdownHandler;
+    private string _basePath;
     private const string DefaultAuthorBrandingFile = "branding_logo.png";
     private const string DraftsFolder = "_drafts";
     private const string PostsFolder = "_posts";
     private const string ImagesFolder = "assets/images";
 
-    private MarkdownHandler _markdownHandler = new(fileSystem);
 
-    public IFileSystem FileSystem { get; } = fileSystem;
+    public IFileSystem FileSystem => _fileSystem;
     public MarkdownHandler Markdown => _markdownHandler;
     public YamlConvert YamlConvert => _markdownHandler.YamlConvert;
-    public string BasePath { get; } = basePath;
+    public string BasePath => _basePath;
     public string Drafts => $"{BasePath}/{DraftsFolder}";
     public string Posts => $"{BasePath}/{PostsFolder}";
     public string Images => $"{BasePath}/{ImagesFolder}";

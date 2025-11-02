@@ -4,6 +4,7 @@ using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
 
@@ -11,6 +12,15 @@ namespace BlogHelper9000.Tests.Commands;
 
 public class PublishCommandTests 
 {
+    private IOptions<BlogHelperOptions> _options;
+    public PublishCommandTests()
+    {
+        _options = Options.Create(new BlogHelperOptions
+        {
+            BaseDirectory = "./blog"
+        });
+    }
+    
     [Fact]
     public async Task Should_Output_Help()
     {
@@ -32,13 +42,14 @@ public class PublishCommandTests
         var fakeTimeProvider = new FakeTimeProvider();
         fakeTimeProvider.SetUtcNow(new DateTimeOffset(new DateTime(2024, 11, 01)));
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var logger = Substitute.For<MockLogger<PublishCommand.Handler>>();
         var command = new PublishCommand
         {
             BaseDirectory = "/blog",
             Post = "file-does-not-exist.md"
         };
-        var sut = new PublishCommand.Handler(logger, fileSystem, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(logger, postManager, fakeTimeProvider);
         
         await sut.Handle(command, CancellationToken.None);
 
@@ -59,19 +70,19 @@ public class PublishCommandTests
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_drafts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
-        var fileSystemHelper = new PostManager(fileSystem, "/blog");
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         
         var command = new PublishCommand
         {
             BaseDirectory = "/blog",
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, fileSystem, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);
         
         await sut.Handle(command, CancellationToken.None);
-        var publishedPost = fileSystemHelper.FileSystem.Directory
+        var publishedPost = postManager.FileSystem.Directory
             .GetFiles("/blog/_posts/2024/").First(x => x.EndsWith("a-test-post.md"));
-        var parsedPost = fileSystemHelper.Markdown.LoadFile(publishedPost);
+        var parsedPost = postManager.Markdown.LoadFile(publishedPost);
 
         publishedPost.Should().EndWith($"{fakeTimeProvider.GetUtcNow().DateTime:yyyy-MM-dd}-a-test-post.md");
         parsedPost.Metadata.PublishedOn.Should().Be(fakeTimeProvider.GetUtcNow().DateTime.Date);
@@ -92,19 +103,19 @@ public class PublishCommandTests
         var fileSystem = new JekyllBlogFilesystemBuilder()
             .AddFile("/blog/_posts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
-        var fileSystemHelper = new PostManager(fileSystem, "/blog");
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         
         var command = new PublishCommand
         {
             BaseDirectory = "/blog",
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, fileSystem, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);
         
         await sut.Handle(command, CancellationToken.None);
-        var publishedPost = fileSystemHelper.FileSystem.Directory
+        var publishedPost = postManager.FileSystem.Directory
             .GetFiles("/blog/_posts/2024/").First(x => x.EndsWith("a-test-post.md"));
-        var parsedPost = fileSystemHelper.Markdown.LoadFile(publishedPost);
+        var parsedPost = postManager.Markdown.LoadFile(publishedPost);
 
         publishedPost.Should().EndWith($"{fakeTimeProvider.GetUtcNow().DateTime:yyyy-MM-dd}-a-test-post.md");
         parsedPost.Metadata.PublishedOn.Should().Be(fakeTimeProvider.GetUtcNow().DateTime.Date);

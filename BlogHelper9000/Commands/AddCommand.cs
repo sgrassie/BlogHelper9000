@@ -14,13 +14,11 @@ internal sealed class AddCommand : IRequest
     public bool IsHidden { get; set; }
     public string FeaturedImage { get; set; }
 
-    public sealed class Handler(ILogger<Handler> logger, IFileSystem fileSystem)
+    public sealed class Handler(ILogger<Handler> logger, PostManager postManager)
         : IRequestHandler<AddCommand>
     {
-        private PostManager _postManager;
         public Task Handle(AddCommand request, CancellationToken cancellationToken)
         {
-            _postManager = new PostManager(fileSystem, request.BaseDirectory);
             var postFile = CreatePostFilePath(request.Title, request.IsDraft);
             AddYamlHeader(postFile, request);
 
@@ -31,8 +29,8 @@ internal sealed class AddCommand : IRequest
         private string CreatePostFilePath(string title, bool isDraft)
         {
             var newPostFilePath = isDraft
-                ? _postManager.CreateDraftPath(title)
-                : _postManager.CreatePostPath(title);
+                ? postManager.CreateDraftPath(title)
+                : postManager.CreatePostPath(title);
 
             return newPostFilePath;
         }
@@ -49,9 +47,9 @@ internal sealed class AddCommand : IRequest
                 IsPublished = !command.IsDraft
             };
 
-            var yamlHeaderText = _postManager.YamlConvert.Serialise(yamlHeader);
+            var yamlHeaderText = postManager.YamlConvert.Serialise(yamlHeader);
 
-            _postManager.FileSystem.File.AppendAllText(filePath, yamlHeaderText);
+            postManager.FileSystem.File.AppendAllText(filePath, yamlHeaderText);
         }
     }
 }

@@ -8,12 +8,10 @@ public sealed class PublishCommand : IRequest
     public string BaseDirectory { get; set; }
     public string Post { get; set; }
 
-    public class Handler(ILogger<Handler> logger, IFileSystem fileSystem, TimeProvider timeProvider) : IRequestHandler<PublishCommand>
+    public class Handler(ILogger<Handler> logger, PostManager postManager, TimeProvider timeProvider) : IRequestHandler<PublishCommand>
     {
         public Task Handle(PublishCommand request, CancellationToken cancellationToken)
         {
-            var postManager = new PostManager(fileSystem, request.BaseDirectory);
-            
             if (postManager.TryFindPost(request.Post, out var postMarkdown))
             {
                 logger.LogDebug("Found a publishable post at {PostFilePath}", postMarkdown.FilePath);

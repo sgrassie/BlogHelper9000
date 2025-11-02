@@ -2,6 +2,7 @@ namespace BlogHelper9000.Commands;
 
 internal sealed class ImageCommand 
 {
+    
     public ImageCommand() 
     {
         // AddCommand(new AddSubCommand());
@@ -42,28 +43,6 @@ internal sealed class ImageCommand
     //     }
     // }
     //
-    // private class AddSubCommand : Command
-    // {
-    //     public AddSubCommand() 
-    //         : base("add", "Add an image to a post")
-    //     {
-    //         AddArgument(ImageCommandSharedOptions.PostArg);
-    //         AddArgument(ImageCommandSharedOptions.QueryArg);
-    //         
-    //         this.SetHandler(async (post, query, branding, fileSystem, logger, baseDirectory) =>
-    //             {
-    //                 var postManager = new PostManager(fileSystem, baseDirectory);
-    //                 var handler = new ImageCommandAddSubCommandHandler(logger, postManager, new UnsplashClient(logger), new ImageProcessor(logger, postManager));
-    //                 await handler.Execute(post, query, branding);
-    //             }, 
-    //             ImageCommandSharedOptions.PostArg,
-    //             ImageCommandSharedOptions.QueryArg,
-    //             ImageCommandSharedOptions.AuthorBrandingOption,
-    //             new FileSystemBinder(),
-    //             new LoggingBinder(),
-    //             new BaseDirectoryBinder());
-    //     }
-    // }
     //
     // private class UpdateSubCommand : Command
     // {

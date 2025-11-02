@@ -1,11 +1,23 @@
 using BlogHelper9000.Commands;
+using BlogHelper9000.Helpers;
 using BlogHelper9000.Tests.Helpers;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace BlogHelper9000.Tests.Commands;
 
 public class AddCommandTests 
 {
+    private IOptions<BlogHelperOptions> _options;
+    
+    public AddCommandTests()
+    {
+        _options = Options.Create(new BlogHelperOptions
+        {
+            BaseDirectory = "./blog"
+        });
+    }
+    
     [Fact]
     public async Task Should_Output_Help()
     {
@@ -39,13 +51,14 @@ public class AddCommandTests
     public async Task Should_Add_NewPost_AsDraft()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var command = new AddCommand
         {
             BaseDirectory = "/blog",
             Title = "New post in draft",
             IsDraft = true,
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, fileSystem);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
         
         await sut.Handle(command, CancellationToken.None);
 
@@ -59,12 +72,13 @@ public class AddCommandTests
     public async Task Should_Add_NewPost_StraightToPosts()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var command = new AddCommand
         {
             BaseDirectory = "/blog",
             Title = "New post in posts"
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, fileSystem);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
         
         await sut.Handle(command, CancellationToken.None);
 

@@ -5,7 +5,7 @@ using TimeWarp.Nuru;
 
 NuruApp app = new NuruAppBuilder()
     .AddDependencyInjection(config => config.RegisterServicesFromAssemblyContaining<Program>())
-    .AddConfiguration(args)
+    .AddConfiguration()
     .ConfigureServices(services =>
     {
         services.AddSingleton<IFileSystem, FileSystem>();

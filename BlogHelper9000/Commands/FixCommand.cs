@@ -11,11 +11,10 @@ public class FixCommand : IRequest
     public bool Description { get; set; }
     public bool Tags { get; set; }
 
-    public class Handler(ILogger<Handler> logger, IFileSystem fileSystem) : IRequestHandler<FixCommand>
+    public class Handler(ILogger<Handler> logger, PostManager postManager) : IRequestHandler<FixCommand>
     {
         public Task Handle(FixCommand request, CancellationToken cancellationToken)
         {
-            var postManager = new PostManager(fileSystem, request.BaseDirectory);
             foreach (var file in postManager.GetAllPosts())
             {
                 logger.LogInformation("Updating metadata for {PostTitle}", file.Metadata.Title);

@@ -10,12 +10,11 @@ public sealed class InfoCommand : IRequest
 {
     public string BaseDirectory { get; set; }
 
-    public sealed class Handler(ILogger<Handler> logger, IFileSystem fileSystem, InfoCommandReporter reporter)
+    public sealed class Handler(ILogger<Handler> logger, PostManager postManager, InfoCommandReporter reporter)
         : IRequestHandler<InfoCommand>
     {
         public Task Handle(InfoCommand request, CancellationToken cancellationToken)
         {
-            var postManager = new PostManager(fileSystem, request.BaseDirectory);
             
             logger.LogDebug("Loading all posts yaml headers");
             var posts = postManager.LoadYamlHeaderForAllPosts();
