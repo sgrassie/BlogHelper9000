@@ -12,30 +12,11 @@ namespace BlogHelper9000.Tests.Commands;
 
 public class PublishCommandTests 
 {
-    private IOptions<BlogHelperOptions> _options;
-    public PublishCommandTests()
+    private readonly IOptions<BlogHelperOptions> _options = Options.Create(new BlogHelperOptions
     {
-        _options = Options.Create(new BlogHelperOptions
-        {
-            BaseDirectory = "./blog"
-        });
-    }
-    
-    [Fact]
-    public async Task Should_Output_Help()
-    {
-        // var console = new TestConsole();
-        // var command = new PublishCommand();
-        //
-        // await command.InvokeAsync("publish -h", console);
-        //
-        // var lines = console.AsLines().ToList();
-        //
-        // lines.Should().Contain(x => x.StartsWith("Description:"));
-        // lines.Should().Contain(x => x.StartsWith("Arguments:"));
-        // lines.Should().Contain(x => x.StartsWith("<post> "));
-    }
-    
+        BaseDirectory = "./blog"
+    });
+
     [Fact]
     public async Task Should_OutputError_WhenPostToPublish_IsNotFound()
     {
