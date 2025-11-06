@@ -8,7 +8,6 @@ internal sealed class AddCommand : IRequest
 {
     public string Title { get; set; }
     public string Tags { get; set; }
-    public string BaseDirectory { get; set; }
     public bool IsDraft { get; set; }
     public bool IsFeatured { get; set; }
     public bool IsHidden { get; set; }

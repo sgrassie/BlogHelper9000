@@ -6,7 +6,6 @@ namespace BlogHelper9000.Commands;
 
 public class FixCommand : IRequest
 {
-    public string BaseDirectory { get; set; }
     public bool Status { get; set; }
     public bool Description { get; set; }
     public bool Tags { get; set; }

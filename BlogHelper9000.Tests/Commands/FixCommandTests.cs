@@ -65,7 +65,6 @@ public class FixCommandTests
 
         var command = new FixCommand
         {
-            BaseDirectory = "/blog",
             Status = true
         };
         var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
@@ -95,7 +94,6 @@ public class FixCommandTests
         
         var command = new FixCommand
         {
-            BaseDirectory = "/blog",
             Status = true
         };
         var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
@@ -127,7 +125,6 @@ public class FixCommandTests
         
         var command = new FixCommand
         {
-            BaseDirectory = "/blog",
             Description = true
         };
         var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
@@ -158,7 +155,6 @@ public class FixCommandTests
         
         var command = new FixCommand
         {
-            BaseDirectory = "/blog",
             Tags = true
         };
         var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
@@ -190,7 +186,6 @@ public class FixCommandTests
         
         var command = new FixCommand
         {
-            BaseDirectory = "/blog",
             Tags = true
         };
         var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);

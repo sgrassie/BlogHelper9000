@@ -54,7 +54,6 @@ public class AddCommandTests
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var command = new AddCommand
         {
-            BaseDirectory = "/blog",
             Title = "New post in draft",
             IsDraft = true,
         };
@@ -75,7 +74,6 @@ public class AddCommandTests
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var command = new AddCommand
         {
-            BaseDirectory = "/blog",
             Title = "New post in posts"
         };
         var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);

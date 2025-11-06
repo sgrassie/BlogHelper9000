@@ -46,7 +46,6 @@ public class PublishCommandTests
         var logger = Substitute.For<MockLogger<PublishCommand.Handler>>();
         var command = new PublishCommand
         {
-            BaseDirectory = "/blog",
             Post = "file-does-not-exist.md"
         };
         var sut = new PublishCommand.Handler(logger, postManager, fakeTimeProvider);
@@ -74,7 +73,6 @@ public class PublishCommandTests
         
         var command = new PublishCommand
         {
-            BaseDirectory = "/blog",
             Post = "a-test-post.md"
         };
         var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);
@@ -107,7 +105,6 @@ public class PublishCommandTests
         
         var command = new PublishCommand
         {
-            BaseDirectory = "/blog",
             Post = "a-test-post.md"
         };
         var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);

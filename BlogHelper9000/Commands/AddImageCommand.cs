@@ -6,7 +6,6 @@ namespace BlogHelper9000.Commands;
 
 public class AddImageCommand : IRequest
 {
-    public string BaseDirectory { get; set; }
     public string Post { get; set; }
     public string ImageQuery { get; set; }
     public string AuthorBranding { get; set; }

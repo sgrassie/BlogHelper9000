@@ -8,8 +8,6 @@ namespace BlogHelper9000.Commands;
 
 public sealed class InfoCommand : IRequest
 {
-    public string BaseDirectory { get; set; }
-
     public sealed class Handler(ILogger<Handler> logger, PostManager postManager, InfoCommandReporter reporter)
         : IRequestHandler<InfoCommand>
     {

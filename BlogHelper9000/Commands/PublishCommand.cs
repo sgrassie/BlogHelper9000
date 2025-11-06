@@ -5,7 +5,6 @@ namespace BlogHelper9000.Commands;
 
 public sealed class PublishCommand : IRequest
 {
-    public string BaseDirectory { get; set; }
     public string Post { get; set; }
 
     public class Handler(ILogger<Handler> logger, PostManager postManager, TimeProvider timeProvider) : IRequestHandler<PublishCommand>
