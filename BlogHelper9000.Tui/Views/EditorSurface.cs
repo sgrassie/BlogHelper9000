@@ -43,6 +43,7 @@ public class EditorSurface : FrameView
         var content = _fileSystem.File.ReadAllText(path);
         _textView.Text = content;
         Title = $"Editor - {_fileSystem.Path.GetFileName(path)}";
+        SetNeedsDraw();
     }
 
     public void Clear()

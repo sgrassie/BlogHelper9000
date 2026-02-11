@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogHelper9000.Nvim.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogHelper9000.Tui", "BlogHelper9000.Tui\BlogHelper9000.Tui.csproj", "{21ACB382-1B75-4F5F-83BC-CD0ED84B71BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlogHelper9000.Tui.Tests", "BlogHelper9000.Tui.Tests\BlogHelper9000.Tui.Tests.csproj", "{7141AD8D-822D-4E9F-992F-FFB157A5E542}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -128,6 +130,18 @@ Global
 		{21ACB382-1B75-4F5F-83BC-CD0ED84B71BF}.Release|x64.Build.0 = Release|Any CPU
 		{21ACB382-1B75-4F5F-83BC-CD0ED84B71BF}.Release|x86.ActiveCfg = Release|Any CPU
 		{21ACB382-1B75-4F5F-83BC-CD0ED84B71BF}.Release|x86.Build.0 = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|x64.Build.0 = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Debug|x86.Build.0 = Debug|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|x64.ActiveCfg = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|x64.Build.0 = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|x86.ActiveCfg = Release|Any CPU
+		{7141AD8D-822D-4E9F-992F-FFB157A5E542}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

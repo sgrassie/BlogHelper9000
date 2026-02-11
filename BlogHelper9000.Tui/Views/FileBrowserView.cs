@@ -16,10 +16,11 @@ namespace BlogHelper9000.Tui.Views;
 /// </summary>
 public class FileBrowserView : FrameView
 {
-    private readonly ListView _listView;
+    internal readonly ListView _listView;
     private readonly IFileSystem _fileSystem;
     private readonly string _basePath;
     private readonly ObservableCollection<string> _items = new();
+    internal readonly List<string?> _filePaths = new();
 
     public event Action<string>? FileSelected;
 
@@ -38,7 +39,16 @@ public class FileBrowserView : FrameView
             Width = Dim.Fill(),
             Height = Dim.Fill(),
         };
-        _listView.Accepted += OnItemAccepted;
+        _listView.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == KeyCode.Enter)
+            {
+                var path = GetSelectedFilePath();
+                if (path is not null)
+                    FileSelected?.Invoke(path);
+                e.Handled = true;
+            }
+        };
 
         Add(_listView);
     }
@@ -46,6 +56,7 @@ public class FileBrowserView : FrameView
     public void RefreshFiles()
     {
         _items.Clear();
+        _filePaths.Clear();
 
         AddSection("_drafts", _fileSystem.Path.Combine(_basePath, "_drafts"));
         AddSection("_posts", _fileSystem.Path.Combine(_basePath, "_posts"));
@@ -55,12 +66,14 @@ public class FileBrowserView : FrameView
         void AddSection(string label, string path)
         {
             _items.Add($"[{label}]");
+            _filePaths.Add(null);
             if (_fileSystem.Directory.Exists(path))
             {
                 foreach (var file in _fileSystem.Directory.EnumerateFiles(path, "*.md", SearchOption.AllDirectories)
                              .OrderByDescending(f => f))
                 {
                     _items.Add($"  {_fileSystem.Path.GetFileName(file)}");
+                    _filePaths.Add(file);
                 }
             }
         }
@@ -69,33 +82,10 @@ public class FileBrowserView : FrameView
     public string? GetSelectedFilePath()
     {
         var selected = _listView.SelectedItem;
-        if (selected is null || selected < 0 || selected >= _items.Count)
+        if (selected is null || selected < 0 || selected >= _filePaths.Count)
             return null;
 
-        var item = _items[selected.Value].Trim();
-        if (item.StartsWith('[')) return null; // section header
-
-        // Try to find the file in drafts or posts
-        var draftsPath = _fileSystem.Path.Combine(_basePath, "_drafts", item);
-        if (_fileSystem.File.Exists(draftsPath)) return draftsPath;
-
-        // Search posts recursively
-        var postsPath = _fileSystem.Path.Combine(_basePath, "_posts");
-        if (_fileSystem.Directory.Exists(postsPath))
-        {
-            foreach (var file in _fileSystem.Directory.EnumerateFiles(postsPath, item, SearchOption.AllDirectories))
-            {
-                return file;
-            }
-        }
-
-        return null;
+        return _filePaths[selected.Value];
     }
 
-    private void OnItemAccepted(object? sender, CommandEventArgs e)
-    {
-        var path = GetSelectedFilePath();
-        if (path is not null)
-            FileSelected?.Invoke(path);
-    }
 }
