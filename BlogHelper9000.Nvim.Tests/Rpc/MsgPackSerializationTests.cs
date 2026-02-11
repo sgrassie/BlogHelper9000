@@ -7,15 +7,19 @@ namespace BlogHelper9000.Nvim.Tests.Rpc;
 
 public class MsgPackSerializationTests
 {
+    private static readonly MessagePackSerializerOptions Options =
+        MessagePackSerializerOptions.Standard.WithResolver(
+            MessagePack.Resolvers.CompositeResolver.Create(
+                NvimExtensionResolver.Instance,
+                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+
     [Fact]
     public void SerializeRequest_Produces_Valid_MsgPack()
     {
         var bytes = MsgPackRpcClient.SerializeRequest(1, "nvim_get_api_info", []);
 
         // Deserialize and verify structure
-        var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+        var result = MessagePackSerializer.Deserialize<object?>(bytes, Options);
 
         result.Should().BeOfType<object?[]>();
         var arr = (object?[])result!;
@@ -31,8 +35,7 @@ public class MsgPackSerializationTests
         var bytes = MsgPackRpcClient.SerializeRequest(42, "nvim_input", ["ihello"]);
 
         var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+            Options);
 
         var arr = (object?[])result!;
         Convert.ToInt64(arr[1]).Should().Be(42);
@@ -49,8 +52,7 @@ public class MsgPackSerializationTests
         var bytes = MsgPackRpcClient.SerializeRequest(1, "nvim_ui_attach", [80, 24, opts]);
 
         var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+            Options);
 
         var arr = (object?[])result!;
         var paramsArr = (object?[])arr[3]!;
@@ -67,8 +69,7 @@ public class MsgPackSerializationTests
         var bytes = MsgPackRpcClient.SerializeNotification("nvim_command", [":q!"]);
 
         var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+            Options);
 
         result.Should().BeOfType<object?[]>();
         var arr = (object?[])result!;
@@ -83,8 +84,7 @@ public class MsgPackSerializationTests
         var bytes = MsgPackRpcClient.SerializeRequest(1, "test", [null!]);
 
         var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+            Options);
 
         var arr = (object?[])result!;
         var paramsArr = (object?[])arr[3]!;
@@ -97,8 +97,7 @@ public class MsgPackSerializationTests
         var bytes = MsgPackRpcClient.SerializeRequest(1, "test", [true, false]);
 
         var result = MessagePackSerializer.Deserialize<object?>(bytes,
-            MessagePackSerializerOptions.Standard.WithResolver(
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+            Options);
 
         var arr = (object?[])result!;
         var paramsArr = (object?[])arr[3]!;

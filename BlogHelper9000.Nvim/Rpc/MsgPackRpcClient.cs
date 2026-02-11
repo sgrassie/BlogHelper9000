@@ -28,7 +28,9 @@ public sealed class MsgPackRpcClient : IAsyncDisposable
 
     private static readonly MessagePackSerializerOptions TypelessOptions =
         MessagePackSerializerOptions.Standard.WithResolver(
-            MessagePack.Resolvers.TypelessObjectResolver.Instance);
+            MessagePack.Resolvers.CompositeResolver.Create(
+                NvimExtensionResolver.Instance,
+                MessagePack.Resolvers.TypelessObjectResolver.Instance));
 
     public MsgPackRpcClient(Stream input, Stream output, ILogger logger)
     {
@@ -101,29 +103,38 @@ public sealed class MsgPackRpcClient : IAsyncDisposable
                     break;
                 }
 
-                var msg = MessagePackSerializer.Deserialize<object?>(result.Value, TypelessOptions);
-                if (msg is not object?[] arr || arr.Length < 3)
+                try
                 {
-                    _logger.LogWarning("Invalid MsgPack-RPC message received");
-                    continue;
-                }
+                    var msg = MessagePackSerializer.Deserialize<object?>(result.Value, TypelessOptions);
+                    if (msg is not object?[] arr || arr.Length < 3)
+                    {
+                        _logger.LogWarning("Invalid MsgPack-RPC message received");
+                        continue;
+                    }
 
-                var type = Convert.ToInt32(arr[0]);
-                switch (type)
+                    var type = Convert.ToInt32(arr[0]);
+                    switch (type)
+                    {
+                        case 1: // Response: [1, msgid, error, result]
+                            HandleResponse(arr);
+                            break;
+                        case 2: // Notification: [2, method, params]
+                            HandleNotification(arr);
+                            break;
+                        case 0: // Request from nvim (rare)
+                            _logger.LogDebug("Received request from Neovim (not handled): {Method}",
+                                arr[2]?.ToString());
+                            break;
+                        default:
+                            _logger.LogWarning("Unknown MsgPack-RPC type: {Type}", type);
+                            break;
+                    }
+                }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
                 {
-                    case 1: // Response: [1, msgid, error, result]
-                        HandleResponse(arr);
-                        break;
-                    case 2: // Notification: [2, method, params]
-                        HandleNotification(arr);
-                        break;
-                    case 0: // Request from nvim (rare)
-                        _logger.LogDebug("Received request from Neovim (not handled): {Method}",
-                            arr[2]?.ToString());
-                        break;
-                    default:
-                        _logger.LogWarning("Unknown MsgPack-RPC type: {Type}", type);
-                        break;
+                    _logger.LogWarning(ex, "Failed to deserialize MsgPack-RPC message, skipping");
+                    continue;
                 }
             }
         }
