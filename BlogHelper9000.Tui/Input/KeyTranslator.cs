@@ -61,7 +61,9 @@ public static class KeyTranslator
         }
 
         // Printable characters (A-Z, 0-9, etc.)
-        if (key.IsKeyCodeAtoZ)
+        // Note: key.IsKeyCodeAtoZ returns false when modifier masks are set,
+        // so we check the base key code (with modifiers stripped) directly.
+        if (baseCode >= KeyCode.A && baseCode <= KeyCode.Z)
         {
             var ch = (char)baseCode;
 

@@ -1,4 +1,7 @@
 using Microsoft.Extensions.Logging;
+using Terminal.Gui.App;
+using Terminal.Gui.Drivers;
+using Terminal.Gui.Input;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Views;
 
@@ -24,11 +27,18 @@ public class BlogWorkspaceWindow : Window
     {
         _nvimEditor = nvimEditor;
 
+        _nvimEditor.ModeChanged += mode =>
+        {
+            Title = $"BlogHelper9000 [{mode}]";
+            SetNeedsDraw();
+        };
+
         Initialized += async (_, _) =>
         {
             try
             {
                 await _nvimEditor.StartAsync();
+                Application.Invoke(() => _editorView.SetFocus());
             }
             catch (Exception ex)
             {
@@ -58,9 +68,28 @@ public class BlogWorkspaceWindow : Window
 
         _fileBrowser.FileSelected += OnFileSelected;
 
+        _editorView.X = Pos.Right(_fileBrowser);
         Add(_fileBrowser, _editorView);
 
         _fileBrowser.RefreshFiles();
+    }
+
+    protected override bool OnKeyDown(Key key)
+    {
+        // When the editor view has focus, forward ALL keys to Neovim.
+        // We cannot rely on Terminal.Gui's internal dispatch chain
+        // (base.OnKeyDown) to propagate keys to the focused subview
+        // in the develop track — so we forward explicitly.
+        // Global shortcuts (Ctrl+B/P/Q) are handled by Application.KeyDown
+        // which fires before OnKeyDown and sets Handled=true, so they
+        // never reach here.
+        if (_nvimEditor is not null && _editorView.HasFocus)
+        {
+            _nvimEditor.SendKeyToNvim(key);
+            return true;
+        }
+
+        return base.OnKeyDown(key);
     }
 
     public void ToggleFileBrowser()

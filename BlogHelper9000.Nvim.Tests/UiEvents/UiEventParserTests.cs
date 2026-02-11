@@ -181,6 +181,105 @@ public class UiEventParserTests
     }
 
     [Fact]
+    public void Parse_ModeInfoSet_Event()
+    {
+        var normalMode = new Dictionary<object, object>
+        {
+            { "cursor_shape", "block" },
+            { "cell_percentage", 0 },
+            { "attr_id", 0 },
+            { "name", "normal" },
+            { "short_name", "n" },
+            { "blinkwait", 0 },
+            { "blinkon", 0 },
+            { "blinkoff", 0 },
+        };
+        var insertMode = new Dictionary<object, object>
+        {
+            { "cursor_shape", "vertical" },
+            { "cell_percentage", 25 },
+            { "attr_id", 1 },
+            { "name", "insert" },
+            { "short_name", "i" },
+            { "blinkwait", 700 },
+            { "blinkon", 400 },
+            { "blinkoff", 250 },
+        };
+        var replaceMode = new Dictionary<object, object>
+        {
+            { "cursor_shape", "horizontal" },
+            { "cell_percentage", 20 },
+            { "attr_id", 2 },
+            { "name", "replace" },
+            { "short_name", "r" },
+            { "blinkwait", 0 },
+            { "blinkon", 0 },
+            { "blinkoff", 0 },
+        };
+
+        object?[] redrawArgs = [
+            new object?[] {
+                "mode_info_set",
+                new object?[] { true, new object?[] { normalMode, insertMode, replaceMode } }
+            }
+        ];
+
+        var events = UiEventParser.Parse(redrawArgs, Logger).ToList();
+
+        var evt = events.Should().ContainSingle().Which.Should().BeOfType<ModeInfoSetEvent>().Which;
+        evt.CursorStyleEnabled.Should().BeTrue();
+        evt.ModeInfo.Should().HaveCount(3);
+
+        evt.ModeInfo[0].CursorShape.Should().Be("block");
+        evt.ModeInfo[0].Name.Should().Be("normal");
+        evt.ModeInfo[0].ShortName.Should().Be("n");
+        evt.ModeInfo[0].BlinkWait.Should().Be(0);
+
+        evt.ModeInfo[1].CursorShape.Should().Be("vertical");
+        evt.ModeInfo[1].CellPercentage.Should().Be(25);
+        evt.ModeInfo[1].AttrId.Should().Be(1);
+        evt.ModeInfo[1].Name.Should().Be("insert");
+        evt.ModeInfo[1].BlinkWait.Should().Be(700);
+        evt.ModeInfo[1].BlinkOn.Should().Be(400);
+        evt.ModeInfo[1].BlinkOff.Should().Be(250);
+
+        evt.ModeInfo[2].CursorShape.Should().Be("horizontal");
+        evt.ModeInfo[2].Name.Should().Be("replace");
+    }
+
+    [Fact]
+    public void Parse_ModeInfoSet_WithMissingKeys_UsesDefaults()
+    {
+        var sparseMode = new Dictionary<object, object>
+        {
+            { "name", "normal" },
+        };
+
+        object?[] redrawArgs = [
+            new object?[] {
+                "mode_info_set",
+                new object?[] { false, new object?[] { sparseMode } }
+            }
+        ];
+
+        var events = UiEventParser.Parse(redrawArgs, Logger).ToList();
+
+        var evt = events.Should().ContainSingle().Which.Should().BeOfType<ModeInfoSetEvent>().Which;
+        evt.CursorStyleEnabled.Should().BeFalse();
+        evt.ModeInfo.Should().HaveCount(1);
+
+        var mode = evt.ModeInfo[0];
+        mode.CursorShape.Should().Be("block");
+        mode.CellPercentage.Should().Be(100);
+        mode.AttrId.Should().Be(0);
+        mode.Name.Should().Be("normal");
+        mode.ShortName.Should().Be("");
+        mode.BlinkWait.Should().Be(0);
+        mode.BlinkOn.Should().Be(0);
+        mode.BlinkOff.Should().Be(0);
+    }
+
+    [Fact]
     public void Parse_Unknown_Event_Returns_Empty()
     {
         object?[] redrawArgs = [

@@ -26,6 +26,10 @@ public class NvimEditorView : View
     private int _defaultFg = 0xCCCCCC;
     private int _defaultBg = 0x1E1E1E;
     private string _currentMode = "normal";
+    private ModeInfo[] _modeInfoTable = [];
+    private bool _cursorStyleEnabled;
+    private int _currentModeIndex;
+    private CursorStyle _currentCursorStyle = CursorStyle.SteadyBlock;
     private Task? _eventLoop;
     private bool _started;
 
@@ -41,6 +45,8 @@ public class NvimEditorView : View
     }
 
     public string CurrentMode => _currentMode;
+
+    public event Action<string>? ModeChanged;
 
     /// <summary>
     /// Starts the Neovim process and attaches the UI.
@@ -119,7 +125,8 @@ public class NvimEditorView : View
             for (var col = 0; col < Math.Min(_grid.Width, vp.Width); col++)
             {
                 var cell = _grid[row, col];
-                var attr = GetAttribute(cell.HlId);
+                var isCursor = HasFocus && row == _grid.CursorRow && col == _grid.CursorCol;
+                var attr = isCursor ? GetCursorAttribute(cell.HlId) : GetAttribute(cell.HlId);
                 SetAttribute(attr);
                 Move(col, row);
 
@@ -131,14 +138,26 @@ public class NvimEditorView : View
             }
         }
 
-        // Draw cursor
+        // Terminal cursor (supplements the software cursor above)
         if (_grid.CursorRow < vp.Height && _grid.CursorCol < vp.Width)
         {
-            Move(_grid.CursorCol, _grid.CursorRow);
+            var viewportPos = new System.Drawing.Point(_grid.CursorCol, _grid.CursorRow);
+            var screenPos = ViewportToScreen(ref viewportPos);
+            Cursor = new Cursor { Position = screenPos, Style = _currentCursorStyle };
+            SetCursorNeedsUpdate();
         }
 
         _grid.ClearDirtyRows();
         return true;
+    }
+
+    /// <summary>
+    /// Public entry point so that parent views (e.g. BlogWorkspaceWindow)
+    /// can forward keys to Neovim when this view does not have focus.
+    /// </summary>
+    public bool SendKeyToNvim(Key key)
+    {
+        return OnKeyDown(key);
     }
 
     /// <summary>
@@ -189,8 +208,21 @@ public class NvimEditorView : View
                         _defaultBg = colors.Background;
                         break;
 
+                    case ModeInfoSetEvent modeInfoSet:
+                        _modeInfoTable = modeInfoSet.ModeInfo;
+                        _cursorStyleEnabled = modeInfoSet.CursorStyleEnabled;
+                        break;
+
                     case ModeChangeEvent modeChange:
                         _currentMode = modeChange.Mode;
+                        _currentModeIndex = modeChange.ModeIndex;
+                        if (_cursorStyleEnabled && _currentModeIndex < _modeInfoTable.Length)
+                            _currentCursorStyle = MapCursorShape(_modeInfoTable[_currentModeIndex]);
+                        Application.Invoke(() =>
+                        {
+                            ModeChanged?.Invoke(FormatModeDisplay(_currentMode));
+                            SetNeedsDraw();
+                        });
                         break;
 
                     case FlushEvent:
@@ -210,6 +242,48 @@ public class NvimEditorView : View
         {
             _logger.LogError(ex, "Error in NvimEditorView event loop");
         }
+    }
+
+    internal static CursorStyle MapCursorShape(ModeInfo modeInfo)
+    {
+        var hasBlink = modeInfo.BlinkWait > 0 || modeInfo.BlinkOn > 0;
+        return modeInfo.CursorShape switch
+        {
+            "block" => hasBlink ? CursorStyle.BlinkingBlock : CursorStyle.SteadyBlock,
+            "horizontal" => hasBlink ? CursorStyle.BlinkingUnderline : CursorStyle.SteadyUnderline,
+            "vertical" => hasBlink ? CursorStyle.BlinkingBar : CursorStyle.SteadyBar,
+            _ => CursorStyle.SteadyBlock,
+        };
+    }
+
+    internal static string FormatModeDisplay(string mode) => mode.ToUpperInvariant() switch
+    {
+        "NORMAL" => "NORMAL",
+        "INSERT" => "INSERT",
+        "VISUAL" => "VISUAL",
+        "VISUAL LINE" => "V-LINE",
+        "VISUAL BLOCK" => "V-BLOCK",
+        "REPLACE" => "REPLACE",
+        "CMDLINE_NORMAL" or "CMDLINE_INSERT" => "COMMAND",
+        _ => mode.ToUpperInvariant(),
+    };
+
+    private Attribute GetCursorAttribute(int hlId)
+    {
+        var fg = _defaultFg;
+        var bg = _defaultBg;
+
+        if (hlId != 0 && _hlAttrs.TryGetValue(hlId, out var attrs))
+        {
+            if (attrs.Foreground.HasValue) fg = attrs.Foreground.Value;
+            if (attrs.Background.HasValue) bg = attrs.Background.Value;
+        }
+
+        // Swap fg/bg for cursor visibility
+        var fgColor = new Color((bg >> 16) & 0xFF, (bg >> 8) & 0xFF, bg & 0xFF);
+        var bgColor = new Color((fg >> 16) & 0xFF, (fg >> 8) & 0xFF, fg & 0xFF);
+
+        return new Attribute(fgColor, bgColor);
     }
 
     private Attribute GetAttribute(int hlId)

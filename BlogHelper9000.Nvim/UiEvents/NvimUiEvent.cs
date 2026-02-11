@@ -36,3 +36,17 @@ public record DefaultColorsSetEvent(int Foreground, int Background, int Special)
 public record ModeChangeEvent(string Mode, int ModeIndex) : NvimUiEvent;
 
 public record GridClearEvent(int Grid) : NvimUiEvent;
+
+public record ModeInfo
+{
+    public string CursorShape { get; init; } = "block";
+    public int CellPercentage { get; init; } = 100;
+    public int AttrId { get; init; }
+    public string Name { get; init; } = "";
+    public string ShortName { get; init; } = "";
+    public int BlinkWait { get; init; }
+    public int BlinkOn { get; init; }
+    public int BlinkOff { get; init; }
+}
+
+public record ModeInfoSetEvent(bool CursorStyleEnabled, ModeInfo[] ModeInfo) : NvimUiEvent;

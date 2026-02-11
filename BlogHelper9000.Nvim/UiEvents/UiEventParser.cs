@@ -52,6 +52,7 @@ internal static class UiEventParser
                     ToInt(args[0]), ToInt(args[1]), ToInt(args[2])),
                 "mode_change" => new ModeChangeEvent(
                     args[0]?.ToString() ?? "", ToInt(args[1])),
+                "mode_info_set" => ParseModeInfoSet(args),
                 _ => null // Ignore unhandled events
             };
         }
@@ -110,4 +111,30 @@ internal static class UiEventParser
 
     private static bool GetBool(Dictionary<object, object> map, string key) =>
         map.TryGetValue(key, out var val) && Convert.ToBoolean(val);
+
+    private static string GetString(Dictionary<object, object> map, string key, string defaultValue) =>
+        map.TryGetValue(key, out var val) ? val?.ToString() ?? defaultValue : defaultValue;
+
+    private static ModeInfoSetEvent ParseModeInfoSet(object?[] args)
+    {
+        var cursorStyleEnabled = Convert.ToBoolean(args[0]);
+        var modeInfoArray = args[1] as object?[] ?? [];
+        var modes = new List<ModeInfo>();
+        foreach (var modeObj in modeInfoArray)
+        {
+            if (modeObj is not Dictionary<object, object> map) continue;
+            modes.Add(new ModeInfo
+            {
+                CursorShape = GetString(map, "cursor_shape", "block"),
+                CellPercentage = GetOptionalInt(map, "cell_percentage") ?? 100,
+                AttrId = GetOptionalInt(map, "attr_id") ?? 0,
+                Name = GetString(map, "name", ""),
+                ShortName = GetString(map, "short_name", ""),
+                BlinkWait = GetOptionalInt(map, "blinkwait") ?? 0,
+                BlinkOn = GetOptionalInt(map, "blinkon") ?? 0,
+                BlinkOff = GetOptionalInt(map, "blinkoff") ?? 0,
+            });
+        }
+        return new ModeInfoSetEvent(cursorStyleEnabled, modes.ToArray());
+    }
 }

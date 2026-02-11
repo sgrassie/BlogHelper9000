@@ -79,9 +79,10 @@ if (!noNvim)
 }
 
 var provider = services.BuildServiceProvider();
-var logger = provider.GetRequiredService<ILoggerFactory>().CreateLogger("TUI");
+var logg = provider.GetRequiredService<ILoggerFactory>().CreateLogger("TUI");
 
 Application.Init();
+Application.KeyBindings.Remove(Application.QuitKey);
 
 try
 {
