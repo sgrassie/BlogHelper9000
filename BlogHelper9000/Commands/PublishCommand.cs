@@ -1,15 +1,17 @@
 using BlogHelper9000.Core.Helpers;
-using TimeWarp.Mediator;
+using TimeWarp.Nuru;
 
 namespace BlogHelper9000.Commands;
 
-public sealed class PublishCommand : IRequest
+public sealed class PublishCommand : ICommand<Unit>
 {
+    [Parameter(Description = "The post to publish.")]
     public string Post { get; set; }
 
-    public class Handler(ILogger<Handler> logger, PostManager postManager, TimeProvider timeProvider) : IRequestHandler<PublishCommand>
+    public class Handler(ILogger<Handler> logger, PostManager postManager, TimeProvider timeProvider) 
+        : ICommandHandler<PublishCommand, Unit>
     {
-        public Task Handle(PublishCommand request, CancellationToken cancellationToken)
+        public ValueTask<Unit> Handle(PublishCommand request, CancellationToken cancellationToken)
         {
             if (postManager.TryFindPost(request.Post, out var postMarkdown))
             {
@@ -45,7 +47,7 @@ public sealed class PublishCommand : IRequest
                 logger.LogError("Could not find {Post} to publish", request.Post);
             }
 
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

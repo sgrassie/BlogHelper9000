@@ -1,17 +1,20 @@
 using System.Text.Json;
 using BlogHelper9000.Core.Models;
-using TimeWarp.Mediator;
+using TimeWarp.Nuru;
 
 namespace BlogHelper9000.Commands;
 
-public class UnsplashCredentialsCommand : IRequest
+public class UnsplashCredentialsCommand : ICommand<Unit>
 {
+    [Parameter(Description = "The access key for the Unsplash API.")]
     public string AccessKey { get; set; }
+    [Parameter(Description = "The secret")]
     public string SecretKey { get; set; }
 
-    public class Handler(ILogger<Handler> logger, IFileSystem fileSystem) : IRequestHandler<UnsplashCredentialsCommand>
+    public class Handler(ILogger<Handler> logger, IFileSystem fileSystem) 
+        : ICommandHandler<UnsplashCredentialsCommand, Unit>
     {
-        public Task Handle(UnsplashCredentialsCommand request, CancellationToken cancellationToken)
+        public ValueTask<Unit> Handle(UnsplashCredentialsCommand request, CancellationToken cancellationToken)
         {
             var credentials = $"{request.AccessKey}:{request.SecretKey}";
             var model = new AppDataModel { UnsplashCredentials = credentials };
@@ -20,7 +23,7 @@ public class UnsplashCredentialsCommand : IRequest
                 "bloghelper9000.json");
             fileSystem.File.WriteAllText(path, json);
             logger.LogInformation("Unsplash credentials set.");
-            return Task.CompletedTask;
+            return default;
         }
     }
 }

@@ -1,18 +1,21 @@
 using System.Globalization;
 using BlogHelper9000.Core.Helpers;
-using TimeWarp.Mediator;
+using TimeWarp.Nuru;
 
 namespace BlogHelper9000.Commands;
 
-public class FixCommand : IRequest
+public class FixCommand : ICommand<Unit>
 {
+    [Parameter(Description = "The query to use when searching for the image on Unsplash.")]
     public bool Status { get; set; }
+    [Parameter(Description = "Fix description by copying from metadescription if it exists.")]
     public bool Description { get; set; }
+        [Parameter(Description = "Fix tags by copying from category or categories if they exist.")]
     public bool Tags { get; set; }
 
-    public class Handler(ILogger<Handler> logger, PostManager postManager) : IRequestHandler<FixCommand>
+    public class Handler(ILogger<Handler> logger, PostManager postManager) : ICommandHandler<FixCommand, Unit>
     {
-        public Task Handle(FixCommand request, CancellationToken cancellationToken)
+        public ValueTask<Unit> Handle(FixCommand request, CancellationToken cancellationToken)
         {
             foreach (var file in postManager.GetAllPosts())
             {
@@ -25,7 +28,7 @@ public class FixCommand : IRequest
                 postManager.Markdown.UpdateFile(file);
             }
 
-            return Task.CompletedTask;
+            return default;
         }
 
         private void FixPublishedStatus(MarkdownFile file)

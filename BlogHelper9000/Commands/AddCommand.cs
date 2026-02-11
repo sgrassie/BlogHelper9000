@@ -1,28 +1,35 @@
 using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.YamlParsing;
-using TimeWarp.Mediator;
+using TimeWarp.Nuru;
 
 namespace BlogHelper9000.Commands;
 
-internal sealed class AddCommand : IRequest
+[NuruRoute("add", Description =  "Add a new post")]
+public sealed class AddCommand : ICommand<Unit>
 {
+    [Parameter(Description = "The title of the post to add.")]
     public string Title { get; set; }
+    [Parameter(Description = "Comma-separated list of tags for the post.")]
     public string Tags { get; set; }
+    [Option("is-draft", "d", Description = "Indicates whether the post is a draft.")]
     public bool IsDraft { get; set; }
+    [Option("is-featured", "f", Description = "Indicates whether the post is featured.")]
     public bool IsFeatured { get; set; }
+    [Option("is-hidden", "h", Description = "Indicates whether the post is hidden.")]
     public bool IsHidden { get; set; }
+    [Option("featured-image", "i", Description = "The path to the featured image for the post.")]
     public string FeaturedImage { get; set; }
 
     public sealed class Handler(ILogger<Handler> logger, PostManager postManager)
-        : IRequestHandler<AddCommand>
+        : ICommandHandler<AddCommand, Unit>
     {
-        public Task Handle(AddCommand request, CancellationToken cancellationToken)
+        public ValueTask<Unit> Handle(AddCommand request, CancellationToken cancellationToken)
         {
             var postFile = CreatePostFilePath(request.Title, request.IsDraft);
             AddYamlHeader(postFile, request);
 
             logger.LogInformation("Added new post at {File}", postFile);
-            return Task.CompletedTask;
+            return default;
         }
 
         private string CreatePostFilePath(string title, bool isDraft)

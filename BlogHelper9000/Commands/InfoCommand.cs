@@ -2,16 +2,16 @@ using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Models;
 using BlogHelper9000.Reporters;
 using BlogHelper9000.Core.YamlParsing;
-using TimeWarp.Mediator;
+using TimeWarp.Nuru;
 
 namespace BlogHelper9000.Commands;
 
-public sealed class InfoCommand : IRequest
+public sealed class InfoCommand : ICommand<Unit>
 {
     public sealed class Handler(ILogger<Handler> logger, PostManager postManager, InfoCommandReporter reporter)
-        : IRequestHandler<InfoCommand>
+        : ICommandHandler<InfoCommand, Unit>
     {
-        public Task Handle(InfoCommand request, CancellationToken cancellationToken)
+        public ValueTask<Unit> Handle(InfoCommand request, CancellationToken cancellationToken)
         {
 
             logger.LogDebug("Loading all posts yaml headers");
@@ -25,7 +25,7 @@ public sealed class InfoCommand : IRequest
 
             reporter?.Report(blogDetails);
 
-            return Task.CompletedTask;
+            return default;
         }
 
         private static void DetermineDaysSinceLastPost(BlogMetaInformation blogBlogMetaInformation)
