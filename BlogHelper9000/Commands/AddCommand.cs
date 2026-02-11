@@ -1,5 +1,5 @@
-using BlogHelper9000.Helpers;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.YamlParsing;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BlogHelper9000.Models;
+using BlogHelper9000.Core.Models;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;

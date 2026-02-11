@@ -1,7 +1,7 @@
-using BlogHelper9000.Helpers;
-using BlogHelper9000.Models;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Models;
 using BlogHelper9000.Reporters;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.Core.YamlParsing;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;
@@ -13,7 +13,7 @@ public sealed class InfoCommand : IRequest
     {
         public Task Handle(InfoCommand request, CancellationToken cancellationToken)
         {
-            
+
             logger.LogDebug("Loading all posts yaml headers");
             var posts = postManager.LoadYamlHeaderForAllPosts();
             var blogDetails = new BlogMetaInformation();
@@ -24,7 +24,7 @@ public sealed class InfoCommand : IRequest
             DetermineDaysSinceLastPost(blogDetails);
 
             reporter?.Report(blogDetails);
-            
+
             return Task.CompletedTask;
         }
 

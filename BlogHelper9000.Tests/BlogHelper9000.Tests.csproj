@@ -38,6 +38,9 @@
 
     <ItemGroup>
         <ProjectReference Include="..\BlogHelper9000\BlogHelper9000.csproj"/>
+        <ProjectReference Include="..\BlogHelper9000.Core\BlogHelper9000.Core.csproj"/>
+        <ProjectReference Include="..\BlogHelper9000.Imaging\BlogHelper9000.Imaging.csproj"/>
+        <ProjectReference Include="..\BlogHelper9000.TestHelpers\BlogHelper9000.TestHelpers.csproj"/>
     </ItemGroup>
 
 </Project>

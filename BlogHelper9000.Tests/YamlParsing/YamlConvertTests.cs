@@ -1,5 +1,5 @@
 using System.IO.Abstractions.TestingHelpers;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.Core.YamlParsing;
 
 
 namespace BlogHelper9000.Tests.YamlParsing;
@@ -18,7 +18,7 @@ featured: false
 hidden: false
 ---
 post content that's not parsed";
-        
+
         var yamlObject = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
 
         yamlObject.Layout.Should().Be("post");
@@ -51,7 +51,7 @@ published: 17/11/2013
 
         header.PublishedOn.Should().Be(new DateTime(2013, 11, 17));
     }
-    
+
     [Fact]
     public void Should_Deserialise_Bools_Correctly()
     {
@@ -63,7 +63,7 @@ ispublished: True
 
         header.IsPublished.Should().BeTrue();
     }
-    
+
     [Fact]
     public void Should_Deserialise_Bools_Correctly_WhenValueIsLowercase()
     {

@@ -1,16 +1,17 @@
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
-using BlogHelper9000.Helpers;
-using BlogHelper9000.Tests.Helpers;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace BlogHelper9000.Tests.Commands;
 
-public class FixCommandTests 
+public class FixCommandTests
 {
     private IOptions<BlogHelperOptions> _options;
-    
+
     public FixCommandTests()
     {
         _options = Options.Create(new BlogHelperOptions
@@ -18,7 +19,7 @@ public class FixCommandTests
             BaseDirectory = "./blog"
         });
     }
-    
+
     [Fact]
     public async Task Should_Output_Help()
     {
@@ -29,7 +30,7 @@ public class FixCommandTests
         // console.Out.ToString()
         //     .Should().Contain("fix [options]");
     }
-    
+
     [Theory]
     [InlineData("-s, --status", "Fix the published status of a post")]
     [InlineData("-d, --description", "Fix the description of a post")]
@@ -45,7 +46,7 @@ public class FixCommandTests
         //
         // lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));
     }
-    
+
     [Fact]
     public void Should_AddPublishedOnFromDateInFilename_WhenPublishedOnIsMissing()
     {
@@ -75,7 +76,7 @@ public class FixCommandTests
 
         contents.Should().Contain(x => x == "published: 13/02/2024");
     }
-    
+
     [Fact]
     public void Should_Update_PublishedOn_To_DateInFilename()
     {
@@ -91,7 +92,7 @@ public class FixCommandTests
             })
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
-        
+
         var command = new FixCommand
         {
             Status = true
@@ -104,7 +105,7 @@ public class FixCommandTests
 
         contents.Should().Contain(x => x == "published: 13/02/2024");
     }
-    
+
     [Fact]
     public void Should_Update_Description_ToUseCorrectProperty()
     {
@@ -120,9 +121,9 @@ public class FixCommandTests
                 { "/blog/_posts/2024-02-13-a-post.md", new MockFileData(header) }
             })
             .BuildFileSystem();
-        
+
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
-        
+
         var command = new FixCommand
         {
             Description = true
@@ -135,7 +136,7 @@ public class FixCommandTests
 
         contents.Should().Contain(x => x == "description: writing-a-generic-plugin-manager-in-c");
     }
-    
+
     [Fact]
     public void Should_Update_UpdateCategory_ToUseCorrectTagProperty()
     {
@@ -152,7 +153,7 @@ public class FixCommandTests
             })
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
-        
+
         var command = new FixCommand
         {
             Tags = true
@@ -165,7 +166,7 @@ public class FixCommandTests
 
         contents.Should().Contain(x => x == "tags: ['C#','Coding','Plugin Manager']");
     }
-    
+
     [Fact]
     public void Should_Update_UpdateCategories_ToUseCorrectTagProperty()
     {
@@ -181,9 +182,9 @@ public class FixCommandTests
                 { "/blog/_posts/2024-02-13-a-post.md", new MockFileData(header) }
             })
             .BuildFileSystem();
-        
+
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
-        
+
         var command = new FixCommand
         {
             Tags = true

@@ -1,5 +1,5 @@
-using BlogHelper9000.Models;
-using BlogHelper9000.YamlParsing;
+using BlogHelper9000.Core.Models;
+using BlogHelper9000.Core.YamlParsing;
 
 namespace BlogHelper9000.Reporters;
 

@@ -1,15 +1,16 @@
 using BlogHelper9000.Commands;
-using BlogHelper9000.Helpers;
-using BlogHelper9000.Tests.Helpers;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 
 namespace BlogHelper9000.Tests.Commands;
 
-public class AddCommandTests 
+public class AddCommandTests
 {
     private IOptions<BlogHelperOptions> _options;
-    
+
     public AddCommandTests()
     {
         _options = Options.Create(new BlogHelperOptions
@@ -17,7 +18,7 @@ public class AddCommandTests
             BaseDirectory = "./blog"
         });
     }
-    
+
     [Fact]
     public async Task Should_Output_Help()
     {
@@ -25,10 +26,10 @@ public class AddCommandTests
         // var command = new AddCommand();
         //
         // await command.InvokeAsync("add -h", console);
-        
+
        // console.Out.ToString().Should().Contain("add <title> [<tags>...] [options]");
     }
-    
+
     [Theory]
     [InlineData("--draft", "Adds the post as a draft")]
     [InlineData("--is-featured", "Sets the post as a featured post")]
@@ -46,7 +47,7 @@ public class AddCommandTests
         //
         // lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));
     }
-    
+
     [Fact]
     public async Task Should_Add_NewPost_AsDraft()
     {
@@ -58,7 +59,7 @@ public class AddCommandTests
             IsDraft = true,
         };
         var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
-        
+
         await sut.Handle(command, CancellationToken.None);
 
         fileSystem
@@ -77,7 +78,7 @@ public class AddCommandTests
             Title = "New post in posts"
         };
         var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
-        
+
         await sut.Handle(command, CancellationToken.None);
 
         fileSystem

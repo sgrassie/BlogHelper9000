@@ -1,5 +1,5 @@
-using BlogHelper9000.Helpers;
-using BlogHelper9000.Imager;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Imaging;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;
@@ -10,7 +10,7 @@ public class AddImageCommand : IRequest
     public string ImageQuery { get; set; }
     public string AuthorBranding { get; set; }
 
-    public class Handler(ILogger<AddImageCommand.Handler> logger, PostManager postManager, IUnsplashClient unsplashClient, IImageProcessor imageProcessor) 
+    public class Handler(ILogger<AddImageCommand.Handler> logger, PostManager postManager, IUnsplashClient unsplashClient, IImageProcessor imageProcessor)
         : IRequestHandler<AddImageCommand>
     {
         public async Task Handle(AddImageCommand request, CancellationToken cancellationToken)
@@ -33,5 +33,5 @@ public class AddImageCommand : IRequest
             }
         }
     }
-        
+
 }

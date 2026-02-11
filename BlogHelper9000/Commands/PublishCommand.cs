@@ -1,4 +1,4 @@
-using BlogHelper9000.Helpers;
+using BlogHelper9000.Core.Helpers;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;
@@ -44,7 +44,7 @@ public sealed class PublishCommand : IRequest
             {
                 logger.LogError("Could not find {Post} to publish", request.Post);
             }
-            
+
             return Task.CompletedTask;
         }
     }

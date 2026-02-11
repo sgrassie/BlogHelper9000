@@ -1,5 +1,5 @@
 using System.Globalization;
-using BlogHelper9000.Helpers;
+using BlogHelper9000.Core.Helpers;
 using TimeWarp.Mediator;
 
 namespace BlogHelper9000.Commands;
@@ -24,7 +24,7 @@ public class FixCommand : IRequest
 
                 postManager.Markdown.UpdateFile(file);
             }
-            
+
             return Task.CompletedTask;
         }
 

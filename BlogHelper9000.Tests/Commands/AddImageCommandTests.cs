@@ -1,8 +1,9 @@
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
-using BlogHelper9000.Helpers;
-using BlogHelper9000.Imager;
-using BlogHelper9000.Tests.Helpers;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Imaging;
+using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -13,7 +14,7 @@ namespace BlogHelper9000.Tests.Commands;
 public class AddImageCommandTests
 {
     private IOptions<BlogHelperOptions> _options;
-    
+
     public AddImageCommandTests()
     {
         _options = Options.Create(new BlogHelperOptions
@@ -21,7 +22,7 @@ public class AddImageCommandTests
             BaseDirectory = "/blog"
         });
     }
-    
+
     [Fact]
     public async Task Should_LogCorrectError_WhenPostCannotBeFound()
     {
@@ -35,7 +36,7 @@ public class AddImageCommandTests
         {
             Post = "file-does-not-exist.md"
         };
-        
+
         var sut = new AddImageCommand.Handler(logger, postManager, mockClient, new ImageProcessor(logger, postManager));
 
         await sut.Handle(command, CancellationToken.None);
@@ -60,7 +61,7 @@ public class AddImageCommandTests
         var imageProcessor = Substitute.For<IImageProcessor>();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var mockClient = Substitute.For<IUnsplashClient>();
-        
+
         var command = new AddImageCommand
         {
             Post = "2000-01-01-first-post.md",
@@ -72,7 +73,7 @@ public class AddImageCommandTests
 
         await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>());
     }
-        
+
     [Theory]
     [InlineData("2000-01-01-first-post.md")]
     [InlineData("/_posts/2000-01-01-first-post.md")]

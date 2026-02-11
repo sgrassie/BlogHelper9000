@@ -9,8 +9,8 @@ Setup<Parameters>(context =>
 Task("Clean")
 .Does<Parameters>((context, parameters) =>
 {
-    CleanDirectories("./src/**/bin/" + parameters.Configuration);
-    CleanDirectories("./src/**/obj");
+    CleanDirectories("./**/bin/" + parameters.Configuration);
+    CleanDirectories("./**/obj");
     CleanDirectories("./releases");
 });
 
@@ -41,13 +41,18 @@ Task("Build")
 Task("Run-Unit-Tests")
     .Does<Parameters>((context, parameters) =>
 {
-    DotNetTest(parameters.SolutionFile, new DotNetTestSettings
+    var testProjects = GetFiles("./**/*.Tests.csproj");
+    foreach (var project in testProjects)
     {
-        Configuration = parameters.Configuration,
-        NoBuild = true,
-        ArgumentCustomization = args => args
-                                        .Append("/p:CollectCoverage=true /p:CoverletOutput=TestResults/ /p:CoverletOutputFormat=lcov")
-    });
+        Information("Running tests in {0}", project);
+        DotNetTest(project.FullPath, new DotNetTestSettings
+        {
+            Configuration = parameters.Configuration,
+            NoBuild = true,
+            ArgumentCustomization = args => args
+                                            .Append("/p:CollectCoverage=true /p:CoverletOutput=TestResults/ /p:CoverletOutputFormat=lcov")
+        });
+    }
 });
 
 Task("PackedIt")

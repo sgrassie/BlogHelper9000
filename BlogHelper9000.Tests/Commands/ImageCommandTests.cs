@@ -1,5 +1,3 @@
-using BlogHelper9000.Commands;
-
 namespace BlogHelper9000.Tests.Commands;
 
 public class ImageCommandTests
@@ -37,14 +35,14 @@ public class ImageCommandTests
     {
         var expectedHelp = new[]
         {
-            "Description:", 
-            "Update images in posts", 
-            "Usage:", 
-            "image update [command] [options]", 
-            "Options:", 
+            "Description:",
+            "Update images in posts",
+            "Usage:",
+            "image update [command] [options]",
+            "Options:",
             "-b, --branding <branding>  Optionally provide author branding. [default: /assets/images/branding_logo.png]",
-            "-?, -h, --help             Show help and usage information", 
-            "Commands:", 
+            "-?, -h, --help             Show help and usage information",
+            "Commands:",
             "post <post> <query>  Updates the image in a specific post [default: programming]",
             "all <query>          Updates all images in all posts [default: programming]"
         };
@@ -58,5 +56,5 @@ public class ImageCommandTests
         //
         // lines.Should().ContainInOrder(expectedHelp);
     }
-    
+
 }

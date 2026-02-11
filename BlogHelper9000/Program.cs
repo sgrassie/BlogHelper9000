@@ -1,6 +1,7 @@
-﻿using BlogHelper9000;
+using BlogHelper9000;
 using BlogHelper9000.Commands;
-using BlogHelper9000.Helpers;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Reporters;
 using Microsoft.Extensions.DependencyInjection;
 using TimeWarp.Nuru;
@@ -28,4 +29,3 @@ NuruApp app = new NuruAppBuilder()
     .Build();
 
 return await app.RunAsync(args);
-    
