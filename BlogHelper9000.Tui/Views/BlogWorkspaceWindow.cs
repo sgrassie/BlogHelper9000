@@ -1,3 +1,4 @@
+using BlogHelper9000.Tui.Commands;
 using Microsoft.Extensions.Logging;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
@@ -8,7 +9,7 @@ using Terminal.Gui.Views;
 namespace BlogHelper9000.Tui.Views;
 
 /// <summary>
-/// Main workspace window containing the file browser and editor.
+/// Main workspace window containing the menu bar, file browser and editor.
 /// </summary>
 public class BlogWorkspaceWindow : Window
 {
@@ -22,8 +23,13 @@ public class BlogWorkspaceWindow : Window
     /// <summary>
     /// Construct with the Neovim editor.
     /// </summary>
-    public BlogWorkspaceWindow(FileBrowserView fileBrowser, NvimEditorView nvimEditor, ILogger<BlogWorkspaceWindow> logger)
-        : this(fileBrowser, (View)nvimEditor, logger)
+    public BlogWorkspaceWindow(
+        FileBrowserView fileBrowser,
+        NvimEditorView nvimEditor,
+        BlogCommands blogCommands,
+        CommandPalette commandPalette,
+        ILogger<BlogWorkspaceWindow> logger)
+        : this(fileBrowser, (View)nvimEditor, blogCommands, commandPalette, logger)
     {
         _nvimEditor = nvimEditor;
 
@@ -50,13 +56,23 @@ public class BlogWorkspaceWindow : Window
     /// <summary>
     /// Construct with the fallback plain-text editor (--no-nvim mode).
     /// </summary>
-    public BlogWorkspaceWindow(FileBrowserView fileBrowser, EditorSurface editor, ILogger<BlogWorkspaceWindow> logger)
-        : this(fileBrowser, (View)editor, logger)
+    public BlogWorkspaceWindow(
+        FileBrowserView fileBrowser,
+        EditorSurface editor,
+        BlogCommands blogCommands,
+        CommandPalette commandPalette,
+        ILogger<BlogWorkspaceWindow> logger)
+        : this(fileBrowser, (View)editor, blogCommands, commandPalette, logger)
     {
         _fallbackEditor = editor;
     }
 
-    private BlogWorkspaceWindow(FileBrowserView fileBrowser, View editorView, ILogger<BlogWorkspaceWindow> logger)
+    private BlogWorkspaceWindow(
+        FileBrowserView fileBrowser,
+        View editorView,
+        BlogCommands blogCommands,
+        CommandPalette commandPalette,
+        ILogger<BlogWorkspaceWindow> logger)
     {
         _fileBrowser = fileBrowser;
         _editorView = editorView;
@@ -66,12 +82,49 @@ public class BlogWorkspaceWindow : Window
         Width = Dim.Fill();
         Height = Dim.Fill();
 
-        _fileBrowser.FileSelected += OnFileSelected;
+        var menuBar = BuildMenuBar(blogCommands, commandPalette);
 
+        _fileBrowser.FileSelected += OnFileSelected;
+        _fileBrowser.Y = Pos.Bottom(menuBar);
         _editorView.X = Pos.Right(_fileBrowser);
-        Add(_fileBrowser, _editorView);
+        _editorView.Y = Pos.Bottom(menuBar);
+
+        Add(menuBar, _fileBrowser, _editorView);
 
         _fileBrowser.RefreshFiles();
+    }
+
+    private MenuBar BuildMenuBar(BlogCommands blogCommands, CommandPalette commandPalette)
+    {
+        var fileMenu = new MenuBarItem("_File", new PopoverMenu(new View[]
+        {
+            new MenuItem("_Quit", Key.Q.WithCtrl, () => Application.RequestStop(this)),
+        }));
+
+        var commandsMenu = new MenuBarItem("_Commands", new PopoverMenu(new View[]
+        {
+            new MenuItem("New _Draft", "", () => blogCommands.ExecuteCommand("New Draft")),
+            new MenuItem("New _Post", "", () => blogCommands.ExecuteCommand("New Post")),
+            new MenuItem("Pu_blish Draft", "", () => blogCommands.ExecuteCommand("Publish Draft")),
+            new MenuItem("Blog _Info", "", () => blogCommands.ExecuteCommand("Blog Info")),
+            null!, // separator
+            new MenuItem("Fix Metadata: _Status", "", () => blogCommands.ExecuteCommand("Fix Metadata: Status")),
+            new MenuItem("Fix Metadata: D_escription", "", () => blogCommands.ExecuteCommand("Fix Metadata: Description")),
+            new MenuItem("Fix Metadata: _Tags", "", () => blogCommands.ExecuteCommand("Fix Metadata: Tags")),
+        }));
+
+        var viewMenu = new MenuBarItem("_View", new PopoverMenu(new View[]
+        {
+            new MenuItem("Toggle File _Browser", Key.B.WithCtrl, () => ToggleFileBrowser()),
+            new MenuItem("Command _Palette", Key.P.WithCtrl, () => commandPalette.Show()),
+        }));
+
+        var helpMenu = new MenuBarItem("_Help", new PopoverMenu(new View[]
+        {
+            new MenuItem("_About", "", () => ShowAbout()),
+        }));
+
+        return new MenuBar(new[] { fileMenu, commandsMenu, viewMenu, helpMenu });
     }
 
     protected override bool OnKeyDown(Key key)
@@ -133,5 +186,35 @@ public class BlogWorkspaceWindow : Window
         }
 
         _editorView.SetFocus();
+    }
+
+    private static void ShowAbout()
+    {
+        var dialog = new Dialog
+        {
+            Title = "About",
+            Width = Dim.Percent(40),
+            Height = 7,
+        };
+
+        var label = new Label
+        {
+            Text = "BlogHelper9000\nA Jekyll blog management tool",
+            X = Pos.Center(),
+            Y = Pos.Center(),
+            TextAlignment = Alignment.Center,
+        };
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == KeyCode.Esc || e.KeyCode == KeyCode.Enter)
+            {
+                dialog.RequestStop();
+                e.Handled = true;
+            }
+        };
+
+        dialog.Add(label);
+        Application.Run(dialog);
     }
 }

@@ -3,6 +3,7 @@ using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.Nvim;
+using BlogHelper9000.Tui.Commands;
 using BlogHelper9000.Tui.Views;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -51,35 +52,52 @@ else
     services.AddSingleton<EditorSurface>();
 }
 
+services.AddSingleton<BlogCommands>();
+services.AddSingleton<CommandPalette>();
+
 services.AddSingleton<FileBrowserView>();
 services.AddSingleton<BlogWorkspaceWindow>(sp =>
 {
     var fileBrowser = sp.GetRequiredService<FileBrowserView>();
+    var blogCommands = sp.GetRequiredService<BlogCommands>();
+    var commandPalette = sp.GetRequiredService<CommandPalette>();
     var logger = sp.GetRequiredService<ILogger<BlogWorkspaceWindow>>();
 
     if (noNvim)
     {
         var editor = sp.GetRequiredService<EditorSurface>();
-        return new BlogWorkspaceWindow(fileBrowser, editor, logger);
+        return new BlogWorkspaceWindow(fileBrowser, editor, blogCommands, commandPalette, logger);
     }
     else
     {
         var nvimEditor = sp.GetRequiredService<NvimEditorView>();
-        return new BlogWorkspaceWindow(fileBrowser, nvimEditor, logger);
+        return new BlogWorkspaceWindow(fileBrowser, nvimEditor, blogCommands, commandPalette, logger);
     }
 });
 
-if (!noNvim)
-{
-    services.AddSingleton<CommandPalette>(sp =>
-        new CommandPalette(
-            sp.GetRequiredService<IBlogService>(),
-            sp.GetRequiredService<NvimEditorView>(),
-            sp.GetRequiredService<ILoggerFactory>().CreateLogger<CommandPalette>()));
-}
-
 var provider = services.BuildServiceProvider();
 var logg = provider.GetRequiredService<ILoggerFactory>().CreateLogger("TUI");
+
+// Wire callbacks on BlogCommands based on editor mode
+var commands = provider.GetRequiredService<BlogCommands>();
+var fileBrowserView = provider.GetRequiredService<FileBrowserView>();
+commands.FilesChangedCallback = () => Application.Invoke(() => fileBrowserView.RefreshFiles());
+
+if (!noNvim)
+{
+    var nvimEditor = provider.GetRequiredService<NvimEditorView>();
+    commands.OpenFileCallback = path =>
+        Task.Run(async () =>
+        {
+            try { await nvimEditor.OpenFileAsync(path); }
+            catch (Exception ex) { logg.LogError(ex, "Failed to open new file"); }
+        });
+}
+else
+{
+    var editor = provider.GetRequiredService<EditorSurface>();
+    commands.OpenFileCallback = path => editor.LoadFile(path);
+}
 
 Application.Init();
 Application.KeyBindings.Remove(Application.QuitKey);
@@ -87,7 +105,7 @@ Application.KeyBindings.Remove(Application.QuitKey);
 try
 {
     var workspace = provider.GetRequiredService<BlogWorkspaceWindow>();
-    var commandPalette = noNvim ? null : provider.GetRequiredService<CommandPalette>();
+    var commandPalette = provider.GetRequiredService<CommandPalette>();
 
     // Global key bindings
     Application.KeyDown += (sender, e) =>
@@ -97,7 +115,7 @@ try
             workspace.ToggleFileBrowser();
             e.Handled = true;
         }
-        else if (e.KeyCode == (KeyCode.P | KeyCode.CtrlMask) && commandPalette is not null)
+        else if (e.KeyCode == (KeyCode.P | KeyCode.CtrlMask))
         {
             commandPalette.Show();
             e.Handled = true;
