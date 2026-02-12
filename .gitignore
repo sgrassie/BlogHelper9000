@@ -32,3 +32,4 @@ riderModule.iml
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode
 *.nupkg
 BlogHelper9000.Tests/TestResults/coverage.info
+BlogHelper9000.sln.DotSettings.user
