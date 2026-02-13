@@ -50,3 +50,7 @@ public record ModeInfo
 }
 
 public record ModeInfoSetEvent(bool CursorStyleEnabled, ModeInfo[] ModeInfo) : NvimUiEvent;
+
+public record BufferModifiedEvent(string FilePath) : NvimUiEvent;
+
+public record BufferSavedEvent(string FilePath) : NvimUiEvent;

@@ -47,6 +47,8 @@ public class NvimEditorView : View
     public string CurrentMode => _currentMode;
 
     public event Action<string>? ModeChanged;
+    public event Action<string>? FileModified;
+    public event Action<string>? FileSaved;
 
     /// <summary>
     /// Starts the Neovim process and attaches the UI.
@@ -73,6 +75,12 @@ public class NvimEditorView : View
             "cnoreabbrev <expr> q! (getcmdtype() == ':' && getcmdline() ==# 'q!') ? 'bdelete!' : 'q!'");
         await _nvim.CommandAsync(
             "cnoreabbrev <expr> qa (getcmdtype() == ':' && getcmdline() ==# 'qa') ? 'bdelete' : 'qa'");
+
+        // Notify the TUI when a buffer is modified or saved
+        await _nvim.CommandAsync(
+            "autocmd BufModifiedSet * if &modified | call rpcnotify(0, 'blog_buf_modified', expand('%:p')) | endif");
+        await _nvim.CommandAsync(
+            "autocmd BufWritePost * call rpcnotify(0, 'blog_buf_saved', expand('%:p'))");
 
         // Subscribe to viewport size changes for resize handling
         FrameChanged += (_, _) =>
@@ -228,6 +236,14 @@ public class NvimEditorView : View
                     case FlushEvent:
                         // Schedule a redraw on the UI thread
                         Application.Invoke(() => SetNeedsDraw());
+                        break;
+
+                    case BufferModifiedEvent modified:
+                        Application.Invoke(() => FileModified?.Invoke(modified.FilePath));
+                        break;
+
+                    case BufferSavedEvent saved:
+                        Application.Invoke(() => FileSaved?.Invoke(saved.FilePath));
                         break;
 
                     default:

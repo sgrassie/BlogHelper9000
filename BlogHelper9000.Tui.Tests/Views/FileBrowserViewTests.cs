@@ -153,4 +153,68 @@ public class FileBrowserViewTests
 
         eventFired.Should().BeFalse();
     }
+
+    [Fact]
+    public void MarkFileModified_AddsAsteriskPrefix()
+    {
+        var fs = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/my-draft.md", new MockFileData("content"))
+            .BuildFileSystem();
+
+        var view = new Tui.Views.FileBrowserView(fs, CreateOptions());
+        view.RefreshFiles();
+
+        view.MarkFileModified("/blog/_drafts/my-draft.md");
+
+        // Index 1 is the draft file
+        view._items[1].Should().Be("* my-draft.md");
+    }
+
+    [Fact]
+    public void MarkFileSaved_RemovesAsteriskPrefix()
+    {
+        var fs = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/my-draft.md", new MockFileData("content"))
+            .BuildFileSystem();
+
+        var view = new Tui.Views.FileBrowserView(fs, CreateOptions());
+        view.RefreshFiles();
+
+        view.MarkFileModified("/blog/_drafts/my-draft.md");
+        view.MarkFileSaved("/blog/_drafts/my-draft.md");
+
+        view._items[1].Should().Be("  my-draft.md");
+    }
+
+    [Fact]
+    public void RefreshFiles_PreservesModifiedIndicator()
+    {
+        var fs = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/my-draft.md", new MockFileData("content"))
+            .BuildFileSystem();
+
+        var view = new Tui.Views.FileBrowserView(fs, CreateOptions());
+        view.RefreshFiles();
+
+        view.MarkFileModified("/blog/_drafts/my-draft.md");
+        view.RefreshFiles();
+
+        view._items[1].Should().Be("* my-draft.md");
+    }
+
+    [Fact]
+    public void MarkFileModified_IsNoOp_ForUnknownFile()
+    {
+        var fs = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/my-draft.md", new MockFileData("content"))
+            .BuildFileSystem();
+
+        var view = new Tui.Views.FileBrowserView(fs, CreateOptions());
+        view.RefreshFiles();
+
+        // Should not throw
+        view.MarkFileModified("/blog/_drafts/nonexistent.md");
+
+        view._items[1].Should().Be("  my-draft.md");
+    }
 }

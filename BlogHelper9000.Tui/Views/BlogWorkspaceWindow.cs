@@ -39,6 +39,9 @@ public class BlogWorkspaceWindow : Window
             SetNeedsDraw();
         };
 
+        _nvimEditor.FileModified += path => _fileBrowser.MarkFileModified(path);
+        _nvimEditor.FileSaved += path => _fileBrowser.MarkFileSaved(path);
+
         Initialized += async (_, _) =>
         {
             try

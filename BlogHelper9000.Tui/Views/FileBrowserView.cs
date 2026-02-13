@@ -19,8 +19,9 @@ public class FileBrowserView : FrameView
     internal readonly ListView _listView;
     private readonly IFileSystem _fileSystem;
     private readonly string _basePath;
-    private readonly ObservableCollection<string> _items = new();
+    internal readonly ObservableCollection<string> _items = new();
     internal readonly List<string?> _filePaths = new();
+    private readonly HashSet<string> _modifiedFiles = new();
 
     public event Action<string>? FileSelected;
 
@@ -72,11 +73,34 @@ public class FileBrowserView : FrameView
                 foreach (var file in _fileSystem.Directory.EnumerateFiles(path, "*.md", SearchOption.AllDirectories)
                              .OrderByDescending(f => f))
                 {
-                    _items.Add($"  {_fileSystem.Path.GetFileName(file)}");
+                    var prefix = _modifiedFiles.Contains(file) ? "* " : "  ";
+                    _items.Add($"{prefix}{_fileSystem.Path.GetFileName(file)}");
                     _filePaths.Add(file);
                 }
             }
         }
+    }
+
+    public void MarkFileModified(string fullPath)
+    {
+        if (!_modifiedFiles.Add(fullPath)) return;
+        UpdateDisplayItem(fullPath);
+    }
+
+    public void MarkFileSaved(string fullPath)
+    {
+        if (!_modifiedFiles.Remove(fullPath)) return;
+        UpdateDisplayItem(fullPath);
+    }
+
+    private void UpdateDisplayItem(string fullPath)
+    {
+        var index = _filePaths.IndexOf(fullPath);
+        if (index < 0) return;
+
+        var fileName = _fileSystem.Path.GetFileName(fullPath);
+        var prefix = _modifiedFiles.Contains(fullPath) ? "* " : "  ";
+        _items[index] = $"{prefix}{fileName}";
     }
 
     public string? GetSelectedFilePath()
