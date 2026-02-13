@@ -91,13 +91,14 @@ public class BlogCommands
         {
             Title = isDraft ? "New Draft" : "New Post",
             Width = Dim.Percent(50),
-            Height = 7,
+            Height = 9,
         };
 
         var label = new Label { Text = "Title:", X = 0, Y = 0 };
         var titleField = new TextField { X = Pos.Right(label) + 1, Y = 0, Width = Dim.Fill() };
+        var createButton = new Button { Text = "Create", X = Pos.Center(), Y = 2 };
 
-        titleField.Accepted += (_, _) =>
+        void DoCreate()
         {
             var title = titleField.Text?.Trim();
             if (string.IsNullOrEmpty(title)) return;
@@ -108,7 +109,10 @@ public class BlogCommands
 
             FilesChangedCallback?.Invoke();
             OpenFileCallback?.Invoke(path);
-        };
+        }
+
+        titleField.Accepted += (_, _) => DoCreate();
+        createButton.Accepting += (_, _) => DoCreate();
 
         dialog.KeyDown += (_, e) =>
         {
@@ -119,7 +123,7 @@ public class BlogCommands
             }
         };
 
-        dialog.Add(label, titleField);
+        dialog.Add(label, titleField, createButton);
         titleField.SetFocus();
         Application.Run(dialog);
     }
