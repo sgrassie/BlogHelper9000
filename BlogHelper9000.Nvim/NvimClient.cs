@@ -134,6 +134,17 @@ public sealed class NvimClient : IAsyncDisposable
                         : new BufferSavedEvent(filePath);
                     await _uiEvents.Writer.WriteAsync(evt, ct);
                 }
+                else if (method is "blog_buf_enter")
+                {
+                    var handle = Convert.ToInt32(args[0]);
+                    var filePath = args[1]?.ToString() ?? "";
+                    await _uiEvents.Writer.WriteAsync(new BufferEnteredEvent(handle, filePath), ct);
+                }
+                else if (method is "blog_buf_deleted")
+                {
+                    var handle = Convert.ToInt32(args[0]);
+                    await _uiEvents.Writer.WriteAsync(new BufferDeletedEvent(handle), ct);
+                }
                 else
                 {
                     _logger.LogDebug("Unhandled notification: {Method}", method);

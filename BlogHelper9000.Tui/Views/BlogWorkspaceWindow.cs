@@ -17,6 +17,7 @@ public class BlogWorkspaceWindow : Window
     private readonly View _editorView;
     private readonly NvimEditorView? _nvimEditor;
     private readonly EditorSurface? _fallbackEditor;
+    private readonly BufferStatusBar? _bufferStatusBar;
     private readonly ILogger _logger;
     private bool _browserVisible = true;
 
@@ -29,7 +30,7 @@ public class BlogWorkspaceWindow : Window
         BlogCommands blogCommands,
         CommandPalette commandPalette,
         ILogger<BlogWorkspaceWindow> logger)
-        : this(fileBrowser, (View)nvimEditor, blogCommands, commandPalette, logger)
+        : this(fileBrowser, (View)nvimEditor, blogCommands, commandPalette, logger, new BufferStatusBar())
     {
         _nvimEditor = nvimEditor;
 
@@ -41,6 +42,9 @@ public class BlogWorkspaceWindow : Window
 
         _nvimEditor.FileModified += path => _fileBrowser.MarkFileModified(path);
         _nvimEditor.FileSaved += path => _fileBrowser.MarkFileSaved(path);
+
+        _nvimEditor.BufferEntered += (handle, path) => _bufferStatusBar!.AddOrUpdateBuffer(handle, path);
+        _nvimEditor.BufferDeleted += handle => _bufferStatusBar!.RemoveBuffer(handle);
 
         Initialized += async (_, _) =>
         {
@@ -65,7 +69,7 @@ public class BlogWorkspaceWindow : Window
         BlogCommands blogCommands,
         CommandPalette commandPalette,
         ILogger<BlogWorkspaceWindow> logger)
-        : this(fileBrowser, (View)editor, blogCommands, commandPalette, logger)
+        : this(fileBrowser, (View)editor, blogCommands, commandPalette, logger, null)
     {
         _fallbackEditor = editor;
     }
@@ -75,10 +79,12 @@ public class BlogWorkspaceWindow : Window
         View editorView,
         BlogCommands blogCommands,
         CommandPalette commandPalette,
-        ILogger<BlogWorkspaceWindow> logger)
+        ILogger<BlogWorkspaceWindow> logger,
+        BufferStatusBar? bufferStatusBar)
     {
         _fileBrowser = fileBrowser;
         _editorView = editorView;
+        _bufferStatusBar = bufferStatusBar;
         _logger = logger;
 
         Title = "BlogHelper9000";
@@ -92,7 +98,17 @@ public class BlogWorkspaceWindow : Window
         _editorView.X = Pos.Right(_fileBrowser);
         _editorView.Y = Pos.Bottom(menuBar);
 
-        Add(menuBar, _fileBrowser, _editorView);
+        if (_bufferStatusBar is not null)
+        {
+            _fileBrowser.Height = Dim.Fill(1);
+            _editorView.Height = Dim.Fill(1);
+            _bufferStatusBar.Y = Pos.AnchorEnd();
+            Add(menuBar, _fileBrowser, _editorView, _bufferStatusBar);
+        }
+        else
+        {
+            Add(menuBar, _fileBrowser, _editorView);
+        }
 
         _fileBrowser.RefreshFiles();
     }

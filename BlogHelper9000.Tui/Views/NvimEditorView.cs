@@ -49,6 +49,8 @@ public class NvimEditorView : View
     public event Action<string>? ModeChanged;
     public event Action<string>? FileModified;
     public event Action<string>? FileSaved;
+    public event Action<int, string>? BufferEntered;
+    public event Action<int>? BufferDeleted;
 
     /// <summary>
     /// Starts the Neovim process and attaches the UI.
@@ -81,6 +83,12 @@ public class NvimEditorView : View
             "autocmd BufModifiedSet * if &modified | call rpcnotify(0, 'blog_buf_modified', expand('%:p')) | endif");
         await _nvim.CommandAsync(
             "autocmd BufWritePost * call rpcnotify(0, 'blog_buf_saved', expand('%:p'))");
+
+        // Notify the TUI when a buffer is entered or deleted
+        await _nvim.CommandAsync(
+            "autocmd BufEnter * if buflisted(bufnr('%')) | call rpcnotify(0, 'blog_buf_enter', bufnr('%'), expand('%:p')) | endif");
+        await _nvim.CommandAsync(
+            "autocmd BufDelete * call rpcnotify(0, 'blog_buf_deleted', str2nr(expand('<abuf>')))");
 
         // Subscribe to viewport size changes for resize handling
         FrameChanged += (_, _) =>
@@ -244,6 +252,14 @@ public class NvimEditorView : View
 
                     case BufferSavedEvent saved:
                         Application.Invoke(() => FileSaved?.Invoke(saved.FilePath));
+                        break;
+
+                    case BufferEnteredEvent entered:
+                        Application.Invoke(() => BufferEntered?.Invoke(entered.BufferHandle, entered.FilePath));
+                        break;
+
+                    case BufferDeletedEvent deleted:
+                        Application.Invoke(() => BufferDeleted?.Invoke(deleted.BufferHandle));
                         break;
 
                     default:
