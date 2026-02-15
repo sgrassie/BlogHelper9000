@@ -111,7 +111,12 @@ try
     // Global key bindings
     Application.KeyDown += (sender, e) =>
     {
-        if (e.KeyCode == (KeyCode.B | KeyCode.CtrlMask))
+        if (e.KeyCode == KeyCode.Tab)
+        {
+            if (workspace.HandleTabFocusToggle())
+                e.Handled = true;
+        }
+        else if (e.KeyCode == (KeyCode.B | KeyCode.CtrlMask))
         {
             workspace.ToggleFileBrowser();
             e.Handled = true;

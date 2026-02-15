@@ -165,6 +165,26 @@ public class BlogWorkspaceWindow : Window
         return new MenuBar(new[] { fileMenu, editMenu, commandsMenu, viewMenu, helpMenu });
     }
 
+    /// <summary>
+    /// Handles Tab key to toggle focus between file browser and editor.
+    /// Returns true if the key was handled (focus was toggled).
+    /// </summary>
+    public bool HandleTabFocusToggle()
+    {
+        if (!_browserVisible)
+            return false;
+
+        if (_nvimEditor is not null && _nvimEditor.CurrentMode != "normal")
+            return false;
+
+        if (_fileBrowser.HasFocus)
+            _editorView.SetFocus();
+        else
+            _fileBrowser.SetFocus();
+
+        return true;
+    }
+
     protected override bool OnKeyDown(Key key)
     {
         // When the editor view has focus, forward ALL keys to Neovim.
