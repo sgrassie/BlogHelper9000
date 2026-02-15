@@ -16,12 +16,16 @@ namespace BlogHelper9000.Tui.Views;
 /// </summary>
 public class FileBrowserView : FrameView
 {
+    internal enum ClipboardOp { Copy, Cut }
+    internal record FileClipboard(string Path, ClipboardOp Op);
+
     internal readonly ListView _listView;
     private readonly IFileSystem _fileSystem;
     private readonly string _basePath;
     internal readonly ObservableCollection<string> _items = new();
     internal readonly List<string?> _filePaths = new();
     private readonly HashSet<string> _modifiedFiles = new();
+    internal FileClipboard? _clipboard;
 
     public event Action<string>? FileSelected;
 
@@ -112,4 +116,116 @@ public class FileBrowserView : FrameView
         return _filePaths[selected.Value];
     }
 
+    public void CopySelectedFile()
+    {
+        var path = GetSelectedFilePath();
+        if (path is null) return;
+        _clipboard = new FileClipboard(path, ClipboardOp.Copy);
+    }
+
+    public void CutSelectedFile()
+    {
+        var path = GetSelectedFilePath();
+        if (path is null) return;
+        _clipboard = new FileClipboard(path, ClipboardOp.Cut);
+    }
+
+    public void PasteFile()
+    {
+        if (_clipboard is null) return;
+        if (!_fileSystem.File.Exists(_clipboard.Path)) return;
+
+        var targetDir = GetSelectedFileDirectory();
+        if (targetDir is null) return;
+
+        var fileName = _fileSystem.Path.GetFileNameWithoutExtension(_clipboard.Path);
+        var extension = _fileSystem.Path.GetExtension(_clipboard.Path);
+        var targetPath = _fileSystem.Path.Combine(targetDir, fileName + extension);
+
+        if (_fileSystem.File.Exists(targetPath))
+        {
+            var counter = 1;
+            while (_fileSystem.File.Exists(_fileSystem.Path.Combine(targetDir, $"{fileName}-{counter}{extension}")))
+                counter++;
+            targetPath = _fileSystem.Path.Combine(targetDir, $"{fileName}-{counter}{extension}");
+        }
+
+        if (_clipboard.Op == ClipboardOp.Copy)
+        {
+            _fileSystem.File.Copy(_clipboard.Path, targetPath);
+        }
+        else
+        {
+            _fileSystem.File.Move(_clipboard.Path, targetPath);
+            _clipboard = null;
+        }
+
+        RefreshFiles();
+    }
+
+    public void DeleteSelectedFile()
+    {
+        var path = GetSelectedFilePath();
+        if (path is null) return;
+
+        var fileName = _fileSystem.Path.GetFileName(path);
+        if (!ConfirmDelete(fileName)) return;
+
+        DeleteFile(path);
+    }
+
+    internal void DeleteFile(string path)
+    {
+        if (!_fileSystem.File.Exists(path)) return;
+        _fileSystem.File.Delete(path);
+        RefreshFiles();
+    }
+
+    private string? GetSelectedFileDirectory()
+    {
+        var selected = _listView.SelectedItem;
+        if (selected is null || selected < 0 || selected >= _filePaths.Count)
+            return null;
+
+        var path = _filePaths[selected.Value];
+        if (path is not null)
+            return _fileSystem.Path.GetDirectoryName(path);
+
+        // On a section header — map to the corresponding directory
+        var headerText = _items[selected.Value];
+        if (headerText.Contains("_drafts"))
+            return _fileSystem.Path.Combine(_basePath, "_drafts");
+        if (headerText.Contains("_posts"))
+            return _fileSystem.Path.Combine(_basePath, "_posts");
+
+        return null;
+    }
+
+    private static bool ConfirmDelete(string fileName)
+    {
+        var confirmed = false;
+        var dialog = new Dialog
+        {
+            Title = "Confirm Delete",
+            Width = Dim.Percent(40),
+            Height = 7,
+        };
+
+        var label = new Label
+        {
+            Text = $"Delete {fileName}?",
+            X = Pos.Center(),
+            Y = Pos.Center(),
+        };
+
+        var yes = new Button { Text = "_Yes" };
+        yes.Accepting += (_, _) => { confirmed = true; dialog.RequestStop(); };
+
+        var no = new Button { Text = "_No" };
+        no.Accepting += (_, _) => dialog.RequestStop();
+
+        dialog.Add(label, yes, no);
+        Application.Run(dialog);
+        return confirmed;
+    }
 }

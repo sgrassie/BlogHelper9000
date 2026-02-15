@@ -52,4 +52,17 @@ public class EditorSurface : FrameView
         _textView.Text = "";
         Title = "Editor";
     }
+
+    public void EditUndo() => _textView.Undo();
+    public void EditRedo() => _textView.Redo();
+    public void EditCut() => _textView.Cut();
+    public void EditCopy() => _textView.Copy();
+    public void EditPaste() => _textView.Paste();
+    public void EditSelectAll() => _textView.SelectAll();
+
+    public void EditDelete()
+    {
+        if (_textView.SelectedLength > 0)
+            _textView.Cut();
+    }
 }

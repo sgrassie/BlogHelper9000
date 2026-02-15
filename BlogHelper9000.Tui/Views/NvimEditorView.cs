@@ -276,6 +276,49 @@ public class NvimEditorView : View
         }
     }
 
+    public void EditUndo() => SendKeys("u");
+    public void EditRedo() => SendKeys("<C-r>");
+
+    public void EditCut()
+    {
+        if (IsVisualMode()) SendKeys("\"+d");
+        else SendKeys("\"+dd");
+    }
+
+    public void EditCopy()
+    {
+        if (IsVisualMode()) SendKeys("\"+y");
+        else SendKeys("\"+yy");
+    }
+
+    public void EditPaste() => SendKeys("\"+p");
+
+    public void EditDelete()
+    {
+        if (IsVisualMode()) SendKeys("d");
+        else SendKeys("dd");
+    }
+
+    public void EditSelectAll() => SendKeys("<Esc>ggVG");
+
+    private bool IsVisualMode() =>
+        _currentMode is "visual" or "visual line" or "visual block";
+
+    private void SendKeys(string keys)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await _nvim.InputAsync(keys);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending edit keys to Neovim: {Keys}", keys);
+            }
+        });
+    }
+
     internal static CursorStyle MapCursorShape(ModeInfo modeInfo)
     {
         var hasBlink = modeInfo.BlinkWait > 0 || modeInfo.BlinkOn > 0;

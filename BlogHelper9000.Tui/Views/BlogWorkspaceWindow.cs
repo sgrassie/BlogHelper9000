@@ -20,6 +20,7 @@ public class BlogWorkspaceWindow : Window
     private readonly BufferStatusBar? _bufferStatusBar;
     private readonly ILogger _logger;
     private bool _browserVisible = true;
+    private View? _lastFocusedContentView;
 
     /// <summary>
     /// Construct with the Neovim editor.
@@ -93,6 +94,9 @@ public class BlogWorkspaceWindow : Window
 
         var menuBar = BuildMenuBar(blogCommands, commandPalette);
 
+        _fileBrowser.HasFocusChanged += (_, e) => { if (e.NewValue) _lastFocusedContentView = _fileBrowser; };
+        _editorView.HasFocusChanged += (_, e) => { if (e.NewValue) _lastFocusedContentView = _editorView; };
+
         _fileBrowser.FileSelected += OnFileSelected;
         _fileBrowser.Y = Pos.Bottom(menuBar);
         _editorView.X = Pos.Right(_fileBrowser);
@@ -120,6 +124,19 @@ public class BlogWorkspaceWindow : Window
             new MenuItem("_Quit", Key.Q.WithCtrl, () => Application.RequestStop(this)),
         }));
 
+        var editMenu = new MenuBarItem("_Edit", new PopoverMenu(new View[]
+        {
+            new MenuItem("_Undo", Key.Z.WithCtrl, () => DispatchEdit(n => n.EditUndo(), f => f.EditUndo(), null)),
+            new MenuItem("_Redo", Key.Y.WithCtrl, () => DispatchEdit(n => n.EditRedo(), f => f.EditRedo(), null)),
+            null!, // separator
+            new MenuItem("Cu_t", Key.X.WithCtrl, () => DispatchEdit(n => n.EditCut(), f => f.EditCut(), fb => fb.CutSelectedFile())),
+            new MenuItem("_Copy", Key.C.WithCtrl, () => DispatchEdit(n => n.EditCopy(), f => f.EditCopy(), fb => fb.CopySelectedFile())),
+            new MenuItem("_Paste", Key.V.WithCtrl, () => DispatchEdit(n => n.EditPaste(), f => f.EditPaste(), fb => fb.PasteFile())),
+            new MenuItem("_Delete", "", () => DispatchEdit(n => n.EditDelete(), f => f.EditDelete(), fb => fb.DeleteSelectedFile())),
+            null!, // separator
+            new MenuItem("Select _All", Key.A.WithCtrl, () => DispatchEdit(n => n.EditSelectAll(), f => f.EditSelectAll(), null)),
+        }));
+
         var commandsMenu = new MenuBarItem("_Commands", new PopoverMenu(new View[]
         {
             new MenuItem("New _Draft", "", () => blogCommands.ExecuteCommand("New Draft")),
@@ -143,7 +160,7 @@ public class BlogWorkspaceWindow : Window
             new MenuItem("_About", "", () => ShowAbout()),
         }));
 
-        return new MenuBar(new[] { fileMenu, commandsMenu, viewMenu, helpMenu });
+        return new MenuBar(new[] { fileMenu, editMenu, commandsMenu, viewMenu, helpMenu });
     }
 
     protected override bool OnKeyDown(Key key)
@@ -205,6 +222,23 @@ public class BlogWorkspaceWindow : Window
         }
 
         _editorView.SetFocus();
+    }
+
+    private void DispatchEdit(
+        Action<NvimEditorView>? nvimAction,
+        Action<EditorSurface>? fallbackAction,
+        Action<FileBrowserView>? fileBrowserAction)
+    {
+        if (_lastFocusedContentView == _fileBrowser && fileBrowserAction is not null)
+        {
+            fileBrowserAction(_fileBrowser);
+            return;
+        }
+
+        if (_nvimEditor is not null && nvimAction is not null)
+            nvimAction(_nvimEditor);
+        else if (_fallbackEditor is not null && fallbackAction is not null)
+            fallbackAction(_fallbackEditor);
     }
 
     private static void ShowAbout()
