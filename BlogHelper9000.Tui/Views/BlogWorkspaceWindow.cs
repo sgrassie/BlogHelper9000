@@ -147,6 +147,8 @@ public class BlogWorkspaceWindow : Window
             new MenuItem("Fix Metadata: _Status", "", () => blogCommands.ExecuteCommand("Fix Metadata: Status")),
             new MenuItem("Fix Metadata: D_escription", "", () => blogCommands.ExecuteCommand("Fix Metadata: Description")),
             new MenuItem("Fix Metadata: _Tags", "", () => blogCommands.ExecuteCommand("Fix Metadata: Tags")),
+            null!, // separator
+            new MenuItem("_Delete File", "", () => blogCommands.ExecuteCommand("Delete File")),
         }));
 
         var viewMenu = new MenuBarItem("_View", new PopoverMenu(new View[]

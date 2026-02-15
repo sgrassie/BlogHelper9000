@@ -1,3 +1,4 @@
+using System.IO.Abstractions;
 using BlogHelper9000.Core.Services;
 using Microsoft.Extensions.Logging;
 using Terminal.Gui.App;
@@ -14,11 +15,13 @@ namespace BlogHelper9000.Tui.Commands;
 public class BlogCommands
 {
     private readonly IBlogService _blogService;
+    private readonly IFileSystem _fileSystem;
     private readonly ILogger<BlogCommands> _logger;
 
-    public BlogCommands(IBlogService blogService, ILogger<BlogCommands> logger)
+    public BlogCommands(IBlogService blogService, IFileSystem fileSystem, ILogger<BlogCommands> logger)
     {
         _blogService = blogService;
+        _fileSystem = fileSystem;
         _logger = logger;
     }
 
@@ -34,6 +37,12 @@ public class BlogCommands
     /// </summary>
     public Action? FilesChangedCallback { get; set; }
 
+    /// <summary>
+    /// Returns the currently selected file path in the file browser, or null if none.
+    /// Set by the host after construction.
+    /// </summary>
+    public Func<string?>? GetSelectedFilePathCallback { get; set; }
+
     public record CommandEntry(string Name, string Description);
 
     public static readonly CommandEntry[] AllCommands =
@@ -45,6 +54,7 @@ public class BlogCommands
         new("Fix Metadata: Status", "Fix published status on all posts"),
         new("Fix Metadata: Description", "Migrate legacy descriptions"),
         new("Fix Metadata: Tags", "Fix and normalize tags"),
+        new("Delete File", "Delete the selected file"),
     ];
 
     public void ExecuteCommand(string commandName)
@@ -76,6 +86,9 @@ public class BlogCommands
                 case "Fix Metadata: Tags":
                     _blogService.FixMetadata(fixStatus: false, fixDescription: false, fixTags: true);
                     FilesChangedCallback?.Invoke();
+                    break;
+                case "Delete File":
+                    PromptAndDeleteFile();
                     break;
             }
         }
@@ -216,6 +229,60 @@ public class BlogCommands
         }
 
         ShowMessage("Blog Info", string.Join("\n", lines));
+    }
+
+    private void PromptAndDeleteFile()
+    {
+        var path = GetSelectedFilePathCallback?.Invoke();
+        if (path is null) return;
+
+        var fileName = _fileSystem.Path.GetFileName(path);
+
+        var dialog = new Dialog
+        {
+            Title = "Delete File",
+            Width = Dim.Percent(40),
+            Height = 7,
+        };
+
+        var label = new Label
+        {
+            Text = $"Delete \"{fileName}\"?",
+            X = Pos.Center(),
+            Y = 0,
+        };
+
+        var yesButton = new Button { Text = "Yes", X = Pos.Center() - 6, Y = 2 };
+        var noButton = new Button { Text = "No", X = Pos.Center() + 2, Y = 2 };
+
+        yesButton.Accepting += (_, _) =>
+        {
+            dialog.RequestStop();
+            DeleteFileAt(path);
+        };
+
+        noButton.Accepting += (_, _) => dialog.RequestStop();
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == KeyCode.Esc)
+            {
+                dialog.RequestStop();
+                e.Handled = true;
+            }
+        };
+
+        dialog.Add(label, yesButton, noButton);
+        noButton.SetFocus();
+        Application.Run(dialog);
+    }
+
+    internal void DeleteFileAt(string path)
+    {
+        if (!_fileSystem.File.Exists(path)) return;
+        _fileSystem.File.Delete(path);
+        _logger.LogInformation("Deleted file: {Path}", path);
+        FilesChangedCallback?.Invoke();
     }
 
     private static void ShowMessage(string title, string message)

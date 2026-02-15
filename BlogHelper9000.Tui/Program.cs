@@ -82,6 +82,7 @@ var logg = provider.GetRequiredService<ILoggerFactory>().CreateLogger("TUI");
 var commands = provider.GetRequiredService<BlogCommands>();
 var fileBrowserView = provider.GetRequiredService<FileBrowserView>();
 commands.FilesChangedCallback = () => Application.Invoke(() => fileBrowserView.RefreshFiles());
+commands.GetSelectedFilePathCallback = () => fileBrowserView.GetSelectedFilePath();
 
 if (!noNvim)
 {
