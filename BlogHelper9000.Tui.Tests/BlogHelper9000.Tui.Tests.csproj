@@ -28,6 +28,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\BlogHelper9000.Tui\BlogHelper9000.Tui.csproj"/>
+        <ProjectReference Include="..\BlogHelper9000.Imaging\BlogHelper9000.Imaging.csproj"/>
         <ProjectReference Include="..\BlogHelper9000.TestHelpers\BlogHelper9000.TestHelpers.csproj"/>
     </ItemGroup>
 

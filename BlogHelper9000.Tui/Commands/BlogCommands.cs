@@ -1,6 +1,10 @@
 using System.IO.Abstractions;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Services;
+using BlogHelper9000.Imaging;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Terminal.Gui.App;
 using Terminal.Gui.Drivers;
 using Terminal.Gui.Input;
@@ -17,12 +21,27 @@ public class BlogCommands
     private readonly IBlogService _blogService;
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<BlogCommands> _logger;
+    private readonly IUnsplashClient _unsplashClient;
+    private readonly IImageProcessor _imageProcessor;
+    private readonly PostManager _postManager;
+    private readonly BlogHelperOptions _options;
 
-    public BlogCommands(IBlogService blogService, IFileSystem fileSystem, ILogger<BlogCommands> logger)
+    public BlogCommands(
+        IBlogService blogService,
+        IFileSystem fileSystem,
+        ILogger<BlogCommands> logger,
+        IUnsplashClient unsplashClient,
+        IImageProcessor imageProcessor,
+        PostManager postManager,
+        IOptions<BlogHelperOptions> options)
     {
         _blogService = blogService;
         _fileSystem = fileSystem;
         _logger = logger;
+        _unsplashClient = unsplashClient;
+        _imageProcessor = imageProcessor;
+        _postManager = postManager;
+        _options = options.Value;
     }
 
     /// <summary>
@@ -43,6 +62,12 @@ public class BlogCommands
     /// </summary>
     public Func<string?>? GetSelectedFilePathCallback { get; set; }
 
+    /// <summary>
+    /// Returns the file path currently open in the active editor, or null if none.
+    /// Set by the host after construction.
+    /// </summary>
+    public Func<string?>? GetActiveFilePathCallback { get; set; }
+
     public record CommandEntry(string Name, string Description);
 
     public static readonly CommandEntry[] AllCommands =
@@ -55,6 +80,7 @@ public class BlogCommands
         new("Fix Metadata: Description", "Migrate legacy descriptions"),
         new("Fix Metadata: Tags", "Fix and normalize tags"),
         new("Delete File", "Delete the selected file"),
+        new("Add Image", "Add a featured image to the active post"),
     ];
 
     public void ExecuteCommand(string commandName)
@@ -89,6 +115,9 @@ public class BlogCommands
                     break;
                 case "Delete File":
                     PromptAndDeleteFile();
+                    break;
+                case "Add Image":
+                    PromptAndAddImage();
                     break;
             }
         }
@@ -275,6 +304,85 @@ public class BlogCommands
         dialog.Add(label, yesButton, noButton);
         noButton.SetFocus();
         Application.Run(dialog);
+    }
+
+    private void PromptAndAddImage()
+    {
+        var activePath = GetActiveFilePathCallback?.Invoke();
+        if (string.IsNullOrEmpty(activePath))
+        {
+            ShowMessage("Add Image", "No active file. Open a post first.");
+            return;
+        }
+
+        if (!_postManager.TryFindPost(activePath, out var markdownFile))
+        {
+            ShowMessage("Add Image", "The active file is not a recognised blog post.");
+            return;
+        }
+
+        var dialog = new Dialog
+        {
+            Title = "Add Image",
+            Width = Dim.Percent(50),
+            Height = 9,
+        };
+
+        var label = new Label { Text = "Search query:", X = 0, Y = 0 };
+        var queryField = new TextField { X = Pos.Right(label) + 1, Y = 0, Width = Dim.Fill() };
+        var searchButton = new Button { Text = "Search", X = Pos.Center(), Y = 2 };
+
+        void DoSearch()
+        {
+            var query = queryField.Text?.Trim();
+            if (string.IsNullOrEmpty(query)) return;
+
+            dialog.RequestStop();
+            AddImageAsync(markdownFile, query);
+        }
+
+        queryField.Accepted += (_, _) => DoSearch();
+        searchButton.Accepting += (_, _) => DoSearch();
+
+        dialog.KeyDown += (_, e) =>
+        {
+            if (e.KeyCode == KeyCode.Esc)
+            {
+                dialog.RequestStop();
+                e.Handled = true;
+            }
+        };
+
+        dialog.Add(label, queryField, searchButton);
+        queryField.SetFocus();
+        Application.Run(dialog);
+    }
+
+    internal void AddImageAsync(MarkdownFile markdownFile, string query)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var imageStream = await _unsplashClient.LoadImageAsync(query);
+
+                string? brandingPath = null;
+                if (_options.AuthorBranding is not null &&
+                    _postManager.TryFindAuthorBranding(_options.AuthorBranding, out var foundPath))
+                {
+                    brandingPath = foundPath;
+                }
+
+                await _imageProcessor.Process(markdownFile, imageStream, brandingPath);
+                _logger.LogInformation("Added featured image to {Post}", markdownFile.Metadata.Title);
+
+                Application.Invoke(() => FilesChangedCallback?.Invoke());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to add image to {Post}", markdownFile.Metadata.Title);
+            }
+        });
     }
 
     internal void DeleteFileAt(string path)

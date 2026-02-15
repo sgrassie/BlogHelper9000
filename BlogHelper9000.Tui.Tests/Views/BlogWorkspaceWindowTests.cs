@@ -1,7 +1,9 @@
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Services;
+using BlogHelper9000.Imaging;
 using BlogHelper9000.TestHelpers;
 using BlogHelper9000.Tui.Commands;
 using BlogHelper9000.Tui.Views;
@@ -26,10 +28,15 @@ public class BlogWorkspaceWindowTests
 
         var fileBrowser = new FileBrowserView(fileSystem, CreateOptions());
         var editor = new EditorSurface(fileSystem);
+        var options = CreateOptions();
         var blogCommands = new BlogCommands(
             Substitute.For<IBlogService>(),
             fileSystem,
-            NullLogger<BlogCommands>.Instance);
+            NullLogger<BlogCommands>.Instance,
+            Substitute.For<IUnsplashClient>(),
+            Substitute.For<IImageProcessor>(),
+            new PostManager(fileSystem, new MarkdownHandler(fileSystem), options),
+            options);
         var commandPalette = new CommandPalette(blogCommands);
         var logger = NullLogger<BlogWorkspaceWindow>.Instance;
 

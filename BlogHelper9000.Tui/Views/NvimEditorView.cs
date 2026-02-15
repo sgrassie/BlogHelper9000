@@ -44,6 +44,9 @@ public class NvimEditorView : View
         Height = Dim.Fill();
     }
 
+    private string? _currentBufferPath;
+    public string? CurrentBufferPath => _currentBufferPath;
+
     public string CurrentMode => _currentMode;
 
     public event Action<string>? ModeChanged;
@@ -255,6 +258,7 @@ public class NvimEditorView : View
                         break;
 
                     case BufferEnteredEvent entered:
+                        _currentBufferPath = entered.FilePath;
                         Application.Invoke(() => BufferEntered?.Invoke(entered.BufferHandle, entered.FilePath));
                         break;
 

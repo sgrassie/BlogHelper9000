@@ -14,16 +14,20 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
     private const string ImagesByUnsplash = "Background image by Unsplash";
     private readonly FontManager _fontManager = new FontManager(logger);
 
-    public async Task Process(MarkdownFile postMarkdown, Stream imageSource, string brandingPath)
+    public async Task Process(MarkdownFile postMarkdown, Stream imageSource, string? brandingPath)
     {
         logger.LogInformation("Generating image for {Post}", postMarkdown.Metadata.Title);
         var mainFont = _fontManager.GetFont("Ubuntu", 90);
-        var logoImage = await Image.LoadAsync(brandingPath);
         var baseImage = await Image.LoadAsync(imageSource);
         var baseImageWidth = baseImage.Width;
         var baseImageHeight = baseImage.Height;
 
-        AddLogo(baseImage, logoImage);
+        if (brandingPath is not null)
+        {
+            var logoImage = await Image.LoadAsync(brandingPath);
+            AddLogo(baseImage, logoImage);
+        }
+
         AddAttribution(baseImage,  baseImageWidth, baseImageHeight);
         AddTextShadow(postMarkdown, baseImage, mainFont);
         AddDescriptionText(postMarkdown, baseImage, mainFont);

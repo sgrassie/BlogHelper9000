@@ -22,6 +22,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\BlogHelper9000.Core\BlogHelper9000.Core.csproj" />
+        <ProjectReference Include="..\BlogHelper9000.Imaging\BlogHelper9000.Imaging.csproj" />
         <ProjectReference Include="..\BlogHelper9000.Nvim\BlogHelper9000.Nvim.csproj" />
     </ItemGroup>
 

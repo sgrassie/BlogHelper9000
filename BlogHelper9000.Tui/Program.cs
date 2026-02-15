@@ -2,6 +2,7 @@ using System.IO.Abstractions;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Services;
+using BlogHelper9000.Imaging;
 using BlogHelper9000.Nvim;
 using BlogHelper9000.Tui.Commands;
 using BlogHelper9000.Tui.Views;
@@ -37,6 +38,12 @@ services.AddSingleton<IOptions<BlogHelperOptions>>(
 services.AddSingleton<MarkdownHandler>();
 services.AddSingleton<PostManager>();
 services.AddSingleton<IBlogService, BlogService>();
+services.AddSingleton<IUnsplashClient>(sp =>
+    new UnsplashClient(sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
+services.AddSingleton<IImageProcessor>(sp =>
+    new ImageProcessor(
+        sp.GetRequiredService<ILoggerFactory>().CreateLogger<ImageProcessor>(),
+        sp.GetRequiredService<PostManager>()));
 
 if (!noNvim)
 {
@@ -93,11 +100,13 @@ if (!noNvim)
             try { await nvimEditor.OpenFileAsync(path); }
             catch (Exception ex) { logg.LogError(ex, "Failed to open new file"); }
         });
+    commands.GetActiveFilePathCallback = () => nvimEditor.CurrentBufferPath;
 }
 else
 {
     var editor = provider.GetRequiredService<EditorSurface>();
     commands.OpenFileCallback = path => editor.LoadFile(path);
+    commands.GetActiveFilePathCallback = () => editor.CurrentFilePath;
 }
 
 Application.Init();

@@ -143,6 +143,7 @@ public class BlogWorkspaceWindow : Window
             new MenuItem("New _Post", "", () => blogCommands.ExecuteCommand("New Post")),
             new MenuItem("Pu_blish Draft", "", () => blogCommands.ExecuteCommand("Publish Draft")),
             new MenuItem("Blog _Info", "", () => blogCommands.ExecuteCommand("Blog Info")),
+            new MenuItem("Add _Image", "", () => blogCommands.ExecuteCommand("Add Image")),
             null!, // separator
             new MenuItem("Fix Metadata: _Status", "", () => blogCommands.ExecuteCommand("Fix Metadata: Status")),
             new MenuItem("Fix Metadata: D_escription", "", () => blogCommands.ExecuteCommand("Fix Metadata: Description")),
