@@ -1,6 +1,6 @@
 # BlogHelper9000
 
-**A CLI + TUI toolkit for Jekyll blogging with an embedded Neovim editor**
+**A CLI + TUI toolkit + MCP server for Jekyll blogging with an embedded Neovim editor**
 
 ![CI Status](https://github.com/sgrassie/BlogHelper9000/actions/workflows/main.yml/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/sgrassie/BlogHelper9000/badge.svg?branch=main)](https://coveralls.io/github/sgrassie/BlogHelper9000?branch=main)
@@ -10,12 +10,13 @@
 
 ---
 
-BlogHelper9000 is a .NET toolset for managing [Jekyll](https://jekyllrb.com/) blog posts. It ships as two executables: a **CLI tool** (`bloghelper`) for scripting and quick operations, and a **TUI workspace** with an embedded Neovim editor for an integrated writing experience — all from your terminal.
+BlogHelper9000 is a .NET toolset for managing [Jekyll](https://jekyllrb.com/) blog posts. It ships as three executables: a **CLI tool** (`bloghelper`) for scripting and quick operations, a **TUI workspace** with an embedded Neovim editor for an integrated writing experience, and an **MCP server** (`bloghelper-mcp`) that exposes blog management capabilities to AI agents (like GitHub Copilot, Claude, and VS Code) — all from your terminal.
 
 ## Features
 
 - **CLI tool** — Create posts & drafts, publish drafts, inspect blog stats, and batch-fix YAML front matter
 - **TUI workspace** — Full terminal UI with file browser, command palette, and embedded Neovim editor
+- **MCP server** — Expose blog management tools to AI agents via the Model Context Protocol (stdio transport)
 - **Embedded Neovim** — Real Neovim running headless via MsgPack-RPC, rendered as a Terminal.Gui view with full mode/cursor support
 - **Featured image generation** — Search Unsplash, download images, and generate branded featured images with ImageSharp
 - **YAML front matter management** — Parse, serialise, and bulk-fix front matter (published status, descriptions, tags)
@@ -136,6 +137,102 @@ Press `Ctrl+P` to open the command palette. It provides filtered access to blog 
 | Fix Metadata: Description | Migrate legacy descriptions |
 | Fix Metadata: Tags | Fix and normalize tags |
 
+## MCP Server
+
+The MCP server exposes BlogHelper9000's blog management capabilities to AI agents via the [Model Context Protocol](https://modelcontextprotocol.io). This allows AI assistants like Claude Desktop, GitHub Copilot, and VS Code to directly manage your Jekyll blog posts.
+
+### Available MCP Tools
+
+| Tool Name | Description |
+|-----------|-------------|
+| `add_post` | Create a new blog post or draft with title and metadata |
+| `publish_post` | Publish a draft from `_drafts/` to `_posts/` with date prefix |
+| `get_blog_info` | Get blog statistics (post count, drafts, recent posts, days since last post) |
+| `list_drafts` | List all draft blog posts in the `_drafts/` directory |
+| `fix_metadata` | Batch-fix YAML front matter (published status, descriptions, tags) |
+| `add_featured_image` | Generate and apply a featured image from Unsplash with title overlay |
+
+### Installation
+
+Install as a .NET global tool:
+
+```bash
+dotnet tool install --global BlogHelper9000.Mcp
+```
+
+Or run directly from source:
+
+```bash
+dotnet run --project BlogHelper9000.Mcp
+```
+
+### Configuration
+
+The MCP server reads the blog base directory from:
+1. `BLOG_BASE_DIRECTORY` environment variable
+2. First positional argument
+3. Current working directory (fallback)
+
+#### Claude Desktop
+
+Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "bloghelper9000": {
+      "command": "bloghelper-mcp",
+      "args": ["/path/to/your/jekyll/blog"]
+    }
+  }
+}
+```
+
+Or use the environment variable approach:
+
+```json
+{
+  "mcpServers": {
+    "bloghelper9000": {
+      "command": "bloghelper-mcp",
+      "env": {
+        "BLOG_BASE_DIRECTORY": "/path/to/your/jekyll/blog"
+      }
+    }
+  }
+}
+```
+
+#### VS Code / Copilot
+
+Add to your workspace or user settings (`.vscode/settings.json`):
+
+```json
+{
+  "mcp.servers": {
+    "bloghelper9000": {
+      "command": "dotnet",
+      "args": ["run", "--project", "/path/to/BlogHelper9000.Mcp"],
+      "env": {
+        "BLOG_BASE_DIRECTORY": "/path/to/your/jekyll/blog"
+      }
+    }
+  }
+}
+```
+
+### Example Usage
+
+Once configured, you can ask your AI assistant to:
+
+- "Create a new draft post titled 'Understanding MCP'"
+- "List all my draft posts"
+- "Show me blog statistics"
+- "Publish the draft 'understanding-mcp'"
+- "Add a featured image about 'programming' to my latest post"
+
+The AI will use the appropriate MCP tool to execute your request.
+
 ## Solution Architecture
 
 ```
@@ -143,10 +240,13 @@ BlogHelper9000.sln
 ├── BlogHelper9000.Core/           Core domain logic
 ├── BlogHelper9000.Imaging/        Image processing
 ├── BlogHelper9000/                CLI executable
+├── BlogHelper9000.Mcp/            MCP server executable
 ├── BlogHelper9000.Nvim/           Neovim client
 ├── BlogHelper9000.Tui/            TUI executable
 ├── BlogHelper9000.Tests/          CLI tests
+├── BlogHelper9000.Mcp.Tests/      MCP server tests
 ├── BlogHelper9000.Nvim.Tests/     Neovim tests
+├── BlogHelper9000.Tui.Tests/      TUI tests
 └── BlogHelper9000.TestHelpers/    Shared test infra
 ```
 
@@ -155,10 +255,13 @@ BlogHelper9000.sln
 | **BlogHelper9000.Core** | classlib | Domain logic — `PostManager`, `MarkdownHandler`, `YamlConvert`, `BlogService`. No UI dependencies. |
 | **BlogHelper9000.Imaging** | classlib | Featured image generation — `ImageProcessor`, `UnsplashClient`, `FontManager`. Uses SixLabors.ImageSharp. |
 | **BlogHelper9000** | exe | CLI tool using TimeWarp.Nuru mediator pattern. Packaged as a `dotnet tool`. |
+| **BlogHelper9000.Mcp** | exe | MCP server exposing blog management tools via stdio transport for AI agents (Claude, VS Code, etc.). Packaged as a `dotnet tool`. |
 | **BlogHelper9000.Nvim** | classlib | Embedded Neovim client. `NvimProcess` manages `nvim --embed --headless`. `MsgPackRpcClient` handles MsgPack-RPC framing. `NvimGrid` maintains a 2D screen buffer. |
 | **BlogHelper9000.Tui** | exe | Terminal.Gui v2 workspace. `NvimEditorView` renders the Neovim grid. `CommandPalette` exposes blog operations. `KeyTranslator` maps Terminal.Gui keys to Neovim notation. |
 | **BlogHelper9000.Tests** | test | xUnit tests for CLI commands |
+| **BlogHelper9000.Mcp.Tests** | test | xUnit tests for MCP server tools |
 | **BlogHelper9000.Nvim.Tests** | test | Tests for grid operations, MsgPack serialization, and UI event parsing (no nvim required) |
+| **BlogHelper9000.Tui.Tests** | test | Tests for TUI workspace components |
 | **BlogHelper9000.TestHelpers** | classlib | `JekyllBlogFilesystemBuilder` and shared test infrastructure using `MockFileSystem` |
 
 ## Tech Stack
