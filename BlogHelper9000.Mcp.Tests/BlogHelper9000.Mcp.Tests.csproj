@@ -28,8 +28,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\BlogHelper9000.Mcp\BlogHelper9000.Mcp.csproj" />
-        <ProjectReference Include="..\BlogHelper9000.Core\BlogHelper9000.Core.csproj" />
-        <ProjectReference Include="..\BlogHelper9000.Imaging\BlogHelper9000.Imaging.csproj" />
     </ItemGroup>
 
 </Project>

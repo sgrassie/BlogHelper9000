@@ -2,6 +2,7 @@ using BlogHelper9000.Core.Services;
 using BlogHelper9000.Mcp.Tools;
 using FluentAssertions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 
 namespace BlogHelper9000.Mcp.Tests.Tools;
 
@@ -33,5 +34,20 @@ public class FixMetadataToolTests
         // Assert
         result.Should().Be("Metadata fix completed successfully.");
         blogService.Received(1).FixMetadata(true, true, true);
+    }
+
+    [Fact]
+    public void FixMetadata_WhenServiceThrows_ReturnsErrorMessage()
+    {
+        // Arrange
+        var blogService = Substitute.For<IBlogService>();
+        blogService.When(x => x.FixMetadata(Arg.Any<bool>(), Arg.Any<bool>(), Arg.Any<bool>()))
+            .Do(_ => throw new InvalidOperationException("Test error"));
+
+        // Act
+        var result = FixMetadataTool.FixMetadata(blogService, fixStatus: true);
+
+        // Assert
+        result.Should().Be("Failed to fix metadata: Test error");
     }
 }

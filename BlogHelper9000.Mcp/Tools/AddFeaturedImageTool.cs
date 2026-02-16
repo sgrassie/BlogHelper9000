@@ -21,7 +21,7 @@ public static class AddFeaturedImageTool
             return $"Could not find post '{postPath}'.";
         }
 
-        var imageStream = await unsplashClient.LoadImageAsync(imageQuery);
+        await using var imageStream = await unsplashClient.LoadImageAsync(imageQuery);
         if (imageStream == Stream.Null)
         {
             return "Failed to load image from Unsplash. Check that credentials are configured.";

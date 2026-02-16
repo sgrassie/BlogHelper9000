@@ -26,7 +26,14 @@ builder.Services.AddSingleton<IUnsplashClient, UnsplashClient>();
 builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
 
 // MCP server — stdio transport, auto-discover [McpServerTool] methods in this assembly
-builder.Services.AddMcpServer()
+builder.Services.AddMcpServer(options =>
+{
+    options.ServerInfo = new()
+    {
+        Name = "BlogHelper9000",
+        Version = "1.0.0"
+    };
+})
 .WithStdioServerTransport()
 .WithToolsFromAssembly();
 

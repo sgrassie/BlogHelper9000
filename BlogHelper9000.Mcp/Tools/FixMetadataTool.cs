@@ -14,7 +14,14 @@ public static class FixMetadataTool
         [Description("Fix empty descriptions")] bool fixDescription = false,
         [Description("Fix/normalize tags")] bool fixTags = false)
     {
-        blogService.FixMetadata(fixStatus, fixDescription, fixTags);
-        return "Metadata fix completed successfully.";
+        try
+        {
+            blogService.FixMetadata(fixStatus, fixDescription, fixTags);
+            return "Metadata fix completed successfully.";
+        }
+        catch (Exception ex)
+        {
+            return $"Failed to fix metadata: {ex.Message}";
+        }
     }
 }

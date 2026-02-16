@@ -75,7 +75,7 @@ public class AddFeaturedImageToolTests
         var unsplashClient = Substitute.For<IUnsplashClient>();
         var imageProcessor = Substitute.For<IImageProcessor>();
         
-        var imageStream = new MemoryStream();
+        await using var imageStream = new MemoryStream();
         unsplashClient.LoadImageAsync("nature").Returns(imageStream);
 
         // Act
