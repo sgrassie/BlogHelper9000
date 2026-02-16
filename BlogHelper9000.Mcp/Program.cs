@@ -4,6 +4,7 @@ using BlogHelper9000.Core.Services;
 using BlogHelper9000.Imaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.IO.Abstractions;
 
@@ -22,8 +23,11 @@ builder.Services.AddSingleton<MarkdownHandler>();
 builder.Services.AddSingleton<PostManager>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddSingleton<IBlogService, BlogService>();
-builder.Services.AddSingleton<IUnsplashClient, UnsplashClient>();
-builder.Services.AddSingleton<IImageProcessor, ImageProcessor>();
+builder.Services.AddSingleton<IUnsplashClient>(sp =>
+    new UnsplashClient(sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
+builder.Services.AddSingleton<IImageProcessor>(sp => new ImageProcessor(
+    sp.GetRequiredService<ILoggerFactory>().CreateLogger<ImageProcessor>(),
+    sp.GetRequiredService<PostManager>()));
 
 // MCP server — stdio transport, auto-discover [McpServerTool] methods in this assembly
 builder.Services.AddMcpServer(options =>
