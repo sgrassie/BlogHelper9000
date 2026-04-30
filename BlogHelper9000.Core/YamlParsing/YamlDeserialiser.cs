@@ -99,7 +99,7 @@ public sealed class YamlDeserialiser : SerialiserBase
             }
             catch (Exception e)
             {
-                var message = $"Error deserialising property '{item.Key}'";
+                var message = $"Error deserialising property '{item.Key}' with value '{item.Value}'";
                 throw new YamlConvertException(message, e);
             }
         }

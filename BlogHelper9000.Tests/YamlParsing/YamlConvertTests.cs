@@ -125,4 +125,13 @@ series: ""TDD: Implementing Freecell""
         act.Should().Throw<YamlConvertException>()
             .WithMessage("*no colon on this line*");
     }
+
+    [Fact]
+    public void Should_Include_Value_In_ExceptionMessage_When_Deserialisation_Fails()
+    {
+        var yaml = "---\npublished: not-a-date\n---";
+        var act = () => new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
+        act.Should().Throw<YamlConvertException>()
+            .WithMessage("*not-a-date*");
+    }
 }
