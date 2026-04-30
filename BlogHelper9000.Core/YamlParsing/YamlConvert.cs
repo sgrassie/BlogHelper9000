@@ -4,8 +4,8 @@ namespace BlogHelper9000.Core.YamlParsing;
 
 public class YamlConvert(IFileSystem fileSystem)
 {
-    private static YamlSerialiser Serialiser = new YamlSerialiser();
-    private static YamlDeserialiser Deserialiser = new YamlDeserialiser();
+    private static readonly YamlSerialiser Serialiser = new YamlSerialiser();
+    private static readonly YamlDeserialiser Deserialiser = new YamlDeserialiser();
 
     public string Serialise(YamlHeader header)
     {
