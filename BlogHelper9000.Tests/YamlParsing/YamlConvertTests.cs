@@ -116,4 +116,13 @@ series: ""TDD: Implementing Freecell""
 
         serialised.Should().Match(yaml);
     }
+
+    [Fact]
+    public void Should_Throw_YamlConvertException_For_MalformedLine()
+    {
+        var yaml = "---\nno colon on this line\n---";
+        var act = () => new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
+        act.Should().Throw<YamlConvertException>()
+            .WithMessage("*no colon on this line*");
+    }
 }

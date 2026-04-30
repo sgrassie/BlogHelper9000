@@ -135,6 +135,7 @@ public sealed class YamlDeserialiser : SerialiserBase
         if (string.IsNullOrEmpty(tag)) return ("", "");
         tag = tag.Trim();
         var index = tag.IndexOf(':');
+        if (index < 0) throw new YamlConvertException($"Malformed YAML line: '{tag}'");
         var property = tag.Substring(0, index);
         var value = tag.Substring(index + 1).Trim();
         return (property, value);
