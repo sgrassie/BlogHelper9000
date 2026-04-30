@@ -95,7 +95,6 @@ public sealed class YamlDeserialiser : SerialiserBase
                     property.SetValue(header, list, null);
                 }
 
-                header.Extras = extras;
             }
             catch (Exception e)
             {
@@ -103,6 +102,8 @@ public sealed class YamlDeserialiser : SerialiserBase
                 throw new YamlConvertException(message, e);
             }
         }
+
+        header.Extras = extras;
 
         return header;
     }
