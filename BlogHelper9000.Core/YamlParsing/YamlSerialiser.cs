@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 
 namespace BlogHelper9000.Core.YamlParsing;
@@ -9,7 +10,7 @@ public sealed class YamlSerialiser : SerialiserBase
         var dict = GetYamlHeaderProperties(header);
 
         var builder = new StringBuilder();
-        builder.AppendLine("---");
+        builder.AppendLine(FrontMatterDelimiter);
 
         foreach (var item in dict)
         {
@@ -25,7 +26,7 @@ public sealed class YamlSerialiser : SerialiserBase
             }
             else if (item.Value is DateTime)
             {
-                builder.AppendLine($"{item.Key}: {item.Value:dd/MM/yyyy}");
+                builder.AppendLine($"{item.Key}: {((DateTime)item.Value).ToString(DateFormat, CultureInfo.InvariantCulture)}");
             }
             else
             {
@@ -33,7 +34,7 @@ public sealed class YamlSerialiser : SerialiserBase
             }
         }
 
-        builder.Append("---");
+        builder.Append(FrontMatterDelimiter);
 
         return builder.ToString();
 

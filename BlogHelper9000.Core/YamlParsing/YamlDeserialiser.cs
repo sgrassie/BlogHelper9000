@@ -5,6 +5,8 @@ namespace BlogHelper9000.Core.YamlParsing;
 
 public sealed class YamlDeserialiser : SerialiserBase
 {
+    private const string DraftDateValue = "draft";
+
     public YamlHeader Deserialise(string[] fileContent)
     {
         var headerStartMarkerFound = false;
@@ -12,7 +14,7 @@ public sealed class YamlDeserialiser : SerialiserBase
 
         foreach (var line in fileContent)
         {
-            if (line.Trim() == "---")
+            if (line.Trim() == FrontMatterDelimiter)
             {
                 if (!headerStartMarkerFound)
                 {
@@ -77,9 +79,9 @@ public sealed class YamlDeserialiser : SerialiserBase
                 if (property?.PropertyType == typeof(DateTime?))
                 {
                     var value = (string)item.Value;
-                    var date = value is "draft" or "true" or "false"
+                    var date = value is DraftDateValue or "true" or "false"
                         ? DateTime.MinValue
-                        : DateTime.ParseExact((string)item.Value, "dd/MM/yyyy", CultureInfo.InvariantCulture);
+                        : DateTime.ParseExact((string)item.Value, DateFormat, CultureInfo.InvariantCulture);
                     property.SetValue(header, date, null);
                 }
 
