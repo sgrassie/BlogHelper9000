@@ -134,4 +134,34 @@ series: ""TDD: Implementing Freecell""
         act.Should().Throw<YamlConvertException>()
             .WithMessage("*not-a-date*");
     }
+
+    [Fact]
+    public void Should_RoundTrip_FullyPopulated_YamlHeader()
+    {
+        var yaml = """
+            ---
+            layout: post
+            title: Test Post
+            description: A test description
+            tags: [dotnet,csharp]
+            featured_image: /assets/img.jpg
+            featured: false
+            hidden: false
+            published: 01/01/2024
+            ---
+            """;
+
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
+        var serialised = new YamlConvert(new MockFileSystem()).Serialise(header);
+        var roundTripped = new YamlConvert(new MockFileSystem()).Deserialise(serialised.Split(Environment.NewLine));
+
+        roundTripped.Layout.Should().Be("post");
+        roundTripped.Title.Should().Be("Test Post");
+        roundTripped.Description.Should().Be("A test description");
+        roundTripped.Tags.Should().Equal("dotnet", "csharp");
+        roundTripped.FeaturedImage.Should().Be("/assets/img.jpg");
+        roundTripped.IsFeatured.Should().BeFalse();
+        roundTripped.IsHidden.Should().BeFalse();
+        roundTripped.PublishedOn.Should().Be(new DateTime(2024, 1, 1));
+    }
 }
