@@ -110,7 +110,7 @@ else
 }
 
 Application.Init();
-Application.KeyBindings.Remove(Application.QuitKey);
+Application.RemoveDefaultKeyBinding(Command.Quit);
 
 try
 {
