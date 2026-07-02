@@ -112,6 +112,7 @@ else
 Application.Init();
 Application.RemoveDefaultKeyBinding(Command.Quit);
 
+
 try
 {
     var workspace = provider.GetRequiredService<BlogWorkspaceWindow>();
