@@ -8,6 +8,16 @@
         <RootNamespace>BlogHelper9000.Imaging</RootNamespace>
     </PropertyGroup>
 
+    <PropertyGroup>
+        <SixLaborsLicenseKey>$(SIXLABORS_LICENSE_KEY)</SixLaborsLicenseKey>
+    </PropertyGroup>
+
+    <Target Name="ValidateSixLaborsLicenseKey"
+            BeforeTargets="SixLabors_ValidateLicense"
+            Condition="'$(DesignTimeBuild)' != 'true' and '$(SixLaborsLicenseKey)' == ''">
+        <Error Text="SixLabors ImageSharp requires a license key to build BlogHelper9000.Imaging. Public contributors must obtain their own key from Six Labors, then set the SIXLABORS_LICENSE_KEY environment variable to the full license text before building." />
+    </Target>
+
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.9" />
         <PackageReference Include="SixLabors.Fonts" Version="3.0.0" />

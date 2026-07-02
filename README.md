@@ -34,6 +34,23 @@ Once installed, the `bloghelper` command is available globally.
 
 ### Building from source
 
+BlogHelper9000 uses SixLabors ImageSharp for featured image generation. ImageSharp requires a license key at build time; public contributors should obtain their own key from [Six Labors](https://sixlabors.com/pricing/).
+
+Set the full license text in the `SIXLABORS_LICENSE_KEY` environment variable before building:
+
+```bash
+export SIXLABORS_LICENSE_KEY="FULL_LICENSE_TEXT"
+```
+
+On MacOS using zsh:
+
+```bash
+echo 'export SIXLABORS_LICENSE_KEY=Id="license text here"' >> ~/.zprofile
+
+```
+
+If you are extracting the value from `sixlabors.lic`, use the full file contents, not only the `Key` field. Keep the license value out of git and out of committed project files.
+
 ```bash
 git clone https://github.com/sgrassie/BlogHelper9000.git
 cd BlogHelper9000
@@ -286,6 +303,8 @@ BlogHelper9000.sln
 ## Building & Testing
 
 BlogHelper9000 uses [Cake](https://cakebuild.net/) for build orchestration.
+
+Before running these commands from source, set `SIXLABORS_LICENSE_KEY` to the full SixLabors license text. If it is missing, the imaging project fails the build with a configuration message explaining how to set it.
 
 ```bash
 # Build
