@@ -52,20 +52,22 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
         baseImage.Mutate(x =>
         {
             logger.LogDebug("Adding post description text");
-            x.DrawText(
+            x.Paint(
                 new DrawingOptions
                 {
                     GraphicsOptions = new GraphicsOptions { Antialias = true }
                 },
-                new RichTextOptions(mainFont)
-                {
-                    Origin = new PointF(600, 200),
-                    WrappingLength = 1000f,
-                    HorizontalAlignment = HorizontalAlignment.Center
-                },
-                postMarkdown.Metadata.Title,
-                new SolidBrush(Color.WhiteSmoke),
-                new SolidPen(Color.WhiteSmoke, 1)
+                canvas => canvas.DrawText(
+                    new RichTextOptions(mainFont)
+                    {
+                        Origin = new PointF(600, 200),
+                        WrappingLength = 1000f,
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    },
+                    postMarkdown.Metadata.Title,
+                    new SolidBrush(Color.WhiteSmoke),
+                    new SolidPen(Color.WhiteSmoke, 1)
+                )
             );
         });
     }
@@ -77,20 +79,22 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
         {
             logger.LogDebug("Adding post description text shadow");
 
-            x.DrawText(
+            x.Paint(
                 new DrawingOptions
                 {
                     GraphicsOptions = new GraphicsOptions { Antialias = true }
                 },
-                new RichTextOptions(mainFont)
-                {
-                    Origin = new PointF(603, 203),
-                    WrappingLength = 1000f,
-                    HorizontalAlignment = HorizontalAlignment.Center
-                },
-                postMarkdown.Metadata.Title,
-                new SolidBrush(Color.Black),
-                new SolidPen(Color.Black, 1)
+                canvas => canvas.DrawText(
+                    new RichTextOptions(mainFont)
+                    {
+                        Origin = new PointF(603, 203),
+                        WrappingLength = 1000f,
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    },
+                    postMarkdown.Metadata.Title,
+                    new SolidBrush(Color.Black),
+                    new SolidPen(Color.Black, 1)
+                )
             );
         });
     }
@@ -112,21 +116,23 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
         baseImage.Mutate(x =>
         {
             logger.LogDebug("Adding Unsplash attribution");
-            var measure = TextMeasurer.MeasureSize(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
+            var measure = TextMeasurer.MeasureAdvance(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
 
-            x.DrawText(
+            x.Paint(
                 new DrawingOptions
                 {
                     GraphicsOptions = new GraphicsOptions { Antialias = true },
                 },
-                new RichTextOptions(unsplashAttributionFont)
-                {
-                    Origin = new PointF(baseImageWidth - measure.Width, baseImageHeight - measure.Height),
-                    HorizontalAlignment = HorizontalAlignment.Center
-                },
-                ImagesByUnsplash,
-                new SolidBrush(Color.WhiteSmoke),
-                new SolidPen(Color.WhiteSmoke, 1)
+                canvas => canvas.DrawText(
+                    new RichTextOptions(unsplashAttributionFont)
+                    {
+                        Origin = new PointF(baseImageWidth - measure.Width, baseImageHeight - measure.Height),
+                        HorizontalAlignment = HorizontalAlignment.Center
+                    },
+                    ImagesByUnsplash,
+                    new SolidBrush(Color.WhiteSmoke),
+                    new SolidPen(Color.WhiteSmoke, 1)
+                )
             );
         });
     }
