@@ -25,7 +25,7 @@ public class MarkdownHandler
     public void UpdateFile(MarkdownFile file)
     {
         var markerCount = 0;
-        var withoutOriginalHeader = new List<string>();
+        var body = new List<string>();
 
         foreach (var line in EnumerateLines(file.FilePath))
         {
@@ -35,29 +35,29 @@ public class MarkdownHandler
                 {
                     markerCount++;
                 }
+                continue;
             }
-            else
-            {
-                withoutOriginalHeader.Add(line);
-            }
+
+            body.Add(line);
         }
 
-        var newContent = withoutOriginalHeader.Prepend(_yamlConvert.Serialise(file.Metadata));
+        if (markerCount < 2)
+            throw new YamlConvertException($"'{file.FilePath}' is missing front-matter delimiters; refusing to overwrite.");
 
-        var f = _fileSystem.FileInfo.New(file.FilePath);
-        using var writer = new StreamWriter(f.OpenWrite());
-        for (var i = 0; i < newContent.Count(); i++)
+        var lines = new List<string> { _yamlConvert.Serialise(file.Metadata).TrimEnd('\n', '\r') };
+        lines.AddRange(body);
+
+        using var writer = new StreamWriter(_fileSystem.File.Open(file.FilePath, FileMode.Create, FileAccess.Write));
+        for (var i = 0; i < lines.Count; i++)
         {
-            var line = newContent.ElementAt(i);
-
-            if (i == newContent.Count() - 1)
+            if (i == lines.Count - 1)
             {
                 // last line, don't write a new line
-                writer.Write(line);
+                writer.Write(lines[i]);
             }
             else
             {
-                writer.WriteLine(line);
+                writer.WriteLine(lines[i]);
             }
         }
     }

@@ -61,6 +61,7 @@ public class AddImageCommandTests
         var imageProcessor = Substitute.For<IImageProcessor>();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var mockClient = Substitute.For<IUnsplashClient>();
+        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new MemoryStream());
 
         var command = new AddImageCommand
         {
@@ -93,9 +94,10 @@ public class AddImageCommandTests
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var imageProcessor = Substitute.For<IImageProcessor>();
         var mockClient = Substitute.For<IUnsplashClient>();
+        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new MemoryStream());
         var command = new AddImageCommand
         {
-            Post = "2000-01-01-first-post.md",
+            Post = postNameToFind,
             AuthorBranding = "branding_logo.png"
         };
         var sut = new AddImageCommand.Handler(NullLogger<AddImageCommand.Handler>.Instance, postManager, mockClient, imageProcessor);

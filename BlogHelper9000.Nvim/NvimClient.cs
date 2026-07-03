@@ -85,6 +85,21 @@ public sealed class NvimClient : IAsyncDisposable
     }
 
     /// <summary>
+    /// Opens a file for editing, treating the path as data rather than parsing it as
+    /// part of an Ex command. The path is passed as a Vimscript single-quoted string
+    /// literal (whose only escape rule is doubling embedded quotes) to
+    /// <c>:execute 'edit ' . fnameescape(...)</c>, so characters meaningful to Ex commands
+    /// (spaces, quotes, pipes, backslashes, newlines) cannot break out of the argument.
+    /// </summary>
+    public async Task EditFileAsync(string path)
+    {
+        await RequestAsync("nvim_command", $"execute 'edit ' . fnameescape({ToVimSingleQuotedString(path)})");
+    }
+
+    internal static string ToVimSingleQuotedString(string value) =>
+        "'" + value.Replace("'", "''") + "'";
+
+    /// <summary>
     /// Get lines from a buffer.
     /// </summary>
     public async Task<string[]> BufGetLinesAsync(int buffer, int start, int end, bool strictIndexing = false)

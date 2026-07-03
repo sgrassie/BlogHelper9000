@@ -25,12 +25,14 @@ public sealed class MsgPackRpcClient : IAsyncDisposable
     private long _nextMsgId;
     private Task? _readerTask;
     private readonly CancellationTokenSource _cts = new();
+    private readonly SemaphoreSlim _writeLock = new(1, 1);
+    private static readonly TimeSpan DefaultRequestTimeout = TimeSpan.FromSeconds(30);
 
     private static readonly MessagePackSerializerOptions TypelessOptions =
         MessagePackSerializerOptions.Standard.WithResolver(
             MessagePack.Resolvers.CompositeResolver.Create(
                 NvimExtensionResolver.Instance,
-                MessagePack.Resolvers.TypelessObjectResolver.Instance));
+                MessagePack.Resolvers.PrimitiveObjectResolver.Instance));
 
     public MsgPackRpcClient(Stream input, Stream output, ILogger logger)
     {
@@ -48,20 +50,42 @@ public sealed class MsgPackRpcClient : IAsyncDisposable
         _readerTask = Task.Run(() => ReadLoop(_cts.Token));
     }
 
-    public async Task<object?> RequestAsync(string method, params object[] args)
+    public Task<object?> RequestAsync(string method, params object[] args) =>
+        RequestAsync(method, DefaultRequestTimeout, args);
+
+    public async Task<object?> RequestAsync(string method, TimeSpan timeout, params object[] args)
     {
         var msgId = Interlocked.Increment(ref _nextMsgId);
         var tcs = new TaskCompletionSource<object?>(TaskCreationOptions.RunContinuationsAsynchronously);
         _pendingRequests[msgId] = tcs;
 
-        var bytes = SerializeRequest(msgId, method, args);
+        try
+        {
+            var bytes = SerializeRequest(msgId, method, args);
 
-        _logger.LogTrace("RPC request [{MsgId}]: {Method}", msgId, method);
+            _logger.LogTrace("RPC request [{MsgId}]: {Method}", msgId, method);
 
-        await _input.WriteAsync(bytes, _cts.Token);
-        await _input.FlushAsync(_cts.Token);
+            await _writeLock.WaitAsync(_cts.Token);
+            try
+            {
+                await _input.WriteAsync(bytes, _cts.Token);
+                await _input.FlushAsync(_cts.Token);
+            }
+            finally
+            {
+                _writeLock.Release();
+            }
 
-        return await tcs.Task;
+            using var timeoutCts = new CancellationTokenSource(timeout);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(_cts.Token, timeoutCts.Token);
+            await using var registration = linkedCts.Token.Register(() => tcs.TrySetCanceled(linkedCts.Token));
+
+            return await tcs.Task;
+        }
+        finally
+        {
+            _pendingRequests.TryRemove(msgId, out _);
+        }
     }
 
     internal static byte[] SerializeRequest(long msgId, string method, object[] args)
@@ -245,6 +269,7 @@ public sealed class MsgPackRpcClient : IAsyncDisposable
             try { await _readerTask; } catch { }
         }
         _cts.Dispose();
+        _writeLock.Dispose();
     }
 }
 

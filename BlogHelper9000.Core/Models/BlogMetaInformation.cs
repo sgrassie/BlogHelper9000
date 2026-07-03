@@ -9,5 +9,5 @@ public class BlogMetaInformation
     public int UnPublishedCount { get; set; }
     public IEnumerable<YamlHeader>? Unpublished { get; set; }
     public List<YamlHeader>? LatestPosts { get; set; }
-    public TimeSpan DaysSinceLastPost { get; set; }
+    public TimeSpan? DaysSinceLastPost { get; set; }
 }

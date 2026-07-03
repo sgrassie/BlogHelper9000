@@ -235,7 +235,7 @@ public class BlogCommands
         {
             $"Total posts: {info.PostCount}",
             $"Drafts: {info.UnPublishedCount}",
-            $"Days since last post: {info.DaysSinceLastPost.Days}",
+            $"Days since last post: {info.DaysSinceLastPost?.Days ?? 0}",
         };
 
         if (info.LastPost is not null)
@@ -358,13 +358,21 @@ public class BlogCommands
         Application.Run(dialog);
     }
 
+    internal Task? LastAddImageTask { get; private set; }
+
     internal void AddImageAsync(MarkdownFile markdownFile, string query)
     {
-        _ = Task.Run(async () =>
+        LastAddImageTask = Task.Run(async () =>
         {
             try
             {
                 var imageStream = await _unsplashClient.LoadImageAsync(query);
+
+                if (imageStream is null)
+                {
+                    _logger.LogError("Could not load an Unsplash image for query '{Query}'", query);
+                    return;
+                }
 
                 string? brandingPath = null;
                 if (_options.AuthorBranding is not null &&

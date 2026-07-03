@@ -34,6 +34,12 @@ public sealed class YamlSerialiser : SerialiserBase
             }
         }
 
+        foreach (var (key, value) in header.Extras)
+        {
+            if (string.IsNullOrEmpty(value)) continue;
+            builder.AppendLine($"{key}: {value}");
+        }
+
         builder.Append(FrontMatterDelimiter);
 
         return builder.ToString();

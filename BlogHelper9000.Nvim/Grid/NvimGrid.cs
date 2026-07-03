@@ -10,6 +10,7 @@ public class NvimGrid
 {
     private NvimGridCell[,] _cells;
     private readonly HashSet<int> _dirtyRows = new();
+    private readonly object _gridLock = new();
 
     public int Width { get; private set; }
     public int Height { get; private set; }
@@ -24,7 +25,10 @@ public class NvimGrid
         Clear();
     }
 
-    public NvimGridCell this[int row, int col] => _cells[row, col];
+    public NvimGridCell this[int row, int col]
+    {
+        get { lock (_gridLock) return _cells[row, col]; }
+    }
 
     public IReadOnlySet<int> DirtyRows => _dirtyRows;
 
@@ -38,31 +42,37 @@ public class NvimGrid
 
     public void Clear()
     {
-        for (var r = 0; r < Height; r++)
-        for (var c = 0; c < Width; c++)
-            _cells[r, c] = new NvimGridCell();
+        lock (_gridLock)
+        {
+            for (var r = 0; r < Height; r++)
+            for (var c = 0; c < Width; c++)
+                _cells[r, c] = new NvimGridCell();
+        }
         MarkAllDirty();
     }
 
     public void Resize(int width, int height)
     {
-        var newCells = new NvimGridCell[height, width];
-        var copyRows = Math.Min(Height, height);
-        var copyCols = Math.Min(Width, width);
+        lock (_gridLock)
+        {
+            var newCells = new NvimGridCell[height, width];
+            var copyRows = Math.Min(Height, height);
+            var copyCols = Math.Min(Width, width);
 
-        for (var r = 0; r < copyRows; r++)
-        for (var c = 0; c < copyCols; c++)
-            newCells[r, c] = _cells[r, c];
+            for (var r = 0; r < copyRows; r++)
+            for (var c = 0; c < copyCols; c++)
+                newCells[r, c] = _cells[r, c];
 
-        // Fill new cells with defaults
-        for (var r = 0; r < height; r++)
-        for (var c = 0; c < width; c++)
-            if (r >= copyRows || c >= copyCols)
-                newCells[r, c] = new NvimGridCell();
+            // Fill new cells with defaults
+            for (var r = 0; r < height; r++)
+            for (var c = 0; c < width; c++)
+                if (r >= copyRows || c >= copyCols)
+                    newCells[r, c] = new NvimGridCell();
 
-        _cells = newCells;
-        Width = width;
-        Height = height;
+            _cells = newCells;
+            Width = width;
+            Height = height;
+        }
         MarkAllDirty();
     }
 
@@ -91,19 +101,24 @@ public class NvimGrid
 
     internal void ApplyLine(GridLineEvent line)
     {
-        var col = line.ColStart;
-        var currentHlId = 0;
+        if (line.Row < 0 || line.Row >= Height) return;
 
-        foreach (var cell in line.Cells)
+        lock (_gridLock)
         {
-            var hlId = cell.HlId ?? currentHlId;
-            currentHlId = hlId;
+            var col = line.ColStart;
+            var currentHlId = 0;
 
-            for (var r = 0; r < cell.Repeat; r++)
+            foreach (var cell in line.Cells)
             {
-                if (col < Width)
+                var hlId = cell.HlId ?? currentHlId;
+                currentHlId = hlId;
+
+                for (var r = 0; r < cell.Repeat; r++)
                 {
-                    _cells[line.Row, col] = new NvimGridCell(cell.Text, hlId);
+                    if (col >= 0 && col < Width)
+                    {
+                        _cells[line.Row, col] = new NvimGridCell(cell.Text, hlId);
+                    }
                     col++;
                 }
             }
@@ -114,38 +129,49 @@ public class NvimGrid
 
     internal void ApplyScroll(GridScrollEvent scroll)
     {
-        if (scroll.Rows > 0)
+        var top = Math.Clamp(scroll.Top, 0, Height);
+        var bottom = Math.Clamp(scroll.Bottom, 0, Height);
+        var left = Math.Clamp(scroll.Left, 0, Width);
+        var right = Math.Clamp(scroll.Right, 0, Width);
+
+        if (top >= bottom || left >= right) return;
+
+        lock (_gridLock)
         {
-            // Scroll up: move rows up, clear bottom
-            for (var r = scroll.Top; r < scroll.Bottom - scroll.Rows; r++)
+            if (scroll.Rows > 0)
             {
-                for (var c = scroll.Left; c < scroll.Right; c++)
-                    _cells[r, c] = _cells[r + scroll.Rows, c];
+                // Scroll up: move rows up, clear bottom
+                var rows = Math.Min(scroll.Rows, bottom - top);
+                for (var r = top; r < bottom - rows; r++)
+                {
+                    for (var c = left; c < right; c++)
+                        _cells[r, c] = _cells[r + rows, c];
+                }
+                for (var r = bottom - rows; r < bottom; r++)
+                {
+                    for (var c = left; c < right; c++)
+                        _cells[r, c] = new NvimGridCell();
+                }
             }
-            for (var r = scroll.Bottom - scroll.Rows; r < scroll.Bottom; r++)
+            else if (scroll.Rows < 0)
             {
-                for (var c = scroll.Left; c < scroll.Right; c++)
-                    _cells[r, c] = new NvimGridCell();
-            }
-        }
-        else if (scroll.Rows < 0)
-        {
-            // Scroll down: move rows down, clear top
-            var amount = -scroll.Rows;
-            for (var r = scroll.Bottom - 1; r >= scroll.Top + amount; r--)
-            {
-                for (var c = scroll.Left; c < scroll.Right; c++)
-                    _cells[r, c] = _cells[r - amount, c];
-            }
-            for (var r = scroll.Top; r < scroll.Top + amount; r++)
-            {
-                for (var c = scroll.Left; c < scroll.Right; c++)
-                    _cells[r, c] = new NvimGridCell();
+                // Scroll down: move rows down, clear top
+                var amount = Math.Min(-scroll.Rows, bottom - top);
+                for (var r = bottom - 1; r >= top + amount; r--)
+                {
+                    for (var c = left; c < right; c++)
+                        _cells[r, c] = _cells[r - amount, c];
+                }
+                for (var r = top; r < top + amount; r++)
+                {
+                    for (var c = left; c < right; c++)
+                        _cells[r, c] = new NvimGridCell();
+                }
             }
         }
 
         // Mark all rows in scroll region as dirty
-        for (var r = scroll.Top; r < scroll.Bottom; r++)
+        for (var r = top; r < bottom; r++)
             _dirtyRows.Add(r);
     }
 
@@ -157,7 +183,7 @@ public class NvimGrid
         var chars = new char[Width];
         for (var c = 0; c < Width; c++)
         {
-            var text = _cells[row, c].Text;
+            var text = this[row, c].Text;
             chars[c] = string.IsNullOrEmpty(text) ? ' ' : text[0];
         }
         return new string(chars);

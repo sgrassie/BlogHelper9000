@@ -287,18 +287,18 @@ BlogHelper9000.sln
 |------------|---------|---------|
 | .NET | 10.0 | Runtime & SDK |
 | C# | latest | Language version with nullable reference types |
-| Terminal.Gui | 2.0.0-develop.5027 | TUI framework (v2 develop track) |
+| Terminal.Gui | 2.4.16 | TUI framework (v2 develop track) |
 | MessagePack | v3 | MsgPack-RPC serialization for Neovim communication |
-| SixLabors.ImageSharp | 3.1.12 | Image processing & featured image generation |
-| SixLabors.Fonts | 2.1.3 | Font rendering for image overlays (bundled Ubuntu fonts) |
-| TimeWarp.Nuru | 2.1.0-beta.32 | Mediator pattern for CLI command routing |
-| Spectre.Console | 0.54.0 | CLI console output formatting |
+| SixLabors.ImageSharp | 4.0.0 | Image processing & featured image generation |
+| SixLabors.Fonts | 3.0.0 | Font rendering for image overlays (bundled Ubuntu fonts) |
+| TimeWarp.Nuru | 3.0.0-beta.71 | Mediator pattern for CLI command routing |
+| Spectre.Console | 0.57.2 | CLI console output formatting |
 | MinVer | 7.0.0 | Git-based semantic versioning |
 | Cake Build | — | Build orchestration |
 | xUnit v3 | — | Test framework |
 | FluentAssertions | — | Test assertion library |
 | NSubstitute | — | Mocking framework |
-| System.IO.Abstractions | 22.1.0 | File system abstraction for testability |
+| System.IO.Abstractions | 22.1.1 | File system abstraction for testability |
 
 ## Building & Testing
 

@@ -215,4 +215,48 @@ public class NvimGridTests
         grid.CursorRow.Should().Be(10);
         grid.CursorCol.Should().Be(20);
     }
+
+    [Fact]
+    public void ApplyLine_With_OutOfRange_Row_Does_Not_Throw()
+    {
+        var grid = new NvimGrid(10, 5);
+
+        var line = new GridLineEvent(1, 999, 0, [new GridLineCell("X", 0, 1)]);
+
+        var act = () => grid.ApplyLine(line);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ApplyLine_With_Negative_Row_Does_Not_Throw()
+    {
+        var grid = new NvimGrid(10, 5);
+
+        var line = new GridLineEvent(1, -1, 0, [new GridLineCell("X", 0, 1)]);
+
+        var act = () => grid.ApplyLine(line);
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ApplyScroll_With_OutOfRange_Bounds_Does_Not_Throw()
+    {
+        var grid = new NvimGrid(10, 5);
+
+        var act = () => grid.ApplyScroll(new GridScrollEvent(1, -100, 999, -100, 999, 2, 0));
+
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void ApplyScroll_With_Inverted_Bounds_Does_Not_Throw()
+    {
+        var grid = new NvimGrid(10, 5);
+
+        var act = () => grid.ApplyScroll(new GridScrollEvent(1, 4, 1, 0, 10, 1, 0));
+
+        act.Should().NotThrow();
+    }
 }

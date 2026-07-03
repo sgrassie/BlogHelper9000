@@ -5,9 +5,9 @@ namespace BlogHelper9000.Core.Services;
 public interface IBlogService
 {
     /// <summary>
-    /// Creates a new post or draft and returns the file path.
+    /// Creates a new post or draft and returns the file path, or null if a post already exists at the target path.
     /// </summary>
-    string AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null);
+    string? AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null, IReadOnlyList<string>? tags = null);
 
     /// <summary>
     /// Publishes a draft post. Returns the new file path, or null if the post was not found.

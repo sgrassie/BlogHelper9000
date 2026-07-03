@@ -50,7 +50,7 @@ public class AddFeaturedImageToolTests
         var unsplashClient = Substitute.For<IUnsplashClient>();
         var imageProcessor = Substitute.For<IImageProcessor>();
         
-        unsplashClient.LoadImageAsync("nature").Returns(Stream.Null);
+        unsplashClient.LoadImageAsync("nature").Returns((Stream?)null);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(

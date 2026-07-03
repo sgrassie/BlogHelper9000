@@ -16,7 +16,7 @@ public static class GetBlogInfoTool
         {
             info.PostCount,
             info.UnPublishedCount,
-            DaysSinceLastPost = info.DaysSinceLastPost.Days,
+            DaysSinceLastPost = info.DaysSinceLastPost?.Days,
             LatestPosts = info.LatestPosts?.Select(p => new
             {
                 p.Title,

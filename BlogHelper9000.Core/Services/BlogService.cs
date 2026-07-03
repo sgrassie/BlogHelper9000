@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Abstractions;
+using System.Text.RegularExpressions;
 using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Models;
 using BlogHelper9000.Core.YamlParsing;
@@ -22,16 +23,24 @@ public class BlogService : IBlogService
         _logger = logger;
     }
 
-    public string AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null)
+    private static readonly Regex AlreadyPublishedFileNamePattern = new(@"^\d{4}-\d{2}-\d{2}-", RegexOptions.Compiled);
+
+    public string? AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null, IReadOnlyList<string>? tags = null)
     {
         var filePath = isDraft
             ? _postManager.CreateDraftPath(title)
             : _postManager.CreatePostPath(title);
 
+        if (_fileSystem.File.Exists(filePath))
+        {
+            _logger.LogError("A post already exists at {File}", filePath);
+            return null;
+        }
+
         var yamlHeader = new YamlHeader
         {
             Title = title,
-            Tags = [],
+            Tags = tags?.ToList() ?? [],
             FeaturedImage = featuredImage ?? string.Empty,
             IsFeatured = isFeatured,
             IsHidden = isHidden,
@@ -54,24 +63,36 @@ public class BlogService : IBlogService
         }
 
         var currentPath = postMarkdown.FilePath;
-        postMarkdown.Metadata.IsPublished = true;
-        postMarkdown.Metadata.PublishedOn = _timeProvider.GetLocalNow().DateTime;
-        _postManager.Markdown.UpdateFile(postMarkdown);
+        var fileName = _fileSystem.Path.GetFileName(currentPath);
 
-        var fileName = _fileSystem.Path.GetFileName(postMarkdown.FilePath);
-        var publishedFilename = $"{_timeProvider.GetLocalNow().DateTime:yyyy-MM-dd}-{fileName}";
-        var targetFolder = _fileSystem.Path.Combine(_postManager.Posts, $"{_timeProvider.GetLocalNow().DateTime:yyyy}");
+        if (AlreadyPublishedFileNamePattern.IsMatch(fileName))
+        {
+            _logger.LogWarning("{Post} already appears to be published", postName);
+            return null;
+        }
+
+        var now = _timeProvider.GetLocalNow().DateTime;
+        var publishedFilename = $"{now:yyyy-MM-dd}-{fileName}";
+        var targetFolder = _fileSystem.Path.Combine(_postManager.Posts, $"{now:yyyy}");
+        var replacementPath = _fileSystem.Path.Combine(targetFolder, publishedFilename);
+
+        if (_fileSystem.File.Exists(replacementPath))
+        {
+            _logger.LogError("A published post already exists at {Target}", replacementPath);
+            return null;
+        }
+
+        postMarkdown.Metadata.IsPublished = true;
+        postMarkdown.Metadata.PublishedOn = now;
+        _postManager.Markdown.UpdateFile(postMarkdown);
 
         if (!_fileSystem.Directory.Exists(targetFolder))
         {
             _fileSystem.Directory.CreateDirectory(targetFolder);
         }
 
-        var replacementPath = _fileSystem.Path.Combine(targetFolder, publishedFilename);
-
         _logger.LogInformation("Publishing {PublishedFileName} to {TargetFolder}", publishedFilename, targetFolder);
         _fileSystem.File.Move(currentPath, replacementPath);
-        _fileSystem.File.Delete(currentPath);
 
         return replacementPath;
     }
@@ -80,13 +101,20 @@ public class BlogService : IBlogService
     {
         foreach (var file in _postManager.GetAllPosts())
         {
-            _logger.LogInformation("Updating metadata for {PostTitle}", file.Metadata.Title);
+            try
+            {
+                _logger.LogInformation("Updating metadata for {PostTitle}", file.Metadata.Title);
 
-            if (fixStatus) FixPublishedStatus(file);
-            if (fixDescription) FixDescription(file);
-            if (fixTags) FixTagsOnFile(file);
+                if (fixStatus) FixPublishedStatus(file);
+                if (fixDescription) FixDescription(file);
+                if (fixTags) FixTagsOnFile(file);
 
-            _postManager.Markdown.UpdateFile(file);
+                _postManager.Markdown.UpdateFile(file);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Skipping {File} — could not fix metadata", file.FilePath);
+            }
         }
     }
 
@@ -111,7 +139,7 @@ public class BlogService : IBlogService
         blogDetails.LastPost = recents.FirstOrDefault();
 
         if (blogDetails.LastPost?.PublishedOn.HasValue == true)
-            blogDetails.DaysSinceLastPost = DateTime.Now - blogDetails.LastPost.PublishedOn.Value;
+            blogDetails.DaysSinceLastPost = _timeProvider.GetLocalNow().DateTime - blogDetails.LastPost.PublishedOn.Value;
 
         return blogDetails;
     }
@@ -129,11 +157,15 @@ public class BlogService : IBlogService
             .ToList();
     }
 
-    private static void FixPublishedStatus(MarkdownFile file)
+    private void FixPublishedStatus(MarkdownFile file)
     {
-        var rawFileName = file.FilePath.Split("/").Last();
-        var datePart = rawFileName[..10];
-        file.Metadata.PublishedOn = DateTime.ParseExact(datePart, "yyyy-MM-dd", CultureInfo.InvariantCulture).Date;
+        var rawFileName = _fileSystem.Path.GetFileName(file.FilePath);
+        var datePart = rawFileName.Length >= 10 ? rawFileName[..10] : rawFileName;
+
+        if (!DateTime.TryParseExact(datePart, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var publishedOn))
+            throw new FormatException($"Could not extract a yyyy-MM-dd date from filename '{rawFileName}'.");
+
+        file.Metadata.PublishedOn = publishedOn;
         file.Metadata.IsPublished = true;
         file.Metadata.IsHidden = false;
     }

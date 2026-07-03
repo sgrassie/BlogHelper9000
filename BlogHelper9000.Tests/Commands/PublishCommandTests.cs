@@ -2,6 +2,7 @@ using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -25,12 +26,13 @@ public class PublishCommandTests
         fakeTimeProvider.SetUtcNow(new DateTimeOffset(new DateTime(2024, 11, 01)));
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, fakeTimeProvider, NullLogger<BlogService>.Instance);
         var logger = Substitute.For<MockLogger<PublishCommand.Handler>>();
         var command = new PublishCommand
         {
             Post = "file-does-not-exist.md"
         };
-        var sut = new PublishCommand.Handler(logger, postManager, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(logger, blogService);
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -52,12 +54,13 @@ public class PublishCommandTests
             .AddFile("/blog/_drafts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, fakeTimeProvider, NullLogger<BlogService>.Instance);
 
         var command = new PublishCommand
         {
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService);
 
         await sut.Handle(command, CancellationToken.None);
         var publishedPost = postManager.FileSystem.Directory
@@ -84,12 +87,13 @@ public class PublishCommandTests
             .AddFile("/blog/_posts/a-test-post.md", new MockFileData(header))
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, fakeTimeProvider, NullLogger<BlogService>.Instance);
 
         var command = new PublishCommand
         {
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, postManager, fakeTimeProvider);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService);
 
         await sut.Handle(command, CancellationToken.None);
         var publishedPost = postManager.FileSystem.Directory

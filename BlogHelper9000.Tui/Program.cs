@@ -38,8 +38,16 @@ services.AddSingleton<IOptions<BlogHelperOptions>>(
 services.AddSingleton<MarkdownHandler>();
 services.AddSingleton<PostManager>();
 services.AddSingleton<IBlogService, BlogService>();
-services.AddSingleton<IUnsplashClient>(sp =>
-    new UnsplashClient(sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
+services.AddSingleton(_ =>
+{
+    var client = new HttpClient();
+    client.DefaultRequestHeaders.Add("Accept-Version", "v1");
+    return client;
+});
+services.AddSingleton<IUnsplashClient>(sp => new UnsplashClient(
+    sp.GetRequiredService<HttpClient>(),
+    sp.GetRequiredService<IFileSystem>(),
+    sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
 services.AddSingleton<IImageProcessor>(sp =>
     new ImageProcessor(
         sp.GetRequiredService<ILoggerFactory>().CreateLogger<ImageProcessor>(),

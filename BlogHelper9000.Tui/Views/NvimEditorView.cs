@@ -112,9 +112,7 @@ public class NvimEditorView : View
     public async Task OpenFileAsync(string path)
     {
         if (!_started) return;
-        // Escape special characters in path
-        var escaped = path.Replace("\\", "\\\\").Replace(" ", "\\ ");
-        await _nvim.CommandAsync($":e {escaped}");
+        await _nvim.EditFileAsync(path);
     }
 
     /// <summary>
@@ -216,60 +214,67 @@ public class NvimEditorView : View
         {
             await foreach (var evt in _nvim.UiEvents.ReadAllAsync())
             {
-                switch (evt)
+                try
                 {
-                    case HlAttrDefineEvent hlDef:
-                        _hlAttrs[hlDef.Id] = hlDef.Attrs;
-                        break;
+                    switch (evt)
+                    {
+                        case HlAttrDefineEvent hlDef:
+                            _hlAttrs[hlDef.Id] = hlDef.Attrs;
+                            break;
 
-                    case DefaultColorsSetEvent colors:
-                        _defaultFg = colors.Foreground;
-                        _defaultBg = colors.Background;
-                        break;
+                        case DefaultColorsSetEvent colors:
+                            _defaultFg = colors.Foreground;
+                            _defaultBg = colors.Background;
+                            break;
 
-                    case ModeInfoSetEvent modeInfoSet:
-                        _modeInfoTable = modeInfoSet.ModeInfo;
-                        _cursorStyleEnabled = modeInfoSet.CursorStyleEnabled;
-                        break;
+                        case ModeInfoSetEvent modeInfoSet:
+                            _modeInfoTable = modeInfoSet.ModeInfo;
+                            _cursorStyleEnabled = modeInfoSet.CursorStyleEnabled;
+                            break;
 
-                    case ModeChangeEvent modeChange:
-                        _currentMode = modeChange.Mode;
-                        _currentModeIndex = modeChange.ModeIndex;
-                        if (_cursorStyleEnabled && _currentModeIndex < _modeInfoTable.Length)
-                            _currentCursorStyle = MapCursorShape(_modeInfoTable[_currentModeIndex]);
-                        Application.Invoke(() =>
-                        {
-                            ModeChanged?.Invoke(FormatModeDisplay(_currentMode));
-                            SetNeedsDraw();
-                        });
-                        break;
+                        case ModeChangeEvent modeChange:
+                            _currentMode = modeChange.Mode;
+                            _currentModeIndex = modeChange.ModeIndex;
+                            if (_cursorStyleEnabled && _currentModeIndex < _modeInfoTable.Length)
+                                _currentCursorStyle = MapCursorShape(_modeInfoTable[_currentModeIndex]);
+                            Application.Invoke(() =>
+                            {
+                                ModeChanged?.Invoke(FormatModeDisplay(_currentMode));
+                                SetNeedsDraw();
+                            });
+                            break;
 
-                    case FlushEvent:
-                        // Schedule a redraw on the UI thread
-                        Application.Invoke(() => SetNeedsDraw());
-                        break;
+                        case FlushEvent:
+                            // Schedule a redraw on the UI thread
+                            Application.Invoke(() => SetNeedsDraw());
+                            break;
 
-                    case BufferModifiedEvent modified:
-                        Application.Invoke(() => FileModified?.Invoke(modified.FilePath));
-                        break;
+                        case BufferModifiedEvent modified:
+                            Application.Invoke(() => FileModified?.Invoke(modified.FilePath));
+                            break;
 
-                    case BufferSavedEvent saved:
-                        Application.Invoke(() => FileSaved?.Invoke(saved.FilePath));
-                        break;
+                        case BufferSavedEvent saved:
+                            Application.Invoke(() => FileSaved?.Invoke(saved.FilePath));
+                            break;
 
-                    case BufferEnteredEvent entered:
-                        _currentBufferPath = entered.FilePath;
-                        Application.Invoke(() => BufferEntered?.Invoke(entered.BufferHandle, entered.FilePath));
-                        break;
+                        case BufferEnteredEvent entered:
+                            _currentBufferPath = entered.FilePath;
+                            Application.Invoke(() => BufferEntered?.Invoke(entered.BufferHandle, entered.FilePath));
+                            break;
 
-                    case BufferDeletedEvent deleted:
-                        Application.Invoke(() => BufferDeleted?.Invoke(deleted.BufferHandle));
-                        break;
+                        case BufferDeletedEvent deleted:
+                            Application.Invoke(() => BufferDeleted?.Invoke(deleted.BufferHandle));
+                            break;
 
-                    default:
-                        // Grid events are applied to the model
-                        _grid.ApplyEvent(evt);
-                        break;
+                        default:
+                            // Grid events are applied to the model
+                            _grid.ApplyEvent(evt);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to apply UI event {EventType}", evt.GetType().Name);
                 }
             }
         }

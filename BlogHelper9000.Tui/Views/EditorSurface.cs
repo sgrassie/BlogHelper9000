@@ -5,14 +5,15 @@ using Terminal.Gui.Views;
 namespace BlogHelper9000.Tui.Views;
 
 /// <summary>
-/// Placeholder editor surface using Terminal.Gui's TextView.
-/// Will be replaced by NvimEditorView in Milestone 4.
+/// Fallback editor surface (--no-nvim mode) using Terminal.Gui's TextView.
 /// </summary>
 public class EditorSurface : FrameView
 {
-    private readonly TextView _textView;
+    internal readonly TextView _textView;
     private readonly IFileSystem _fileSystem;
     private string? _currentFilePath;
+    private bool _isModified;
+    private bool _suppressChangeTracking;
 
     public EditorSurface(IFileSystem fileSystem)
     {
@@ -30,26 +31,59 @@ public class EditorSurface : FrameView
             ReadOnly = false,
         };
 
+        _textView.ContentsChanged += (_, _) =>
+        {
+            if (_suppressChangeTracking || _currentFilePath is null || _isModified) return;
+            _isModified = true;
+            FileModified?.Invoke(_currentFilePath);
+        };
+
         Add(_textView);
     }
 
     public string? CurrentFilePath => _currentFilePath;
+    public bool IsModified => _isModified;
+
+    public event Action<string>? FileModified;
+    public event Action<string>? FileSaved;
 
     public void LoadFile(string path)
     {
         if (!_fileSystem.File.Exists(path)) return;
 
-        _currentFilePath = path;
-        var content = _fileSystem.File.ReadAllText(path);
-        _textView.Text = content;
-        Title = $"Editor - {_fileSystem.Path.GetFileName(path)}";
-        SetNeedsDraw();
+        _suppressChangeTracking = true;
+        try
+        {
+            _currentFilePath = path;
+            var content = _fileSystem.File.ReadAllText(path);
+            _textView.Text = content;
+            _isModified = false;
+            Title = $"Editor - {_fileSystem.Path.GetFileName(path)}";
+            SetNeedsDraw();
+        }
+        finally
+        {
+            _suppressChangeTracking = false;
+        }
+    }
+
+    /// <summary>
+    /// Writes the current buffer contents back to <see cref="CurrentFilePath"/>. No-op if no file is loaded.
+    /// </summary>
+    public void Save()
+    {
+        if (_currentFilePath is null) return;
+
+        _fileSystem.File.WriteAllText(_currentFilePath, _textView.Text ?? string.Empty);
+        _isModified = false;
+        FileSaved?.Invoke(_currentFilePath);
     }
 
     public void Clear()
     {
         _currentFilePath = null;
         _textView.Text = "";
+        _isModified = false;
         Title = "Editor";
     }
 

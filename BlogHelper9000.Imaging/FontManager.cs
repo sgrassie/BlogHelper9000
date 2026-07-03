@@ -8,29 +8,33 @@ public class FontManager
 {
     private readonly ILogger _logger;
     private static readonly Assembly Assembly = typeof(FontManager).Assembly;
-    private static readonly FontCollection FontCollection = new();
+    private static readonly Lazy<FontCollection> LazyFontCollection = new(LoadFonts, LazyThreadSafetyMode.ExecutionAndPublication);
 
-        public FontManager(ILogger logger)
+    public FontManager(ILogger logger)
+    {
+        _logger = logger;
+    }
+
+    private static FontCollection LoadFonts()
+    {
+        var collection = new FontCollection();
+        foreach (var ttf in Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".ttf")))
         {
-            _logger = logger;
-            _logger.LogInformation("Loading fonts");
+            using var stream = Assembly.GetManifestResourceStream(ttf);
+            if (stream != null) collection.Add(stream);
+        }
+        return collection;
+    }
 
-            foreach (var ttf in Assembly.GetManifestResourceNames().Where(x => x.EndsWith(".ttf")))
-            {
-                using var stream = Assembly.GetManifestResourceStream(ttf);
-                if (stream != null) FontCollection.Add(stream);
-            }
+    public Font GetFont(string fontName, int fontSize = 125, FontStyle style = FontStyle.Bold)
+    {
+        if (LazyFontCollection.Value.TryGet(fontName, out var family))
+        {
+            _logger.LogDebug("Loading {FontName} with size {FontSize}", fontName, fontSize);
+
+            return family.CreateFont(fontSize, style);
         }
 
-        public Font GetFont(string fontName, int fontSize = 125, FontStyle style = FontStyle.Bold)
-        {
-            if (FontCollection.TryGet(fontName, out var family))
-            {
-                _logger.LogDebug("Loading {FontName} with size {FontSize}", fontName, fontSize);
-
-                return family.CreateFont(fontSize, style);
-            }
-
-            throw new ArgumentException($"Could not create {fontName} font.", nameof(fontName));
-        }
+        throw new ArgumentException($"Could not create {fontName} font.", nameof(fontName));
+    }
 }

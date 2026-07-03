@@ -9,24 +9,23 @@ public sealed class YamlDeserialiser : SerialiserBase
 
     public YamlHeader Deserialise(string[] fileContent)
     {
-        var headerStartMarkerFound = false;
+        var delimiterCount = 0;
         var yamlBlock = new List<string>();
 
         foreach (var line in fileContent)
         {
             if (line.Trim() == FrontMatterDelimiter)
             {
-                if (!headerStartMarkerFound)
-                {
-                    headerStartMarkerFound = true;
-                    continue;
-                }
-
-                break;
+                delimiterCount++;
+                if (delimiterCount == 2) break;
+                continue;
             }
 
-            yamlBlock.Add(line);
+            if (delimiterCount == 1) yamlBlock.Add(line);
         }
+
+        if (delimiterCount < 2)
+            throw new YamlConvertException("Front matter is missing a closing '---' delimiter.");
 
         return ParseYamlHeader(yamlBlock);
     }

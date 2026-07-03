@@ -22,7 +22,7 @@ public static class AddFeaturedImageTool
         }
 
         await using var imageStream = await unsplashClient.LoadImageAsync(imageQuery);
-        if (imageStream == Stream.Null)
+        if (imageStream is null)
         {
             return "Failed to load image from Unsplash. Check that credentials are configured.";
         }

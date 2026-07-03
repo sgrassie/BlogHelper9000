@@ -1,6 +1,7 @@
 using BlogHelper9000.Commands;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -20,45 +21,17 @@ public class AddCommandTests
     }
 
     [Fact]
-    public async Task Should_Output_Help()
-    {
-        // var console = new TestConsole();
-        // var command = new AddCommand();
-        //
-        // await command.InvokeAsync("add -h", console);
-
-       // console.Out.ToString().Should().Contain("add <title> [<tags>...] [options]");
-    }
-
-    [Theory]
-    [InlineData("--draft", "Adds the post as a draft")]
-    [InlineData("--is-featured", "Sets the post as a featured post")]
-    [InlineData("--is-hidden", "Sets whether the post is hidden or not")]
-    [InlineData("--featured-image", "Sets the featured image path")]
-    [InlineData("--version", "Show version information")]
-    public async Task Should_Output_Options(string optionName, string optionHelp)
-    {
-        // var console = new TestConsole();
-        // var command = new AddCommand();
-        // await command.InvokeAsync("add -h", console);
-        //
-        // var lines = console.AsLines()
-        //     .Where(line => line.StartsWith("--")).ToList();
-        //
-        // lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));
-    }
-
-    [Fact]
     public async Task Should_Add_NewPost_AsDraft()
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
         var command = new AddCommand
         {
             Title = "New post in draft",
             IsDraft = true,
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -73,11 +46,12 @@ public class AddCommandTests
     {
         var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
         var command = new AddCommand
         {
             Title = "New post in posts"
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, postManager);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -85,5 +59,25 @@ public class AddCommandTests
             .File
             .Exists(Path.Combine(JekyllBlogFilesystemBuilder.Posts, "new-post-in-posts.md"))
             .Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Should_Add_NewPost_With_SuppliedTags()
+    {
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
+        var command = new AddCommand
+        {
+            Title = "Tagged post",
+            Tags = "csharp, dotnet"
+        };
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
+
+        await sut.Handle(command, CancellationToken.None);
+
+        var path = fileSystem.Path.Combine(JekyllBlogFilesystemBuilder.Posts, "tagged-post.md");
+        var header = new MarkdownHandler(fileSystem).LoadFile(path).Metadata;
+        header.Tags.Should().Equal("csharp", "dotnet");
     }
 }

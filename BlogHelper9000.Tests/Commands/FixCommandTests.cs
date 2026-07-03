@@ -2,6 +2,7 @@ using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -21,33 +22,6 @@ public class FixCommandTests
     }
 
     [Fact]
-    public async Task Should_Output_Help()
-    {
-        // var console = new TestConsole();
-        // var command = new FixCommand();
-        // await command.InvokeAsync("fix -h", console);
-        //
-        // console.Out.ToString()
-        //     .Should().Contain("fix [options]");
-    }
-
-    [Theory]
-    [InlineData("-s, --status", "Fix the published status of a post")]
-    [InlineData("-d, --description", "Fix the description of a post")]
-    [InlineData("-t, --tags", "Fix the tags of a post")]
-    public async Task Should_Output_Options(string optionName, string optionHelp)
-    {
-        // var console = new TestConsole();
-        // var command = new FixCommand();
-        // await command.InvokeAsync("fix -h", console);
-        //
-        // var lines = console.AsLines()
-        //     .Where(line => line.StartsWith("-")).ToList();
-        //
-        // lines.Should().Contain(x => x.StartsWith(optionName) && x.Contains(optionHelp));
-    }
-
-    [Fact]
     public void Should_AddPublishedOnFromDateInFilename_WhenPublishedOnIsMissing()
     {
         var header = """
@@ -63,12 +37,13 @@ public class FixCommandTests
             })
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
 
         var command = new FixCommand
         {
             Status = true
         };
-        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, blogService);
 
         sut.Handle(command, CancellationToken.None);
 
@@ -92,12 +67,13 @@ public class FixCommandTests
             })
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
 
         var command = new FixCommand
         {
             Status = true
         };
-        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, blogService);
 
         sut.Handle(command, CancellationToken.None);
 
@@ -123,12 +99,13 @@ public class FixCommandTests
             .BuildFileSystem();
 
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
 
         var command = new FixCommand
         {
             Description = true
         };
-        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, blogService);
 
         sut.Handle(command, CancellationToken.None);
 
@@ -153,12 +130,13 @@ public class FixCommandTests
             })
             .BuildFileSystem();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
 
         var command = new FixCommand
         {
             Tags = true
         };
-        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, blogService);
 
         sut.Handle(command, CancellationToken.None);
 
@@ -184,12 +162,13 @@ public class FixCommandTests
             .BuildFileSystem();
 
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
 
         var command = new FixCommand
         {
             Tags = true
         };
-        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, postManager);
+        var sut = new FixCommand.Handler(NullLogger<FixCommand.Handler>.Instance, blogService);
 
         sut.Handle(command, CancellationToken.None);
 

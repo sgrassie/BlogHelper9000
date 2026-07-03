@@ -136,6 +136,23 @@ series: ""TDD: Implementing Freecell""
     }
 
     [Fact]
+    public void Should_Preserve_UnknownFrontMatterKeys_OnRoundTrip()
+    {
+        var yaml = @"---
+title: Learning ReactiveUI for fun and profit
+layout: post
+permalink: /foo/
+categories: ReactiveUI
+---";
+
+        var header = new YamlConvert(new MockFileSystem()).Deserialise(yaml.Split(Environment.NewLine));
+        var serialised = new YamlConvert(new MockFileSystem()).Serialise(header);
+
+        serialised.Should().Contain("permalink: /foo/");
+        serialised.Should().Contain("categories: ReactiveUI");
+    }
+
+    [Fact]
     public void Should_RoundTrip_FullyPopulated_YamlHeader()
     {
         var yaml = """

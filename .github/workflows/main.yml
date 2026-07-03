@@ -25,6 +25,11 @@ jobs:
       DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
       DOTNET_NOLOGO: 1
       DOTNET_VERSION: "10.0.100-rc.2.25502.107"
+      # BlogHelper9000.Imaging requires a SixLabors license key to build (see
+      # BlogHelper9000.Imaging/BlogHelper9000.Imaging.csproj). Set this as a repository
+      # secret; external forks without the secret will fail the Imaging build until they
+      # supply their own key from Six Labors.
+      SIXLABORS_LICENSE_KEY: ${{ secrets.SIXLABORS_LICENSE_KEY }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -36,7 +41,6 @@ jobs:
 
       - name: Setup .NET 10
         id: setup
-        continue-on-error: true
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
@@ -46,9 +50,12 @@ jobs:
         uses: cake-build/cake-action@v3
         with:
           target: tests
-      
-      - name: Publish coverage report to coveralls.io   
-        uses: coverallsapp/github-action@master   
+
+      - name: Check for vulnerable packages
+        run: dotnet list BlogHelper9000.sln package --vulnerable --include-transitive
+
+      - name: Publish coverage report to coveralls.io
+        uses: coverallsapp/github-action@master
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }} 
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path-to-lcov: ${{ github.workspace }}/BlogHelper9000.Tests/TestResults/coverage.info

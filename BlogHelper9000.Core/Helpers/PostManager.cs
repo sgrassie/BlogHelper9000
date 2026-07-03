@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Abstractions;
+using System.Text.RegularExpressions;
 using BlogHelper9000.Core.YamlParsing;
 using Microsoft.Extensions.Options;
 
@@ -12,11 +13,13 @@ public class PostManager
         _fileSystem = fileSystem;
         _markdownHandler = markdownHandler;
         _basePath = options.Value.BaseDirectory;
+        _pathResolver = new BlogPathResolver(fileSystem, _basePath);
     }
 
     private IFileSystem _fileSystem;
     private readonly MarkdownHandler _markdownHandler;
     private string _basePath;
+    private readonly BlogPathResolver _pathResolver;
     private const string DefaultAuthorBrandingFile = "branding_logo.png";
     private const string DraftsFolder = "_drafts";
     private const string PostsFolder = "_posts";
@@ -57,11 +60,15 @@ public class PostManager
     {
         var allPosts = new List<YamlHeader>();
 
-        var posts = FileSystem.Directory.EnumerateFiles(Drafts, "*.md", SearchOption.AllDirectories).ToList();
-        var drafts = FileSystem.Directory.EnumerateFiles(Posts, "*.md", SearchOption.AllDirectories).ToList();
+        var drafts = FileSystem.Directory.Exists(Drafts)
+            ? FileSystem.Directory.EnumerateFiles(Drafts, "*.md", SearchOption.AllDirectories).ToList()
+            : [];
+        var posts = FileSystem.Directory.Exists(Posts)
+            ? FileSystem.Directory.EnumerateFiles(Posts, "*.md", SearchOption.AllDirectories).ToList()
+            : [];
 
-        allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
         allPosts.AddRange(drafts.Select(GetHeaderWithOriginalFilename));
+        allPosts.AddRange(posts.Select(GetHeaderWithOriginalFilename));
 
         return allPosts.OrderBy(x => x.PublishedOn).ToList().AsReadOnly();
 
@@ -69,9 +76,9 @@ public class PostManager
         {
             var lines = FileSystem.File.ReadAllLines(f);
             var header = YamlConvert.Deserialise(lines);
-            var fileInfo = new FileInfo(f);
-            header.Extras.Add("originalFilename", fileInfo.Name);
-            header.Extras.Add("lastUpdated", $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}");
+            var fileInfo = FileSystem.FileInfo.New(f);
+            header.Extras["originalFilename"] = fileInfo.Name;
+            header.Extras["lastUpdated"] = $"{fileInfo.LastWriteTime:dd/MM/yyyy hh:mm:ss}";
             return header;
         }
     }
@@ -95,9 +102,9 @@ public class PostManager
 
         bool IsDraft(string possiblePath, out string draftPath)
         {
-            if (FileSystem.File.Exists(possiblePath))
+            if (_pathResolver.TryResolveWithinBase(possiblePath, out var resolved) && FileSystem.File.Exists(resolved))
             {
-                draftPath = possiblePath;
+                draftPath = resolved;
                 return true;
             }
 
@@ -108,14 +115,15 @@ public class PostManager
                 return true;
             }
 
+            draftPath = string.Empty;
             return false;
         }
 
         bool IsPost(string possiblePath, out string postPath)
         {
-            if (FileSystem.File.Exists(possiblePath))
+            if (_pathResolver.TryResolveWithinBase(possiblePath, out var resolved) && FileSystem.File.Exists(resolved))
             {
-                postPath = possiblePath;
+                postPath = resolved;
                 return true;
             }
 
@@ -126,6 +134,7 @@ public class PostManager
                 return true;
             }
 
+            postPath = string.Empty;
             return false;
         }
     }
@@ -147,9 +156,9 @@ public class PostManager
     {
         if (!string.IsNullOrEmpty(branding))
         {
-            if (FileSystem.File.Exists(branding))
+            if (_pathResolver.TryResolveWithinBase(branding, out var resolved) && FileSystem.File.Exists(resolved))
             {
-                brandingPath = branding;
+                brandingPath = resolved;
                 return true;
             }
 
@@ -174,8 +183,16 @@ public class PostManager
         return false;
     }
 
-    private string MakeFileName(string title)
+    private static string MakeFileName(string title)
     {
-        return title.Replace(" ", "-").ToLowerInvariant();
+        var slug = title.Trim().ToLowerInvariant();
+        slug = Regex.Replace(slug, @"[\s/\\]+", "-");
+        slug = Regex.Replace(slug, @"[^a-z0-9-]", "");
+        slug = Regex.Replace(slug, @"-{2,}", "-").Trim('-');
+
+        if (string.IsNullOrEmpty(slug))
+            throw new ArgumentException($"Title '{title}' does not produce a usable filename.", nameof(title));
+
+        return slug;
     }
 }

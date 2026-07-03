@@ -83,16 +83,13 @@ public class BlogCommandsAddImageTests
         _unsplashClient.LoadImageAsync("coding").Returns(imageStream);
 
         var sut = CreateSut();
-        var callbackInvoked = false;
-        sut.FilesChangedCallback = () => callbackInvoked = true;
 
         _postManager.TryFindPost(postPath, out var markdownFile);
         markdownFile.Should().NotBeNull();
 
         sut.AddImageAsync(markdownFile!, "coding");
 
-        // Allow the background task to complete
-        await Task.Delay(500);
+        await sut.LastAddImageTask!;
 
         await _unsplashClient.Received(1).LoadImageAsync("coding");
         await _imageProcessor.Received(1).Process(markdownFile!, imageStream, null);
@@ -139,8 +136,7 @@ public class BlogCommandsAddImageTests
 
         sut.AddImageAsync(markdownFile!, "coding");
 
-        // Allow the background task to complete
-        await Task.Delay(500);
+        await sut.LastAddImageTask!;
 
         await _imageProcessor.Received(1).Process(markdownFile!, imageStream, brandingFile);
     }

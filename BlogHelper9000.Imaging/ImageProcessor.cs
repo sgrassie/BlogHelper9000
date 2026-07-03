@@ -18,13 +18,14 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
     {
         logger.LogInformation("Generating image for {Post}", postMarkdown.Metadata.Title);
         var mainFont = _fontManager.GetFont("Ubuntu", 90);
-        var baseImage = await Image.LoadAsync(imageSource);
+
+        using var baseImage = await Image.LoadAsync(imageSource);
         var baseImageWidth = baseImage.Width;
         var baseImageHeight = baseImage.Height;
 
         if (brandingPath is not null)
         {
-            var logoImage = await Image.LoadAsync(brandingPath);
+            using var logoImage = await Image.LoadAsync(brandingPath);
             AddLogo(baseImage, logoImage);
         }
 
@@ -40,11 +41,16 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
         logger.LogDebug("Saving generated image");
 
         var (fileName, savePath) = postManager.CreateImageFilePathForPost(postMarkdown);
+        var directory = postManager.FileSystem.Path.GetDirectoryName(savePath);
+        if (!string.IsNullOrEmpty(directory) && !postManager.FileSystem.Directory.Exists(directory))
+            postManager.FileSystem.Directory.CreateDirectory(directory);
+
+        await baseImage.SaveAsWebpAsync(savePath);
+
         var markdownPath = $"/assets/images/{fileName}";
         postMarkdown.Metadata.FeaturedImage = markdownPath;
         postMarkdown.Metadata.Image = markdownPath;
         postManager.UpdateMarkdown(postMarkdown);
-        await baseImage.SaveAsWebpAsync(savePath);
     }
 
     private void AddDescriptionText(MarkdownFile postMarkdown, Image baseImage, Font mainFont)

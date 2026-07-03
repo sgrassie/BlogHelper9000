@@ -73,6 +73,8 @@ public class BlogWorkspaceWindow : Window
         : this(fileBrowser, (View)editor, blogCommands, commandPalette, logger, null)
     {
         _fallbackEditor = editor;
+        _fallbackEditor.FileModified += path => _fileBrowser.MarkFileModified(path);
+        _fallbackEditor.FileSaved += path => _fileBrowser.MarkFileSaved(path);
     }
 
     private BlogWorkspaceWindow(
@@ -121,6 +123,7 @@ public class BlogWorkspaceWindow : Window
     {
         var fileMenu = new MenuBarItem("_File", new PopoverMenu(new View[]
         {
+            new MenuItem("_Save", Key.S.WithCtrl, () => SaveFallbackEditor()),
             new MenuItem("_Quit", Key.Q.WithCtrl, () => Application.RequestStop(this)),
         }));
 
@@ -241,10 +244,43 @@ public class BlogWorkspaceWindow : Window
         }
         else if (_fallbackEditor is not null)
         {
+            if (_fallbackEditor.IsModified && !ConfirmDiscardUnsavedChanges())
+                return;
+
             _fallbackEditor.LoadFile(path);
         }
 
         _editorView.SetFocus();
+    }
+
+    private void SaveFallbackEditor() => _fallbackEditor?.Save();
+
+    private static bool ConfirmDiscardUnsavedChanges()
+    {
+        var confirmed = false;
+        var dialog = new Dialog
+        {
+            Title = "Unsaved Changes",
+            Width = Dim.Percent(50),
+            Height = 7,
+        };
+
+        var label = new Label
+        {
+            Text = "Discard unsaved changes to the current file?",
+            X = Pos.Center(),
+            Y = Pos.Center(),
+        };
+
+        var yes = new Button { Text = "_Yes" };
+        yes.Accepting += (_, _) => { confirmed = true; dialog.RequestStop(); };
+
+        var no = new Button { Text = "_No" };
+        no.Accepting += (_, _) => dialog.RequestStop();
+
+        dialog.Add(label, yes, no);
+        Application.Run(dialog);
+        return confirmed;
     }
 
     private void DispatchEdit(

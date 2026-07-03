@@ -21,7 +21,7 @@ public class InfoCommandReporter
                     new GridColumn().LeftAligned(),
                     new GridColumn())
                 .AddRow("Last Post", ":", FormatPostDetail(blogMetaInformation.LastPost))
-                .AddRow("# days since last post", ":", $"{blogMetaInformation.DaysSinceLastPost.Days}")
+                .AddRow("# days since last post", ":", $"{blogMetaInformation.DaysSinceLastPost?.Days ?? 0}")
                 .AddRow("# of posts", ":", $"{blogMetaInformation.PostCount - blogMetaInformation.UnPublishedCount}")
                 .AddRow("# of drafts", ":", $"{blogMetaInformation.UnPublishedCount}")
                 .AddRow("Available drafts", ":", FormatDraftPostDetail(blogMetaInformation.Unpublished?.FirstOrDefault()));
