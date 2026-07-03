@@ -144,6 +144,12 @@ public class PostManager
         Markdown.UpdateFile(postMarkdown);
     }
 
+    /// <summary>
+    /// Reads a post's body text. <paramref name="path"/> must already be a resolved,
+    /// validated path (e.g. from <see cref="TryFindPost"/>), not a raw caller-supplied string.
+    /// </summary>
+    public string GetPostBody(string path) => Markdown.GetBody(path);
+
     public (string fileName, string savePath) CreateImageFilePathForPost(MarkdownFile postMarkdown)
     {
         var fileName = FileSystem.Path.GetFileName(postMarkdown.FilePath);

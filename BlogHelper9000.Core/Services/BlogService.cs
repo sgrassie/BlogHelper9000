@@ -25,7 +25,7 @@ public class BlogService : IBlogService
 
     private static readonly Regex AlreadyPublishedFileNamePattern = new(@"^\d{4}-\d{2}-\d{2}-", RegexOptions.Compiled);
 
-    public string? AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null, IReadOnlyList<string>? tags = null)
+    public string? AddPost(string title, bool isDraft, bool isFeatured = false, bool isHidden = false, string? featuredImage = null, IReadOnlyList<string>? tags = null, string? content = null)
     {
         var filePath = isDraft
             ? _postManager.CreateDraftPath(title)
@@ -48,18 +48,24 @@ public class BlogService : IBlogService
         };
 
         var yamlHeaderText = _postManager.YamlConvert.Serialise(yamlHeader);
-        _fileSystem.File.AppendAllText(filePath, yamlHeaderText);
+        var fileText = string.IsNullOrEmpty(content)
+            ? yamlHeaderText
+            : $"{yamlHeaderText}{Environment.NewLine}{Environment.NewLine}{content}";
+        _fileSystem.File.AppendAllText(filePath, fileText);
 
         _logger.LogInformation("Added new post at {File}", filePath);
         return filePath;
     }
 
-    public string? PublishPost(string postName)
+    public string? PublishPost(string postName) =>
+        PublishPostDetailed(postName) is { Outcome: PublishOutcome.Published, PublishedPath: { } path } ? path : null;
+
+    public PublishPostResult PublishPostDetailed(string postName)
     {
         if (!_postManager.TryFindPost(postName, out var postMarkdown))
         {
             _logger.LogError("Could not find {Post} to publish", postName);
-            return null;
+            return new PublishPostResult(PublishOutcome.NotFound, null);
         }
 
         var currentPath = postMarkdown.FilePath;
@@ -68,7 +74,7 @@ public class BlogService : IBlogService
         if (AlreadyPublishedFileNamePattern.IsMatch(fileName))
         {
             _logger.LogWarning("{Post} already appears to be published", postName);
-            return null;
+            return new PublishPostResult(PublishOutcome.AlreadyPublished, null);
         }
 
         var now = _timeProvider.GetLocalNow().DateTime;
@@ -79,7 +85,7 @@ public class BlogService : IBlogService
         if (_fileSystem.File.Exists(replacementPath))
         {
             _logger.LogError("A published post already exists at {Target}", replacementPath);
-            return null;
+            return new PublishPostResult(PublishOutcome.TargetExists, null);
         }
 
         postMarkdown.Metadata.IsPublished = true;
@@ -94,11 +100,13 @@ public class BlogService : IBlogService
         _logger.LogInformation("Publishing {PublishedFileName} to {TargetFolder}", publishedFilename, targetFolder);
         _fileSystem.File.Move(currentPath, replacementPath);
 
-        return replacementPath;
+        return new PublishPostResult(PublishOutcome.Published, replacementPath);
     }
 
-    public void FixMetadata(bool fixStatus, bool fixDescription, bool fixTags)
+    public FixMetadataResult FixMetadata(bool fixStatus, bool fixDescription, bool fixTags, bool dryRun = false)
     {
+        var result = new FixMetadataResult();
+
         foreach (var file in _postManager.GetAllPosts())
         {
             try
@@ -109,13 +117,21 @@ public class BlogService : IBlogService
                 if (fixDescription) FixDescription(file);
                 if (fixTags) FixTagsOnFile(file);
 
-                _postManager.Markdown.UpdateFile(file);
+                if (!dryRun)
+                {
+                    _postManager.Markdown.UpdateFile(file);
+                }
+
+                result.Updated.Add(file.FilePath);
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Skipping {File} — could not fix metadata", file.FilePath);
+                result.Skipped.Add(new FixMetadataSkip(file.FilePath, ex.Message));
             }
         }
+
+        return result;
     }
 
     public BlogMetaInformation GetBlogInfo()

@@ -16,8 +16,9 @@ public class FixCommand : ICommand<Unit>
     {
         public ValueTask<Unit> Handle(FixCommand request, CancellationToken cancellationToken)
         {
-            blogService.FixMetadata(request.Status, request.Description, request.Tags);
-            logger.LogInformation("Metadata fix completed");
+            var result = blogService.FixMetadata(request.Status, request.Description, request.Tags);
+            logger.LogInformation("Metadata fix completed: {Updated} updated, {Skipped} skipped",
+                result.Updated.Count, result.Skipped.Count);
             return default;
         }
     }

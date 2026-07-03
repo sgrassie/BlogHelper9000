@@ -47,7 +47,64 @@ public class MarkdownHandler
         var lines = new List<string> { _yamlConvert.Serialise(file.Metadata).TrimEnd('\n', '\r') };
         lines.AddRange(body);
 
-        using var writer = new StreamWriter(_fileSystem.File.Open(file.FilePath, FileMode.Create, FileAccess.Write));
+        WriteFile(file.FilePath, lines);
+    }
+
+    /// <summary>
+    /// Rewrites the file with updated metadata and a replacement body, discarding the original body.
+    /// </summary>
+    public void UpdateFile(MarkdownFile file, string newBody)
+    {
+        var lines = new List<string> { _yamlConvert.Serialise(file.Metadata).TrimEnd('\n', '\r') };
+
+        if (newBody.Length > 0)
+        {
+            lines.Add(string.Empty);
+            lines.AddRange(newBody.Replace("\r\n", "\n").Split('\n'));
+        }
+
+        WriteFile(file.FilePath, lines);
+    }
+
+    /// <summary>
+    /// Reads everything after the closing front-matter delimiter, minus the single blank
+    /// separator line written by <see cref="UpdateFile(MarkdownFile, string)"/>/AddPost.
+    /// </summary>
+    public string GetBody(string path)
+    {
+        var markerCount = 0;
+        var body = new List<string>();
+        var skippedSeparatorBlank = false;
+
+        foreach (var line in EnumerateLines(path))
+        {
+            if (markerCount < 2)
+            {
+                if (line == "---")
+                {
+                    markerCount++;
+                }
+                continue;
+            }
+
+            if (!skippedSeparatorBlank && body.Count == 0 && line.Length == 0)
+            {
+                skippedSeparatorBlank = true;
+                continue;
+            }
+
+            body.Add(line);
+        }
+
+        if (markerCount < 2)
+            throw new YamlConvertException($"'{path}' is missing front-matter delimiters.");
+
+        return string.Join(Environment.NewLine, body);
+    }
+
+    private void WriteFile(string path, List<string> lines)
+    {
+        using var writer = new StreamWriter(_fileSystem.File.Open(path, FileMode.Create, FileAccess.Write));
         for (var i = 0; i < lines.Count; i++)
         {
             if (i == lines.Count - 1)

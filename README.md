@@ -162,12 +162,17 @@ The MCP server exposes BlogHelper9000's blog management capabilities to AI agent
 
 | Tool Name | Description |
 |-----------|-------------|
-| `add_post` | Create a new blog post or draft with title and metadata |
-| `publish_post` | Publish a draft from `_drafts/` to `_posts/` with date prefix |
+| `add_post` | Create a new blog post or draft with title, metadata, and optional body content |
+| `get_post` | Read a post or draft's front matter and body text |
+| `update_post` | Update a post's title, description, tags, and/or body (only supplied fields change) |
+| `list_posts` | List published posts, newest first |
+| `publish_post` | Publish a draft from `_drafts/` to `_posts/<year>/` with a date prefix |
 | `get_blog_info` | Get blog statistics (post count, drafts, recent posts, days since last post) |
 | `list_drafts` | List all draft blog posts in the `_drafts/` directory |
-| `fix_metadata` | Batch-fix YAML front matter (published status, descriptions, tags) |
+| `fix_metadata` | Batch-fix YAML front matter (published status, descriptions, tags); supports a `dryRun` preview |
 | `add_featured_image` | Generate and apply a featured image from Unsplash with title overlay |
+
+Every tool returns a single structured response shape (`{ success, error, data }`), so a calling agent can always branch on `success` rather than parsing prose.
 
 ### Installation
 
@@ -182,6 +187,17 @@ Or run directly from source:
 ```bash
 dotnet run --project BlogHelper9000.Mcp
 ```
+
+### Upgrading
+
+MCP clients only see the tools available in the server process they've already started — after pulling changes or bumping the version, rebuild and restart the server:
+
+```bash
+dotnet pack BlogHelper9000.Mcp -c Release
+dotnet tool update --global --add-source BlogHelper9000.Mcp/releases bloghelper-mcp
+```
+
+Then restart the MCP client (or its connection to `bloghelper-mcp`) so it reconnects to the updated server and re-fetches the tool list.
 
 ### Configuration
 
@@ -242,11 +258,13 @@ Add to your workspace or user settings (`.vscode/settings.json`):
 
 Once configured, you can ask your AI assistant to:
 
-- "Create a new draft post titled 'Understanding MCP'"
+- "Create a new draft post titled 'Understanding MCP' about how the protocol works"
+- "Read back the draft 'understanding-mcp' and fix the tags to 'ai, mcp'"
 - "List all my draft posts"
 - "Show me blog statistics"
 - "Publish the draft 'understanding-mcp'"
-- "Add a featured image about 'programming' to my latest post"
+- "Add a featured image to my latest post"
+- "Preview a metadata fix across all my posts before applying it"
 
 The AI will use the appropriate MCP tool to execute your request.
 

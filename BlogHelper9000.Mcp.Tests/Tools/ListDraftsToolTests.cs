@@ -8,7 +8,7 @@ namespace BlogHelper9000.Mcp.Tests.Tools;
 public class ListDraftsToolTests
 {
     [Fact]
-    public void ListDrafts_WhenNoDrafts_ReturnsNoDraftsMessage()
+    public void ListDrafts_WhenNoDrafts_ReturnsSuccessWithEmptyList()
     {
         // Arrange
         var blogService = Substitute.For<IBlogService>();
@@ -18,12 +18,13 @@ public class ListDraftsToolTests
         var result = ListDraftsTool.ListDrafts(blogService);
 
         // Assert
-        result.Should().Be("No drafts found.");
+        result.Success.Should().BeTrue();
+        result.Data!.Drafts.Should().BeEmpty();
         blogService.Received(1).ListDrafts();
     }
 
     [Fact]
-    public void ListDrafts_WhenDraftsExist_ReturnsJsonList()
+    public void ListDrafts_WhenDraftsExist_ReturnsThem()
     {
         // Arrange
         var blogService = Substitute.For<IBlogService>();
@@ -34,9 +35,8 @@ public class ListDraftsToolTests
         var result = ListDraftsTool.ListDrafts(blogService);
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
-        result.Should().Contain("draft1.md");
-        result.Should().Contain("draft2.md");
+        result.Success.Should().BeTrue();
+        result.Data!.Drafts.Should().Equal("draft1.md", "draft2.md");
         blogService.Received(1).ListDrafts();
     }
 }

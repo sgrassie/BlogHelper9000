@@ -1,3 +1,4 @@
+using System.Reflection;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Services;
@@ -9,6 +10,14 @@ using Microsoft.Extensions.Options;
 using System.IO.Abstractions;
 
 var builder = Host.CreateApplicationBuilder(args);
+
+// stdio MCP servers exchange JSON-RPC on stdout — logs must never share that stream,
+// or a log line can desynchronize the client mid-frame.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole(options =>
+{
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 
 // BlogHelper9000 core services — same DI wiring as the CLI & TUI
 var baseDirectory = Environment.GetEnvironmentVariable("BLOG_BASE_DIRECTORY")
@@ -38,16 +47,58 @@ builder.Services.AddSingleton<IImageProcessor>(sp => new ImageProcessor(
     sp.GetRequiredService<PostManager>()));
 
 // MCP server — stdio transport, auto-discover [McpServerTool] methods in this assembly
+var serverVersion = typeof(Program).Assembly
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
+
+const string serverInstructions = """
+    BlogHelper9000 manages a Jekyll blog at a configured base directory. Drafts live in
+    _drafts/; published posts live in _posts/<year>/. A post is identified by its filename
+    (e.g. 'my-post.md') or a path — bare filenames are resolved against _drafts/ then
+    _posts/, and paths outside the blog root are rejected.
+
+    Typical workflow: get_blog_info -> list_drafts/list_posts -> add_post -> get_post ->
+    publish_post -> add_featured_image.
+
+    Conventions: titles are slugified to lowercase-hyphenated filenames; tags are supplied
+    as a comma-separated string (e.g. 'csharp, dotnet'); in front matter, 'published:' holds
+    a date (or a draft/true/false placeholder before it is set), and the separate boolean
+    publish flag is tracked internally — you do not need to set it directly.
+
+    Caution: fix_metadata rewrites every post under _posts/ in one call — call it with
+    dryRun=true first to preview the change before applying it. add_featured_image performs
+    network calls to Unsplash and requires credentials configured on the host machine.
+    """;
+
 builder.Services.AddMcpServer(options =>
 {
     options.ServerInfo = new()
     {
         Name = "BlogHelper9000",
-        Version = "1.0.0"
+        Version = serverVersion
     };
+    options.ServerInstructions = serverInstructions;
 })
 .WithStdioServerTransport()
 .WithToolsFromAssembly();
 
 var app = builder.Build();
+
+using (var startupScope = app.Services.CreateScope())
+{
+    var fileSystem = startupScope.ServiceProvider.GetRequiredService<IFileSystem>();
+    var logger = startupScope.ServiceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    var looksLikeJekyllBlog = fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_posts"))
+        || fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_drafts"));
+
+    if (!looksLikeJekyllBlog)
+    {
+        logger.LogWarning(
+            "'{BaseDirectory}' does not look like a Jekyll blog (_posts/_drafts not found). " +
+            "Set BLOG_BASE_DIRECTORY or pass the blog path as the first argument.",
+            baseDirectory);
+    }
+}
+
 await app.RunAsync();
+
+internal sealed partial class Program;

@@ -83,4 +83,73 @@ public class MarkdownHandlerTests
 
         act.Should().Throw<YamlConvertException>();
     }
+
+    [Fact]
+    public void GetBody_Should_Return_Text_After_Delimiters_Without_Separator_Blank_Line()
+    {
+        var fileSystem = new MockFileSystem();
+        const string original = """
+                                 ---
+                                 title: Original
+                                 ---
+
+                                 Line one.
+                                 Line two.
+                                 """;
+        fileSystem.AddFile("/post.md", new MockFileData(original));
+        var handler = new MarkdownHandler(fileSystem);
+
+        var body = handler.GetBody("/post.md");
+
+        body.Should().Be($"Line one.{Environment.NewLine}Line two.");
+    }
+
+    [Fact]
+    public void GetBody_Should_Throw_When_ClosingDelimiter_Missing()
+    {
+        var fileSystem = new MockFileSystem();
+        const string original = """
+                                 ---
+                                 title: No closing delimiter
+                                 Body content.
+                                 """;
+        fileSystem.AddFile("/post.md", new MockFileData(original));
+        var handler = new MarkdownHandler(fileSystem);
+
+        var act = () => handler.GetBody("/post.md");
+
+        act.Should().Throw<YamlConvertException>();
+    }
+
+    [Fact]
+    public void UpdateFile_With_NewBody_Should_Replace_Body_And_RoundTrip_Through_GetBody()
+    {
+        var fileSystem = new MockFileSystem();
+        const string original = """
+                                 ---
+                                 title: Original
+                                 ---
+                                 Old body.
+                                 """;
+        fileSystem.AddFile("/post.md", new MockFileData(original));
+        var handler = new MarkdownHandler(fileSystem);
+        var markdownFile = handler.LoadFile("/post.md");
+        markdownFile.Metadata.Title = "Updated";
+
+        handler.UpdateFile(markdownFile, "New body.\nSecond line.");
+
+        var contents = fileSystem.File.ReadAllText("/post.md");
+        contents.Should().NotContain("Old body.");
+        handler.GetBody("/post.md").Should().Be($"New body.{Environment.NewLine}Second line.");
+    }
+
+    [Fact]
+    public void AddPost_Content_Should_RoundTrip_Through_GetBody()
+    {
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile("/post.md", new MockFileData("---\ntitle: Original\n---\n\nHello, world."));
+        var handler = new MarkdownHandler(fileSystem);
+
+        handler.GetBody("/post.md").Should().Be("Hello, world.");
+    }
 }
