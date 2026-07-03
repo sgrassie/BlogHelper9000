@@ -26,7 +26,7 @@
       </PackageReference>
       <PackageReference Include="SimpleExec" Version="13.0.0" />
       <PackageReference Include="Spectre.Console" Version="0.57.1" />
-      <PackageReference Include="TimeWarp.Nuru" Version="3.0.0-beta.70" />
+      <PackageReference Include="TimeWarp.Nuru" Version="3.0.0-beta.71" />
     </ItemGroup>
 
     <ItemGroup>
