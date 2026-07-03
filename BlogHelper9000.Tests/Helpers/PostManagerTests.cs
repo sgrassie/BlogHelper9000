@@ -93,4 +93,48 @@ public class PostManagerTests
 
         headers.Should().BeEmpty();
     }
+
+    [Fact]
+    public void TryFindPost_Should_Resolve_BareFilename_Against_NestedYearFolder_Post()
+    {
+        const string header = "---\ntitle: A post\n---";
+        var fileSystem = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-01-01-a-post.md", new System.IO.Abstractions.TestingHelpers.MockFileData(header))
+            .BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+
+        var found = postManager.TryFindPost("2024-01-01-a-post.md", out var markdownFile);
+
+        found.Should().BeTrue();
+        markdownFile!.FilePath.Should().Be("/blog/_posts/2024/2024-01-01-a-post.md");
+    }
+
+    [Fact]
+    public void TryFindPost_Should_Resolve_BareFilename_Against_NestedYearFolder_Draft()
+    {
+        const string header = "---\ntitle: A draft\n---";
+        var fileSystem = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/2024/a-draft.md", new System.IO.Abstractions.TestingHelpers.MockFileData(header))
+            .BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+
+        var found = postManager.TryFindPost("a-draft.md", out var markdownFile);
+
+        found.Should().BeTrue();
+        markdownFile!.FilePath.Should().Be("/blog/_drafts/2024/a-draft.md");
+    }
+
+    [Fact]
+    public void TryFindPost_Should_Still_Return_False_When_NoFileMatches_Anywhere()
+    {
+        var fileSystem = new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-01-01-a-post.md", new System.IO.Abstractions.TestingHelpers.MockFileData("---\ntitle: A post\n---"))
+            .BuildFileSystem();
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
+
+        var found = postManager.TryFindPost("does-not-exist.md", out var markdownFile);
+
+        found.Should().BeFalse();
+        markdownFile.Should().BeNull();
+    }
 }

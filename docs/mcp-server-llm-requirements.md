@@ -1,7 +1,7 @@
 # BlogHelper9000.Mcp — LLM Integration Requirements
 
 Date: 2026-07-03
-Status: Implemented (2026-07-03) — all 12 requirements (MCP-1 through MCP-12) are in place; `dotnet test BlogHelper9000.sln` is green (Mcp.Tests 33/33, full solution 233/233 + 2 pre-existing skips). One out-of-scope gap was found and spun off separately: `PostManager.TryFindPost` cannot resolve a bare filename against a post nested in `_posts/<year>/`, only its full path — see the flagged follow-up task.
+Status: Implemented (2026-07-03) — all 12 requirements (MCP-1 through MCP-12) are in place; `dotnet test BlogHelper9000.sln` is green (Mcp.Tests 33/33, full solution 236/236 + 2 pre-existing skips). One out-of-scope gap was found while implementing this (`PostManager.TryFindPost` couldn't resolve a bare filename against a post nested in `_posts/<year>/`, only its full path) and has since been fixed separately in `PostManager.cs` — see the `TryFindByFileName` helper and its recursive fallback search.
 Audience: an implementing engineer or coding agent. Every requirement includes acceptance criteria; implementation notes give exact file paths and code sketches. Follow the repo's existing conventions: xUnit v3 + FluentAssertions + NSubstitute, `MockFileSystem` via `System.IO.Abstractions`, thin tools delegating to `IBlogService`/`PostManager` in Core.
 
 ---

@@ -56,8 +56,7 @@ public class BlogServiceTests
             .BuildFileSystem();
         var sut = CreateSut(fileSystem);
 
-        // Full path required — see the note in PublishPostDetailed_Should_Report_AlreadyPublished.
-        var result = sut.PublishPost("/blog/_posts/2024/2024-01-01-a-post.md");
+        var result = sut.PublishPost("2024-01-01-a-post.md");
 
         result.Should().BeNull();
     }
@@ -132,9 +131,7 @@ public class BlogServiceTests
             .BuildFileSystem();
         var sut = CreateSut(fileSystem);
 
-        // Note: TryFindPost only resolves bare filenames against _drafts/ and the immediate
-        // _posts/ folder, not nested _posts/<year>/ subfolders — the full path is required here.
-        var result = sut.PublishPostDetailed("/blog/_posts/2024/2024-01-01-a-post.md");
+        var result = sut.PublishPostDetailed("2024-01-01-a-post.md");
 
         result.Outcome.Should().Be(Core.Models.PublishOutcome.AlreadyPublished);
         result.PublishedPath.Should().BeNull();

@@ -100,41 +100,45 @@ public class PostManager
         markdownFile = null;
         return false;
 
-        bool IsDraft(string possiblePath, out string draftPath)
+        bool IsDraft(string possiblePath, out string draftPath) =>
+            TryFindByFileName(possiblePath, Drafts, out draftPath);
+
+        bool IsPost(string possiblePath, out string postPath) =>
+            TryFindByFileName(possiblePath, Posts, out postPath);
+
+        bool TryFindByFileName(string possiblePath, string searchRoot, out string foundPath)
         {
             if (_pathResolver.TryResolveWithinBase(possiblePath, out var resolved) && FileSystem.File.Exists(resolved))
             {
-                draftPath = resolved;
+                foundPath = resolved;
                 return true;
             }
 
-            draftPath = $"{Drafts}/{FileSystem.Path.GetFileName(possiblePath)}";
+            var fileName = FileSystem.Path.GetFileName(possiblePath);
+            var immediateChildPath = $"{searchRoot}/{fileName}";
 
-            if (FileSystem.File.Exists(draftPath))
+            if (FileSystem.File.Exists(immediateChildPath))
             {
+                foundPath = immediateChildPath;
                 return true;
             }
 
-            draftPath = string.Empty;
-            return false;
-        }
-
-        bool IsPost(string possiblePath, out string postPath)
-        {
-            if (_pathResolver.TryResolveWithinBase(possiblePath, out var resolved) && FileSystem.File.Exists(resolved))
+            // Published posts live under _posts/<year>/, so a bare filename won't resolve
+            // via the immediate-child check above — search recursively as a fallback.
+            if (FileSystem.Directory.Exists(searchRoot))
             {
-                postPath = resolved;
-                return true;
+                var nestedMatch = FileSystem.Directory
+                    .EnumerateFiles(searchRoot, fileName, SearchOption.AllDirectories)
+                    .FirstOrDefault();
+
+                if (nestedMatch is not null)
+                {
+                    foundPath = nestedMatch;
+                    return true;
+                }
             }
 
-            postPath = $"{Posts}/{FileSystem.Path.GetFileName(possiblePath)}";
-
-            if (FileSystem.File.Exists(postPath))
-            {
-                return true;
-            }
-
-            postPath = string.Empty;
+            foundPath = string.Empty;
             return false;
         }
     }
