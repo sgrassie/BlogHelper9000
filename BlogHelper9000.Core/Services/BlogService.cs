@@ -139,7 +139,7 @@ public class BlogService : IBlogService
         var posts = _postManager.LoadYamlHeaderForAllPosts();
         var blogDetails = new BlogMetaInformation();
 
-        blogDetails.PostCount = posts.Count;
+        blogDetails.PostCount = posts.Count(x => x.IsPublished == true);
 
         var unpublished = posts.Where(x => x.IsPublished == false).ToList();
         blogDetails.UnPublishedCount = unpublished.Count;
@@ -151,7 +151,7 @@ public class BlogService : IBlogService
             .OrderByDescending(x => x.PublishedOn)
             .ToList();
 
-        blogDetails.LatestPosts = recents.Count > 0 ? recents.Skip(1).ToList() : [];
+        blogDetails.LatestPosts = recents;
         blogDetails.LastPost = recents.FirstOrDefault();
 
         if (blogDetails.LastPost?.PublishedOn.HasValue == true)

@@ -179,4 +179,41 @@ public class BlogServiceTests
         result.Outcome.Should().Be(Core.Models.PublishOutcome.Published);
         result.PublishedPath.Should().EndWith("2024-11-01-a-post.md");
     }
+
+    [Fact]
+    public void GetBlogInfo_Should_Include_MostRecentPost_In_LatestPosts()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024-01-01-post-1.md", new MockFileData("---\ntitle: Post 1\npublished: 01/01/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-02-01-post-2.md", new MockFileData("---\ntitle: Post 2\npublished: 01/02/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-03-01-post-3.md", new MockFileData("---\ntitle: Post 3\npublished: 01/03/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-04-01-post-4.md", new MockFileData("---\ntitle: Post 4\npublished: 01/04/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-05-01-post-5.md", new MockFileData("---\ntitle: Post 5\npublished: 01/05/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-06-01-post-6.md", new MockFileData("---\ntitle: Post 6\npublished: 01/06/2024\nispublished: true\n---"))
+            .AddFile("/blog/_posts/2024-07-01-post-7.md", new MockFileData("---\ntitle: Post 7\npublished: 01/07/2024\nispublished: true\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetBlogInfo();
+
+        result.LatestPosts.Should().Contain(p => p.Title == "Post 7");
+        result.LatestPosts!.First().Title.Should().Be("Post 7");
+        result.LastPost!.Title.Should().Be("Post 7");
+    }
+
+    [Fact]
+    public void GetBlogInfo_Should_Not_Count_Drafts_In_PostCount()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024-01-01-post-1.md", new MockFileData("---\ntitle: Post 1\npublished: 01/01/2024\nispublished: true\n---"))
+            .AddFile("/blog/_drafts/a-draft.md", new MockFileData("---\ntitle: A draft\nispublished: false\n---"))
+            .AddFile("/blog/_drafts/another-draft.md", new MockFileData("---\ntitle: Another draft\nispublished: false\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetBlogInfo();
+
+        result.PostCount.Should().Be(1);
+        result.UnPublishedCount.Should().Be(2);
+    }
 }

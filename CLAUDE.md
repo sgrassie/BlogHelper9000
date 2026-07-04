@@ -49,6 +49,8 @@ dotnet run --project BlogHelper9000.Tui -- --base-directory /path/to/jekyll/blog
 dotnet run --project BlogHelper9000.Tui -- --no-nvim --base-directory /path/to/jekyll/blog
 ```
 
+`BlogHelper9000.Imaging` requires a `SIXLABORS_LICENSE_KEY` environment variable to build (SixLabors.ImageSharp license). Since `BlogHelper9000.Tests` and `BlogHelper9000.Mcp.Tests` reference it transitively, building or testing those projects fails without it. CI reads it from a GitHub secret; locally it's expected to live in your shell profile — if a `dotnet build`/`dotnet test` run in a non-interactive shell can't see it, re-run via a login shell (e.g. `zsh -lc '...'`) rather than assuming the key is missing.
+
 ## Architecture
 
 ### Projects
