@@ -4,7 +4,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## Project Overview
 
-BlogHelper9000 is a multi-project .NET solution for managing Jekyll blog posts. It provides both a CLI tool (`bloghelper`) and a TUI workspace with an embedded Neovim editor.
+BlogHelper9000 is a multi-project .NET solution for managing Jekyll blog posts. It provides a CLI tool (`bloghelper`), a TUI workspace with an embedded Neovim editor, and an MCP server (`bloghelper-mcp`) exposing blog operations to AI agents.
 
 ## Solution Structure
 
@@ -15,10 +15,22 @@ BlogHelper9000.sln
   BlogHelper9000/                (exe — CLI tool, references Core + Imaging)
   BlogHelper9000.Nvim/           (classlib — embedded Neovim client via MsgPack-RPC)
   BlogHelper9000.Tui/            (exe — Terminal.Gui workspace, references Core + Nvim)
+  BlogHelper9000.Mcp/            (exe — stdio MCP server, references Core + Imaging)
   BlogHelper9000.Tests/          (tests for CLI commands)
   BlogHelper9000.Nvim.Tests/     (tests for Nvim grid, RPC, UI event parsing)
+  BlogHelper9000.Tui.Tests/      (tests for TUI views, commands, key translation)
+  BlogHelper9000.Mcp.Tests/      (tests for MCP tools)
   BlogHelper9000.TestHelpers/    (classlib — shared test infrastructure)
 ```
+
+`AGENTS.md` is a copy of this file for Codex — keep the two in sync when updating either. Design specs and implementation plans live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+
+## Jekyll Blog Conventions (domain model)
+
+- Drafts live in `_drafts/`; published posts live in `_posts/<year>/`.
+- A post is identified by filename (e.g. `my-post.md`) or path; bare filenames resolve against `_drafts/` then `_posts/` (including nested year folders). Paths outside the blog root are rejected.
+- Titles are slugified to lowercase-hyphenated filenames.
+- In front matter, `published:` holds a date (or a draft/true/false placeholder); a separate internal boolean tracks publish state. Blog stats count only published posts.
 
 ## Build & Test Commands
 
@@ -47,7 +59,14 @@ dotnet run --project BlogHelper9000.Tui -- --base-directory /path/to/jekyll/blog
 
 # Run the TUI without Neovim (safe mode, uses plain-text editor)
 dotnet run --project BlogHelper9000.Tui -- --no-nvim --base-directory /path/to/jekyll/blog
+
+# Run the MCP server (blog path via env var, first positional arg, or cwd)
+BLOG_BASE_DIRECTORY=/path/to/jekyll/blog dotnet run --project BlogHelper9000.Mcp
 ```
+
+Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `--target=tests` / `--target=pack`).
+
+`BlogHelper9000.Imaging` requires a `SIXLABORS_LICENSE_KEY` environment variable to build (SixLabors.ImageSharp license). Since `BlogHelper9000.Tests` and `BlogHelper9000.Mcp.Tests` reference it transitively, building or testing those projects fails without it. CI reads it from a GitHub secret; locally it's expected to live in your shell profile — if a `dotnet build`/`dotnet test` run in a non-interactive shell can't see it, re-run via a login shell (e.g. `zsh -lc '...'`) rather than assuming the key is missing.
 
 ## Architecture
 
@@ -58,6 +77,7 @@ dotnet run --project BlogHelper9000.Tui -- --no-nvim --base-directory /path/to/j
 - **BlogHelper9000** — CLI exe using TimeWarp.Nuru mediator pattern. Commands in `Commands/`.
 - **BlogHelper9000.Nvim** — Embedded Neovim client. `NvimProcess` manages `nvim --embed --headless`. `MsgPackRpcClient` handles MsgPack-RPC framing. `NvimGrid` maintains 2D screen buffer. Uses MessagePack v3.
 - **BlogHelper9000.Tui** — Terminal.Gui v2 (develop track) workspace. `NvimEditorView` renders Neovim grid. `CommandPalette` (Ctrl+P) exposes blog operations. `KeyTranslator` converts Terminal.Gui keys to Neovim notation.
+- **BlogHelper9000.Mcp** — MCP server over stdio using the `ModelContextProtocol` SDK. Tools live in `Tools/` (one class per tool, auto-discovered via `[McpServerTool]` and `WithToolsFromAssembly()`); shared response shapes in `ToolResponses.cs`. Packs as dotnet tool `bloghelper-mcp`. **stdout is reserved for JSON-RPC framing — never write to it; all logging must go to stderr** (`Program.cs` configures `LogToStandardErrorThreshold = Trace`).
 
 ### Key Namespaces
 
@@ -73,6 +93,8 @@ dotnet run --project BlogHelper9000.Tui -- --no-nvim --base-directory /path/to/j
 | `BlogHelper9000.Nvim.UiEvents` | NvimUiEvent records, UiEventParser |
 | `BlogHelper9000.Tui.Views` | BlogWorkspaceWindow, NvimEditorView, FileBrowserView, CommandPalette |
 | `BlogHelper9000.Tui.Input` | KeyTranslator |
+| `BlogHelper9000.Tui.Commands` | BlogCommands (palette actions) |
+| `BlogHelper9000.Mcp.Tools` | One class per MCP tool (AddPostTool, PublishPostTool, …) |
 
 ### TUI Keyboard Shortcuts
 - `Ctrl+B` — Toggle file browser
@@ -84,12 +106,19 @@ dotnet run --project BlogHelper9000.Tui -- --no-nvim --base-directory /path/to/j
 - File system operations are abstracted via `System.IO.Abstractions.IFileSystem`, tested with `MockFileSystem`
 - `JekyllBlogFilesystemBuilder` (in TestHelpers) constructs mock Jekyll directory structures
 - Nvim tests cover grid operations, MsgPack serialization, and UI event parsing without requiring nvim
+- MCP tool tests (`BlogHelper9000.Mcp.Tests/Tools/`) exercise each tool against a `MockFileSystem` — no running MCP client needed
+
+### Gotchas
+- `FixMetadataTool` rewrites every post under `_posts/` in one call — it supports `dryRun=true`; preserve that behaviour when changing it
+- MCP server: never write to stdout (see Architecture above); a stray `Console.WriteLine` breaks JSON-RPC framing
+- Post lookup must handle nested `_posts/<year>/` filenames — `TryFindPost` was previously broken for these (fixed in `ef99e1e`); add tests for nested paths when touching post resolution
 
 ## Tech Stack
 - .NET 10.0 / C# latest, nullable reference types enabled
 - Cake Build for build orchestration
 - Terminal.Gui v2 (2.0.0-develop.5027) for TUI
 - MessagePack v3 for Neovim RPC
+- ModelContextProtocol SDK for the MCP server (stdio transport)
 - `InternalsVisibleTo` exposes internals to test projects
 - MinVer for semantic versioning
 - Spectre.Console for CLI console output formatting
