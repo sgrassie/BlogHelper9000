@@ -12,7 +12,7 @@ public sealed record ToolResponse<T>(bool Success, string? Error, T? Data)
 
 public sealed record AddPostResult(string FilePath, bool IsDraft);
 
-public sealed record PublishResult(string? PublishedPath);
+public sealed record PublishResult(string? PublishedPath, string? ScheduleOutcome);
 
 public sealed record FixMetadataToolResult(IReadOnlyList<string> Updated, IReadOnlyList<FixMetadataSkipDto> Skipped, bool DryRun);
 
@@ -42,3 +42,26 @@ public sealed record PostSummary(string FileName, string? Title, DateTime? Publi
 public sealed record ListPostsResult(IReadOnlyList<PostSummary> Posts);
 
 public sealed record UpdatePostResult(string FilePath, IReadOnlyList<string> UpdatedFields);
+
+public sealed record SeriesStatsDto(
+    string Series, int Planned, int Published, int Remaining, double PercentDone,
+    string? LatestPostedTitle, string? NextPlannedTitle, string? NextSlot, DateOnly? LastPostedOn);
+
+public sealed record ListSeriesResult(IReadOnlyList<SeriesStatsDto> Series);
+
+public sealed record ScheduleEntryDto(
+    int Position, int? Week, DateOnly? PublishDate, string? Topic, string Title,
+    string DraftFilename, string? Tags, bool Published, DateOnly? PublishedOn, string? Notes);
+
+public sealed record GetSeriesResult(string Series, IReadOnlyList<ScheduleEntryDto> Entries);
+
+public sealed record ScheduleStatsResult(
+    int BaselinePublished, DateOnly? BaselineDate, int PublishedViaSchedules, int TotalPublished,
+    int TotalPlanned, int TotalRemaining, double Progress, IReadOnlyList<SeriesStatsDto> Series);
+
+public sealed record AddToSeriesResult(string Series, int Position, string DraftFilename);
+
+public sealed record MarkScheduledResult(string DraftFilename, string Outcome);
+
+public sealed record NextScheduledResult(
+    string Series, string Title, string DraftFilename, int? Week, DateOnly? PublishDate);

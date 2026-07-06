@@ -1,4 +1,5 @@
 using BlogHelper9000.Core.Models;
+using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.Mcp.Tools;
 using FluentAssertions;
@@ -17,7 +18,7 @@ public class PublishPostToolTests
             .Returns(new PublishPostResult(PublishOutcome.Published, "/path/to/_posts/2024/my-draft.md"));
 
         // Act
-        var result = PublishPostTool.PublishPost(blogService, "my-draft");
+        var result = PublishPostTool.PublishPost(blogService, Substitute.For<IScheduleService>(), "my-draft");
 
         // Assert
         result.Success.Should().BeTrue();
@@ -34,7 +35,7 @@ public class PublishPostToolTests
             .Returns(new PublishPostResult(PublishOutcome.NotFound, null));
 
         // Act
-        var result = PublishPostTool.PublishPost(blogService, "nonexistent");
+        var result = PublishPostTool.PublishPost(blogService, Substitute.For<IScheduleService>(), "nonexistent");
 
         // Assert
         result.Success.Should().BeFalse();
@@ -50,7 +51,7 @@ public class PublishPostToolTests
             .Returns(new PublishPostResult(PublishOutcome.AlreadyPublished, null));
 
         // Act
-        var result = PublishPostTool.PublishPost(blogService, "2024-01-01-a-post.md");
+        var result = PublishPostTool.PublishPost(blogService, Substitute.For<IScheduleService>(), "2024-01-01-a-post.md");
 
         // Assert
         result.Success.Should().BeFalse();
@@ -67,10 +68,28 @@ public class PublishPostToolTests
             .Returns(new PublishPostResult(PublishOutcome.TargetExists, null));
 
         // Act
-        var result = PublishPostTool.PublishPost(blogService, "a-post.md");
+        var result = PublishPostTool.PublishPost(blogService, Substitute.For<IScheduleService>(), "a-post.md");
 
         // Assert
         result.Success.Should().BeFalse();
         result.Error.Should().Contain("target path");
+    }
+
+    [Fact]
+    public void PublishPost_OnSuccess_TicksTheSchedule()
+    {
+        // Arrange
+        var blogService = Substitute.For<IBlogService>();
+        var scheduleService = Substitute.For<IScheduleService>();
+        blogService.PublishPostDetailed("my-draft")
+            .Returns(new PublishPostResult(PublishOutcome.Published, "/path/to/_posts/2026/my-draft.md"));
+        scheduleService.MarkPublished("my-draft").Returns(MarkPublishedOutcome.Marked);
+
+        // Act
+        var result = PublishPostTool.PublishPost(blogService, scheduleService, "my-draft");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.ScheduleOutcome.Should().Be("Marked");
     }
 }

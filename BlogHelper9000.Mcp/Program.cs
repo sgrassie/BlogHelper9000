@@ -69,6 +69,17 @@ const string serverInstructions = """
     Caution: fix_metadata rewrites every post under _posts/ in one call — call it with
     dryRun=true first to preview the change before applying it. add_featured_image performs
     network calls to Unsplash and requires credentials configured on the host machine.
+
+    The publishing schedule lives in a SQLite database at .bloghelper.db in the blog root
+    (dot-prefixed so Jekyll does not copy it into the generated site). It records post
+    series and per-post schedule entries keyed by draft filename. Schedule tools:
+    list_series, get_series, get_schedule_stats, get_next_scheduled_post,
+    add_post_to_series, mark_schedule_entry_published. publish_post automatically ticks
+    the matching schedule entry, so mark_schedule_entry_published is only needed for
+    posts published by other means. Scheduled-publishing workflow: get_schedule_stats ->
+    get_next_scheduled_post -> get_post (review) -> publish_post. If the schedule tools
+    report that no database exists, the user must create it with
+    'bloghelper schedule-import <xlsx>'.
     """;
 
 builder.Services.AddMcpServer(options =>
