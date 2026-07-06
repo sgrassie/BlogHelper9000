@@ -32,6 +32,7 @@ builder.ConfigureServices(services =>
     services.AddOptions<BlogHelperOptions>().BindConfiguration("BlogHelperOptions");
     services.AddSingleton<IFileSystem, FileSystem>();
     services.AddSingleton<InfoCommandReporter>();
+    services.AddSingleton<ScheduleReporter>();
     services.AddSingleton<MarkdownHandler>();
     services.AddSingleton<PostManager>();
     services.AddSingleton<TimeProvider>(TimeProvider.System);
