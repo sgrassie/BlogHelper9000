@@ -31,6 +31,7 @@ BlogHelper9000.sln
 - A post is identified by filename (e.g. `my-post.md`) or path; bare filenames resolve against `_drafts/` then `_posts/` (including nested year folders). Paths outside the blog root are rejected.
 - Titles are slugified to lowercase-hyphenated filenames.
 - In front matter, `published:` holds a date (or a draft/true/false placeholder); a separate internal boolean tracks publish state. Blog stats count only published posts.
+- The publishing schedule (post series, per-post entries, publish ticks) lives in a SQLite database at `.bloghelper.db` in the blog root — dot-prefixed so Jekyll does not copy it into `_site`. It is created by `bloghelper schedule-import <xlsx>`; entries are keyed by draft filename (no date prefix).
 
 ## Build & Test Commands
 
@@ -74,7 +75,7 @@ Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `-
 
 - **BlogHelper9000.Core** — Domain logic: `PostManager`, `MarkdownHandler`, `YamlConvert`, `BlogService`. No UI dependencies.
 - **BlogHelper9000.Imaging** — `ImageProcessor`, `UnsplashClient`, `FontManager`. Depends on SixLabors.ImageSharp.
-- **BlogHelper9000** — CLI exe using TimeWarp.Nuru mediator pattern. Commands in `Commands/`.
+- **BlogHelper9000** — CLI exe using TimeWarp.Nuru mediator pattern. Commands in `Commands/`. Schedule commands: `schedule-import <xlsx> [--force]`, `schedule-list`, `schedule-show <series>`, `schedule-stats`, `schedule-mark <post> [--date] [--unmark]`; `add --series/--week/--publish-date` appends the new draft to a series and `publish` auto-ticks the matching entry. The importer reads xlsx with ExcelDataReader (CLI project only).
 - **BlogHelper9000.Nvim** — Embedded Neovim client. `NvimProcess` manages `nvim --embed --headless`. `MsgPackRpcClient` handles MsgPack-RPC framing. `NvimGrid` maintains 2D screen buffer. Uses MessagePack v3.
 - **BlogHelper9000.Tui** — Terminal.Gui v2 (develop track) workspace. `NvimEditorView` renders Neovim grid. `CommandPalette` (Ctrl+P) exposes blog operations. `KeyTranslator` converts Terminal.Gui keys to Neovim notation.
 - **BlogHelper9000.Mcp** — MCP server over stdio using the `ModelContextProtocol` SDK. Tools live in `Tools/` (one class per tool, auto-discovered via `[McpServerTool]` and `WithToolsFromAssembly()`); shared response shapes in `ToolResponses.cs`. Packs as dotnet tool `bloghelper-mcp`. **stdout is reserved for JSON-RPC framing — never write to it; all logging must go to stderr** (`Program.cs` configures `LogToStandardErrorThreshold = Trace`).
@@ -87,6 +88,7 @@ Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `-
 | `BlogHelper9000.Core.YamlParsing` | YamlConvert, YamlHeader, attributes |
 | `BlogHelper9000.Core.Models` | BlogMetaInformation, AppDataModel |
 | `BlogHelper9000.Core.Services` | IBlogService, BlogService |
+| `BlogHelper9000.Core.Scheduling` | ScheduleDatabase, ScheduleRepository, ScheduleService, ScheduleStats |
 | `BlogHelper9000.Imaging` | ImageProcessor, UnsplashClient |
 | `BlogHelper9000.Nvim.Rpc` | NvimProcess, MsgPackRpcClient |
 | `BlogHelper9000.Nvim.Grid` | NvimGrid, NvimGridCell |
@@ -112,6 +114,10 @@ Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `-
 - `FixMetadataTool` rewrites every post under `_posts/` in one call — it supports `dryRun=true`; preserve that behaviour when changing it
 - MCP server: never write to stdout (see Architecture above); a stray `Console.WriteLine` breaks JSON-RPC framing
 - Post lookup must handle nested `_posts/<year>/` filenames — `TryFindPost` was previously broken for these (fixed in `ef99e1e`); add tests for nested paths when touching post resolution
+- SQLite bypasses `IFileSystem` — schedule tests use `ScheduleDatabase.OpenInMemory()`, never `MockFileSystem`; only existence checks go through `IFileSystem`
+- `schedule-import` replaces the whole schedule database (guarded by `--force`)
+- TimeWarp.Nuru 3.0.0-beta.71: service registrations MUST go through `builder.ConfigureServices(...)` (touching `builder.Services` throws at startup); the lambda is inlined into generated code so it cannot capture locals; `[NuruRouteGroup]` is silently ignored, hence the hyphenated `schedule-*` route names
+- ClosedXML cannot LOAD workbooks in this solution (SixLabors.Fonts 3.x conflict via Imaging) — creating/saving them in tests is fine; production xlsx reading uses ExcelDataReader
 
 ## Tech Stack
 - .NET 10.0 / C# latest, nullable reference types enabled
