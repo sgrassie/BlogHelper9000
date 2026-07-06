@@ -1,6 +1,8 @@
 using BlogHelper9000.Commands;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Scheduling;
+using NSubstitute;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -31,7 +33,7 @@ public class AddCommandTests
             Title = "New post in draft",
             IsDraft = true,
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -51,7 +53,7 @@ public class AddCommandTests
         {
             Title = "New post in posts"
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -72,7 +74,7 @@ public class AddCommandTests
             Title = "Tagged post",
             Tags = "csharp, dotnet"
         };
-        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService);
+        var sut = new AddCommand.Handler(NullLogger<AddCommand.Handler>.Instance, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
 

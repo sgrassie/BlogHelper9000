@@ -2,6 +2,7 @@ using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Commands;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using Microsoft.Extensions.Logging;
@@ -32,7 +33,7 @@ public class PublishCommandTests
         {
             Post = "file-does-not-exist.md"
         };
-        var sut = new PublishCommand.Handler(logger, blogService);
+        var sut = new PublishCommand.Handler(logger, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
 
@@ -60,7 +61,7 @@ public class PublishCommandTests
         {
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
         var publishedPost = postManager.FileSystem.Directory
@@ -93,7 +94,7 @@ public class PublishCommandTests
         {
             Post = "a-test-post.md"
         };
-        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService);
+        var sut = new PublishCommand.Handler(NullLogger<PublishCommand.Handler>.Instance, blogService, Substitute.For<IScheduleService>());
 
         await sut.Handle(command, CancellationToken.None);
         var publishedPost = postManager.FileSystem.Directory

@@ -1,3 +1,4 @@
+using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using TimeWarp.Nuru;
 
@@ -18,8 +19,14 @@ public sealed class AddCommand : ICommand<Unit>
     public bool IsHidden { get; set; }
     [Option("featured-image", "i", Description = "The path to the featured image for the post.")]
     public string FeaturedImage { get; set; }
+    [Option("series", "s", Description = "Add the new post to this schedule series.")]
+    public string? Series { get; set; }
+    [Option("week", "w", Description = "Schedule week number for the series entry.")]
+    public int? Week { get; set; }
+    [Option("publish-date", "p", Description = "Planned publish date (yyyy-MM-dd) for the series entry.")]
+    public string? PublishDate { get; set; }
 
-    public sealed class Handler(ILogger<Handler> logger, IBlogService blogService)
+    public sealed class Handler(ILogger<Handler> logger, IBlogService blogService, IScheduleService scheduleService)
         : ICommandHandler<AddCommand, Unit>
     {
         public ValueTask<Unit> Handle(AddCommand request, CancellationToken cancellationToken)
@@ -31,9 +38,24 @@ public sealed class AddCommand : ICommand<Unit>
             var filePath = blogService.AddPost(request.Title, request.IsDraft, request.IsFeatured, request.IsHidden, request.FeaturedImage, tags);
 
             if (filePath is null)
+            {
                 logger.LogError("Could not add post '{Title}' — a post already exists at the target path", request.Title);
-            else
-                logger.LogInformation("Added new post at {File}", filePath);
+                return default;
+            }
+
+            logger.LogInformation("Added new post at {File}", filePath);
+
+            if (!string.IsNullOrWhiteSpace(request.Series))
+            {
+                DateOnly? publishDate = DateOnly.TryParse(request.PublishDate, out var parsed) ? parsed : null;
+                var entry = scheduleService.AddToSeries(request.Series, request.Title, Path.GetFileName(filePath),
+                    week: request.Week, publishDate: publishDate, tags: request.Tags, notes: null);
+
+                if (entry is null)
+                    logger.LogWarning("'{File}' is already on the schedule — not added again", Path.GetFileName(filePath));
+                else
+                    logger.LogInformation("Scheduled as #{Position} in series '{Series}'", entry.Position, entry.Series);
+            }
 
             return default;
         }
