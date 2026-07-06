@@ -1,6 +1,7 @@
 using System.Reflection;
 using BlogHelper9000.Core;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.Imaging;
 using Microsoft.Extensions.DependencyInjection;
@@ -32,6 +33,7 @@ builder.Services.AddSingleton<MarkdownHandler>();
 builder.Services.AddSingleton<PostManager>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddSingleton<IBlogService, BlogService>();
+builder.Services.AddSingleton<IScheduleService, ScheduleService>();
 builder.Services.AddSingleton(_ =>
 {
     var client = new HttpClient();
