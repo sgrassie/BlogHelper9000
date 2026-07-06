@@ -6,6 +6,7 @@ using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.Imaging;
 using BlogHelper9000.Reporters;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using TimeWarp.Nuru;
@@ -14,27 +15,42 @@ var builder = NuruApp.CreateBuilder()
     .UseMicrosoftDependencyInjection()
     .AddConfiguration(args);
 
-builder.Services.AddOptions<BlogHelperOptions>().BindConfiguration("BlogHelperOptions");
-builder.Services.AddSingleton<IFileSystem, FileSystem>();
-builder.Services.AddSingleton<InfoCommandReporter>();
-builder.Services.AddSingleton<MarkdownHandler>();
-builder.Services.AddSingleton<PostManager>();
-builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
-builder.Services.AddSingleton<IBlogService, BlogService>();
-builder.Services.AddSingleton<IScheduleService, ScheduleService>();
-builder.Services.AddSingleton(_ =>
+// Nuru's source generator only enables DI when registrations go through
+// ConfigureServices; touching builder.Services directly throws at startup.
+builder.ConfigureServices(services =>
 {
-    var client = new HttpClient();
-    client.DefaultRequestHeaders.Add("Accept-Version", "v1");
-    return client;
+    // Nuru's generator inlines this lambda into a static method, so it cannot capture
+    // anything from Program: the IConfiguration for options binding is rebuilt here
+    // from the same sources the generated host uses.
+    services.AddSingleton<IConfiguration>(_ => new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: true)
+        .AddEnvironmentVariables()
+        .AddCommandLine(Environment.GetCommandLineArgs().Where(a => a.Contains('=')).ToArray())
+        .Build());
+    services.AddLogging(logging => logging.AddConsole());
+    services.AddOptions<BlogHelperOptions>().BindConfiguration("BlogHelperOptions");
+    services.AddSingleton<IFileSystem, FileSystem>();
+    services.AddSingleton<InfoCommandReporter>();
+    services.AddSingleton<MarkdownHandler>();
+    services.AddSingleton<PostManager>();
+    services.AddSingleton<TimeProvider>(TimeProvider.System);
+    services.AddSingleton<IBlogService, BlogService>();
+    services.AddSingleton<IScheduleService, ScheduleService>();
+    services.AddSingleton(_ =>
+    {
+        var client = new HttpClient();
+        client.DefaultRequestHeaders.Add("Accept-Version", "v1");
+        return client;
+    });
+    services.AddSingleton<IUnsplashClient>(sp => new UnsplashClient(
+        sp.GetRequiredService<HttpClient>(),
+        sp.GetRequiredService<IFileSystem>(),
+        sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
+    services.AddSingleton<IImageProcessor>(sp => new ImageProcessor(
+        sp.GetRequiredService<ILoggerFactory>().CreateLogger<ImageProcessor>(),
+        sp.GetRequiredService<PostManager>()));
 });
-builder.Services.AddSingleton<IUnsplashClient>(sp => new UnsplashClient(
-    sp.GetRequiredService<HttpClient>(),
-    sp.GetRequiredService<IFileSystem>(),
-    sp.GetRequiredService<ILoggerFactory>().CreateLogger<UnsplashClient>()));
-builder.Services.AddSingleton<IImageProcessor>(sp => new ImageProcessor(
-    sp.GetRequiredService<ILoggerFactory>().CreateLogger<ImageProcessor>(),
-    sp.GetRequiredService<PostManager>()));
 
 NuruApp app = builder
     .DiscoverEndpoints()
