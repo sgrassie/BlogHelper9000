@@ -22,9 +22,11 @@ public sealed record ListDraftsResult(IReadOnlyList<DraftDetailDto> Drafts, int 
 
 public sealed record DraftDetailDto(string FileName, string? Title, int WordCount,
     DateTime LastModified, string? Series, string? ScheduleSlot,
-    IReadOnlyList<string> ReadinessFlags);
+    IReadOnlyList<string> ReadinessFlags, bool HasFeaturedImage);
 
-public sealed record AddImageResult(string PostTitle, string ImagePath);
+public sealed record AddImageResult(
+    string PostTitle, string ImagePath, string PhotoId, string PhotographerName,
+    string PhotographerProfileUrl, string PhotoUrl, string Attribution);
 
 public sealed record BlogInfoResult(
     string BaseDirectory,
@@ -41,7 +43,7 @@ public sealed record DraftSummaryDto(string? Title, string? OriginalFilename);
 
 public sealed record GetPostResult(string FilePath, bool IsDraft, Dictionary<string, string?> FrontMatter, string Body);
 
-public sealed record PostSummary(string FileName, string? Title, DateTime? PublishedOn, IReadOnlyList<string> Tags);
+public sealed record PostSummary(string FileName, string? Title, DateTime? PublishedOn, IReadOnlyList<string> Tags, bool HasFeaturedImage);
 
 public sealed record ListPostsResult(IReadOnlyList<PostSummary> Posts);
 

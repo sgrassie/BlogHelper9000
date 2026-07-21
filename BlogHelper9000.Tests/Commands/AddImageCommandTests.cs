@@ -61,7 +61,9 @@ public class AddImageCommandTests
         var imageProcessor = Substitute.For<IImageProcessor>();
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var mockClient = Substitute.For<IUnsplashClient>();
-        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new MemoryStream());
+        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new UnsplashImageResult(
+            new MemoryStream(), "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description"));
 
         var command = new AddImageCommand
         {
@@ -72,7 +74,7 @@ public class AddImageCommandTests
 
         await sut.Handle(command, CancellationToken.None);
 
-        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>());
+        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>(), "Photo by Jane Doe on Unsplash");
     }
 
     [Theory]
@@ -94,7 +96,9 @@ public class AddImageCommandTests
         var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem), _options);
         var imageProcessor = Substitute.For<IImageProcessor>();
         var mockClient = Substitute.For<IUnsplashClient>();
-        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new MemoryStream());
+        mockClient.LoadImageAsync(Arg.Any<string>()).Returns(new UnsplashImageResult(
+            new MemoryStream(), "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description"));
         var command = new AddImageCommand
         {
             Post = postNameToFind,
@@ -104,6 +108,6 @@ public class AddImageCommandTests
 
         await sut.Handle(command, CancellationToken.None);
 
-        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>());
+        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), Arg.Any<Stream>(), Arg.Any<string>(), "Photo by Jane Doe on Unsplash");
     }
 }

@@ -4,6 +4,7 @@ using BlogHelper9000.Imaging;
 using BlogHelper9000.Mcp.Tools;
 using FluentAssertions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Options;
 using BlogHelper9000.Core;
@@ -51,7 +52,7 @@ public class AddFeaturedImageToolTests
         var unsplashClient = Substitute.For<IUnsplashClient>();
         var imageProcessor = Substitute.For<IImageProcessor>();
 
-        unsplashClient.LoadImageAsync("nature").Returns((Stream?)null);
+        unsplashClient.LoadImageAsync("nature").Returns((UnsplashImageResult?)null);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -78,7 +79,9 @@ public class AddFeaturedImageToolTests
         var imageProcessor = Substitute.For<IImageProcessor>();
 
         await using var imageStream = new MemoryStream();
-        unsplashClient.LoadImageAsync("nature").Returns(imageStream);
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("nature").Returns(unsplashResult);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -87,7 +90,12 @@ public class AddFeaturedImageToolTests
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.PostTitle.Should().Be("My Post");
-        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), imageStream, null);
+        result.Data.PhotoId.Should().Be("photo-1");
+        result.Data.PhotographerName.Should().Be("Jane Doe");
+        result.Data.PhotographerProfileUrl.Should().Be("https://unsplash.com/@janedoe");
+        result.Data.PhotoUrl.Should().Be("https://unsplash.com/photos/photo-1");
+        result.Data.Attribution.Should().Be("Photo by Jane Doe on Unsplash");
+        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), imageStream, null, "Photo by Jane Doe on Unsplash");
     }
 
     [Fact]
@@ -106,7 +114,9 @@ public class AddFeaturedImageToolTests
         var imageProcessor = Substitute.For<IImageProcessor>();
 
         await using var imageStream = new MemoryStream();
-        unsplashClient.LoadImageAsync("Dynamic Port Assignment").Returns(imageStream);
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("Dynamic Port Assignment").Returns(unsplashResult);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -114,6 +124,157 @@ public class AddFeaturedImageToolTests
 
         // Assert
         result.Success.Should().BeTrue();
-        await unsplashClient.Received(1).LoadImageAsync("Dynamic Port Assignment", Arg.Any<CancellationToken>());
+        await unsplashClient.Received(1).LoadImageAsync("Dynamic Port Assignment", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenPostAlreadyHasImage_AndReplaceFalse_ReturnsFailureEnvelope()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md",
+            new MockFileData("---\ntitle: My Post\nfeatured_image: /assets/images/my-post.webp\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("replace=true");
+        result.Error.Should().Contain("photoId");
+        result.Error.Should().Be(
+            "Post already has a featured image ('/assets/images/my-post.webp') — " +
+            "pass replace=true to regenerate (optionally with photoId to pin a specific Unsplash photo).");
+        await unsplashClient.DidNotReceive().LoadImageAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenPostAlreadyHasImage_AndPhotoIdSupplied_ButReplaceFalse_ReturnsFailureEnvelope()
+    {
+        // Arrange — photoId alone must not bypass the consent guard.
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md",
+            new MockFileData("---\ntitle: My Post\nfeatured_image: /assets/images/my-post.webp\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature", photoId: "photo-42");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("replace=true");
+        await unsplashClient.DidNotReceive().LoadImageAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenPostAlreadyHasImage_AndReplaceTrue_Succeeds()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md",
+            new MockFileData("---\ntitle: My Post\nfeatured_image: /assets/images/my-post.webp\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        await using var imageStream = new MemoryStream();
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("nature").Returns(unsplashResult);
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature", replace: true);
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.Attribution.Should().Be("Photo by Jane Doe on Unsplash");
+        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), imageStream, null, "Photo by Jane Doe on Unsplash");
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenPhotoIdSupplied_ForwardsToUnsplashClient()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md", new MockFileData("---\ntitle: My Post\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        await using var imageStream = new MemoryStream();
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-42", "https://unsplash.com/photos/photo-42",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("nature", "photo-42", Arg.Any<CancellationToken>()).Returns(unsplashResult);
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature", photoId: "photo-42");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.PhotoId.Should().Be("photo-42");
+        await unsplashClient.Received(1).LoadImageAsync("nature", "photo-42", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenUnsplashRequestFails_ReturnsFailureEnvelopeNamingThePhotoId()
+    {
+        // Arrange — an invalid/unknown photoId causes UnsplashClient to throw HttpRequestException
+        // (via EnsureSuccessStatusCode) instead of returning null; the tool must not let it escape
+        // the ToolResponse envelope.
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md", new MockFileData("---\ntitle: My Post\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        unsplashClient.LoadImageAsync("nature", "not-a-real-photo-id", Arg.Any<CancellationToken>())
+            .Throws(new HttpRequestException(
+                "Response status code does not indicate success: 404 (Not Found).",
+                null,
+                System.Net.HttpStatusCode.NotFound));
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature",
+            photoId: "not-a-real-photo-id");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("not-a-real-photo-id");
+        result.Error.Should().Contain("404");
     }
 }

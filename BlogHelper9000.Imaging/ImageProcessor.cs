@@ -14,7 +14,7 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
     private const string ImagesByUnsplash = "Background image by Unsplash";
     private readonly FontManager _fontManager = new FontManager(logger);
 
-    public async Task Process(MarkdownFile postMarkdown, Stream imageSource, string? brandingPath)
+    public async Task Process(MarkdownFile postMarkdown, Stream imageSource, string? brandingPath, string? attribution = null)
     {
         logger.LogInformation("Generating image for {Post}", postMarkdown.Metadata.Title);
         var mainFont = _fontManager.GetFont("Ubuntu", 90);
@@ -29,7 +29,7 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
             AddLogo(baseImage, logoImage);
         }
 
-        AddAttribution(baseImage,  baseImageWidth, baseImageHeight);
+        AddAttribution(baseImage, baseImageWidth, baseImageHeight, attribution);
         AddTextShadow(postMarkdown, baseImage, mainFont);
         AddDescriptionText(postMarkdown, baseImage, mainFont);
 
@@ -115,14 +115,15 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
         });
     }
 
-    private void AddAttribution(Image baseImage, int baseImageWidth, int baseImageHeight)
+    private void AddAttribution(Image baseImage, int baseImageWidth, int baseImageHeight, string? attribution)
     {
+        var attributionText = string.IsNullOrEmpty(attribution) ? ImagesByUnsplash : attribution;
         var unsplashAttributionFont = _fontManager.GetFont("Ubuntu", 15, FontStyle.Italic);
 
         baseImage.Mutate(x =>
         {
             logger.LogDebug("Adding Unsplash attribution");
-            var measure = TextMeasurer.MeasureAdvance(ImagesByUnsplash, new TextOptions(unsplashAttributionFont));
+            var measure = TextMeasurer.MeasureAdvance(attributionText, new TextOptions(unsplashAttributionFont));
 
             x.Paint(
                 new DrawingOptions
@@ -135,7 +136,7 @@ public class ImageProcessor(ILogger logger, PostManager postManager) : IImagePro
                         Origin = new PointF(baseImageWidth - measure.Width, baseImageHeight - measure.Height),
                         HorizontalAlignment = HorizontalAlignment.Center
                     },
-                    ImagesByUnsplash,
+                    attributionText,
                     new SolidBrush(Color.WhiteSmoke),
                     new SolidPen(Color.WhiteSmoke, 1)
                 )

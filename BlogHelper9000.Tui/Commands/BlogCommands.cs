@@ -366,9 +366,9 @@ public class BlogCommands
         {
             try
             {
-                var imageStream = await _unsplashClient.LoadImageAsync(query);
+                var result = await _unsplashClient.LoadImageAsync(query);
 
-                if (imageStream is null)
+                if (result is null)
                 {
                     _logger.LogError("Could not load an Unsplash image for query '{Query}'", query);
                     return;
@@ -381,7 +381,7 @@ public class BlogCommands
                     brandingPath = foundPath;
                 }
 
-                await _imageProcessor.Process(markdownFile, imageStream, brandingPath);
+                await _imageProcessor.Process(markdownFile, result.Image, brandingPath, result.Attribution);
                 _logger.LogInformation("Added featured image to {Post}", markdownFile.Metadata.Title);
 
                 Application.Invoke(() => FilesChangedCallback?.Invoke());

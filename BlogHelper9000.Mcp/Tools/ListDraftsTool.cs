@@ -32,7 +32,7 @@ public static class ListDraftsTool
                         : entry?.Week is { } week ? $"Week {week}" : null;
 
                     return new DraftDetailDto(d.FileName, d.Title, d.WordCount, d.LastModified,
-                        entry?.Series, slot, d.ReadinessFlags);
+                        entry?.Series, slot, d.ReadinessFlags, d.HasFeaturedImage);
                 })
                 .Take(limit)
                 .ToList();
