@@ -216,4 +216,81 @@ public class BlogServiceTests
         result.PostCount.Should().Be(1);
         result.UnPublishedCount.Should().Be(2);
     }
+
+    [Fact]
+    public void GetDraftDetails_Should_Extract_TitleAndWordCount()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/a-draft.md",
+                new MockFileData("---\ntitle: A Draft\n---\n\nFive simple words in this body."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result.Should().ContainSingle();
+        var detail = result[0];
+        detail.FileName.Should().Be("a-draft.md");
+        detail.FilePath.Should().Be("/blog/_drafts/a-draft.md");
+        detail.Title.Should().Be("A Draft");
+        detail.WordCount.Should().Be(6);
+    }
+
+    [Fact]
+    public void GetDraftDetails_Should_ExtractReadinessFlags_FromBody()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/a-draft.md",
+                new MockFileData("---\ntitle: A Draft\n---\n\nTODO: finish this. [placeholder image]"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result[0].ReadinessFlags.Should().BeEquivalentTo("TODO", "[placeholder");
+    }
+
+    [Fact]
+    public void GetDraftDetails_Should_ReportHasFeaturedImage_WhenSet()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/with-image.md",
+                new MockFileData("---\ntitle: Has Image\nfeatured_image: /assets/images/foo.webp\n---"))
+            .AddFile("/blog/_drafts/without-image.md",
+                new MockFileData("---\ntitle: No Image\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result.Single(d => d.FileName == "with-image.md").HasFeaturedImage.Should().BeTrue();
+        result.Single(d => d.FileName == "without-image.md").HasFeaturedImage.Should().BeFalse();
+    }
+
+    [Fact]
+    public void GetDraftDetails_Should_OrderByLastModifiedDescending()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/older.md", new MockFileData("---\ntitle: Older\n---"))
+            .AddFile("/blog/_drafts/newer.md", new MockFileData("---\ntitle: Newer\n---"))
+            .BuildFileSystem();
+        fileSystem.File.SetLastWriteTime("/blog/_drafts/older.md", new DateTime(2024, 1, 1));
+        fileSystem.File.SetLastWriteTime("/blog/_drafts/newer.md", new DateTime(2024, 6, 1));
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result.Select(d => d.FileName).Should().Equal("newer.md", "older.md");
+    }
+
+    [Fact]
+    public void GetDraftDetails_Should_ReturnEmpty_WhenNoDraftsDirectory()
+    {
+        var fileSystem = new MockFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result.Should().BeEmpty();
+    }
 }

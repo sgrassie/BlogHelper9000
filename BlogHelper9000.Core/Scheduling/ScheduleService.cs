@@ -124,6 +124,13 @@ public sealed partial class ScheduleService : IScheduleService, IDisposable
             ?? candidates.FirstOrDefault();
     }
 
+    public ScheduleEntry? FindEntry(string post)
+    {
+        if (!DatabaseExists) return null;
+
+        return Repository.FindEntryByFilename(NormaliseFilename(post));
+    }
+
     internal static string NormaliseFilename(string post)
     {
         var name = Path.GetFileName(post.Trim());

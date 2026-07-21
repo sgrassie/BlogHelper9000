@@ -18,7 +18,11 @@ public sealed record FixMetadataToolResult(IReadOnlyList<string> Updated, IReadO
 
 public sealed record FixMetadataSkipDto(string FilePath, string Reason);
 
-public sealed record DraftListResult(IReadOnlyList<string> Drafts);
+public sealed record ListDraftsResult(IReadOnlyList<DraftDetailDto> Drafts, int Total);
+
+public sealed record DraftDetailDto(string FileName, string? Title, int WordCount,
+    DateTime LastModified, string? Series, string? ScheduleSlot,
+    IReadOnlyList<string> ReadinessFlags);
 
 public sealed record AddImageResult(string PostTitle, string ImagePath);
 

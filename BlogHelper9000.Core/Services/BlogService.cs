@@ -173,6 +173,36 @@ public class BlogService : IBlogService
             .ToList();
     }
 
+    public IReadOnlyList<DraftDetail> GetDraftDetails()
+    {
+        var draftsPath = _postManager.Drafts;
+        if (!_fileSystem.Directory.Exists(draftsPath))
+            return [];
+
+        return _fileSystem.Directory
+            .EnumerateFiles(draftsPath, "*.md", SearchOption.AllDirectories)
+            .Select(BuildDraftDetail)
+            .OrderByDescending(d => d.LastModified)
+            .ToList();
+    }
+
+    private DraftDetail BuildDraftDetail(string path)
+    {
+        var markdownFile = _postManager.Markdown.LoadFile(path);
+        var body = _postManager.Markdown.GetBody(path);
+        var wordCount = body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var lastModified = _fileSystem.FileInfo.New(path).LastWriteTime;
+
+        return new DraftDetail(
+            _fileSystem.Path.GetFileName(path),
+            path,
+            markdownFile.Metadata.Title,
+            wordCount,
+            lastModified,
+            !string.IsNullOrWhiteSpace(markdownFile.Metadata.FeaturedImage),
+            ContentMarkers.FindMarkers(body));
+    }
+
     private void FixPublishedStatus(MarkdownFile file)
     {
         var rawFileName = _fileSystem.Path.GetFileName(file.FilePath);

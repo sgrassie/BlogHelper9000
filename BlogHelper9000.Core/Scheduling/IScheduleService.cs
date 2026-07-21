@@ -32,4 +32,11 @@ public interface IScheduleService
     /// series the one with the earliest planned date (dated entries first, then schedule order).
     /// </summary>
     ScheduleEntry? GetNextUnpublished(string? seriesName = null);
+
+    /// <summary>
+    /// Finds the schedule entry whose draft filename matches <paramref name="post"/> (same
+    /// normalisation as <see cref="MarkPublished"/>). Returns null when there is no schedule
+    /// database, or the post isn't on it.
+    /// </summary>
+    ScheduleEntry? FindEntry(string post);
 }
