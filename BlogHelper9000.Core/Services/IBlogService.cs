@@ -21,6 +21,19 @@ public interface IBlogService
     PublishPostResult PublishPostDetailed(string postName);
 
     /// <summary>
+    /// Reverses publishing a post: clears the published metadata and moves it back to
+    /// <c>_drafts/</c> with its date prefix stripped. When <paramref name="dryRun"/> is true,
+    /// reports what would happen without writing or moving anything.
+    /// </summary>
+    UnpublishPostResult UnpublishPostDetailed(string postName, bool dryRun = false);
+
+    /// <summary>
+    /// Permanently deletes a draft file. Refuses anything not resolved under <c>_drafts/</c>.
+    /// When <paramref name="dryRun"/> is true, reports what would happen without deleting.
+    /// </summary>
+    DeleteDraftResult DeleteDraft(string postName, bool dryRun = false);
+
+    /// <summary>
     /// Batch-fixes metadata across all posts. When <paramref name="dryRun"/> is true, computes
     /// and reports what would change without writing any files.
     /// </summary>

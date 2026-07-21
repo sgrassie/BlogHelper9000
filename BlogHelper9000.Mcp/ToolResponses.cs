@@ -47,6 +47,10 @@ public sealed record ListPostsResult(IReadOnlyList<PostSummary> Posts);
 
 public sealed record UpdatePostResult(string FilePath, IReadOnlyList<string> UpdatedFields);
 
+public sealed record PatchPostResult(string FilePath, bool Applied);
+
+public sealed record AppendToPostResult(string FilePath);
+
 public sealed record SeriesStatsDto(
     string Series, int Planned, int Published, int Remaining, double PercentDone,
     string? LatestPostedTitle, string? NextPlannedTitle, string? NextSlot, DateOnly? LastPostedOn,
@@ -100,3 +104,7 @@ public sealed record DuePostDto(
     bool Overdue, int DaysOverdue, int? Week, int Position);
 
 public sealed record GetDuePostsResult(IReadOnlyList<DuePostDto> Due);
+
+public sealed record DeleteDraftToolResult(string FilePath, bool DryRun, bool Deleted, string? ScheduleEntry);
+
+public sealed record UnpublishResult(string? DraftPath, string Outcome, string? ScheduleOutcome, bool DryRun);
