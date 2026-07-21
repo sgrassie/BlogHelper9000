@@ -35,6 +35,7 @@ builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddSingleton<IBlogService, BlogService>();
 builder.Services.AddSingleton<IPostSearchService, PostSearchService>();
 builder.Services.AddSingleton<IScheduleService, ScheduleService>();
+builder.Services.AddSingleton<IPostValidator, PostValidator>();
 builder.Services.AddSingleton(_ =>
 {
     var client = new HttpClient();
