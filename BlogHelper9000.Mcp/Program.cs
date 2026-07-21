@@ -59,13 +59,23 @@ const string serverInstructions = """
     (e.g. 'my-post.md') or a path — bare filenames are resolved against _drafts/ then
     _posts/, and paths outside the blog root are rejected.
 
-    Typical workflow: get_blog_info -> list_drafts/list_posts -> add_post -> get_post ->
-    publish_post -> add_featured_image.
+    Typical workflow: get_blog_info -> list_drafts/list_posts -> search_posts (check for
+    prior coverage / find posts to link to) -> add_post -> get_post -> publish_post ->
+    add_featured_image.
 
     Conventions: titles are slugified to lowercase-hyphenated filenames; tags are supplied
     as a comma-separated string (e.g. 'csharp, dotnet'); in front matter, 'published:' holds
     a date (or a draft/true/false placeholder before it is set), and the separate boolean
     publish flag is tracked internally — you do not need to set it directly.
+
+    Discovery tools: search_posts answers "have I written about X?" and internal-linking
+    research with a full-text and/or tag search across posts and drafts, returning snippets.
+    list_drafts is a triage view of _drafts/ — title, word count, last-modified, schedule
+    series/slot, and readiness flags (e.g. TODO/FIXME markers) for each draft, so you can
+    see what's close to done without opening every file. get_tags returns the tag taxonomy
+    with usage counts and casing variants across the blog, plus the normalisation rules
+    fix_metadata applies — use it before tagging a new post to stay consistent with existing
+    tags.
 
     Caution: fix_metadata rewrites every post under _posts/ in one call — call it with
     dryRun=true first to preview the change before applying it. add_featured_image performs
