@@ -11,6 +11,11 @@ namespace BlogHelper9000.Core.Services;
 /// </summary>
 public sealed class PostValidator : IPostValidator
 {
+    // Deliberate limitation: both regexes stop at the first ')', so a target containing a
+    // literal parenthesis (some Wikipedia-style URLs, etc.) gets truncated rather than
+    // matched in full. Markdown itself allows escaping/angle-bracket forms for this case;
+    // we don't attempt to parse those — false negatives on that edge case are accepted
+    // rather than reaching for a full markdown parser here.
     private static readonly Regex ImageRegex =
         new(@"!\[[^\]]*\]\(\s*(\S*?)(?:\s+""[^""]*"")?\s*\)", RegexOptions.Compiled);
 
@@ -63,10 +68,18 @@ public sealed class PostValidator : IPostValidator
 
     public IReadOnlyList<ValidationReport> ValidateBlog()
     {
-        var slugIndex = BuildSlugIndex();
         var reports = new List<ValidationReport>();
 
-        foreach (var path in EnumerateAllPostFiles())
+        // BuildSlugIndex enumerates the same directories as the file collection below and
+        // is guarded the same way (see BuildSlugIndex) — call it first so a directory-level
+        // failure there degrades the index rather than aborting the whole sweep.
+        var slugIndex = BuildSlugIndex();
+
+        var files = new List<string>();
+        files.AddRange(CollectFiles(_postManager.Drafts, reports));
+        files.AddRange(CollectFiles(_postManager.Posts, reports));
+
+        foreach (var path in files)
         {
             reports.Add(ValidateFile(path, slugIndex));
         }
@@ -80,38 +93,48 @@ public sealed class PostValidator : IPostValidator
     private static ValidationFinding FrontMatterParseFinding(Exception ex) =>
         new(ValidationSeverity.Error, "front-matter", $"front matter does not parse: {ex.Message}", null);
 
-    private IEnumerable<string> EnumerateAllPostFiles()
-    {
-        if (_fileSystem.Directory.Exists(_postManager.Drafts))
-        {
-            foreach (var path in _fileSystem.Directory.EnumerateFiles(_postManager.Drafts, "*.md", SearchOption.AllDirectories))
-                yield return path;
-        }
+    private static ValidationFinding ValidatorErrorFinding(string message) =>
+        new(ValidationSeverity.Error, "validator-error", message, null);
 
-        if (_fileSystem.Directory.Exists(_postManager.Posts))
+    /// <summary>
+    /// Enumerates the .md files under <paramref name="directory"/>. A directory-level IO
+    /// failure (permissions, concurrent delete) must not abort the whole sweep — it's
+    /// recorded as its own finding (Check="validator-error", FilePath=the directory) and
+    /// the other directory (drafts/posts) still gets validated.
+    /// </summary>
+    private List<string> CollectFiles(string directory, List<ValidationReport> reports)
+    {
+        try
         {
-            foreach (var path in _fileSystem.Directory.EnumerateFiles(_postManager.Posts, "*.md", SearchOption.AllDirectories))
-                yield return path;
+            if (!_fileSystem.Directory.Exists(directory))
+                return [];
+
+            return _fileSystem.Directory.EnumerateFiles(directory, "*.md", SearchOption.AllDirectories).ToList();
+        }
+        catch (Exception ex)
+        {
+            reports.Add(new ValidationReport(directory, [ValidatorErrorFinding($"could not enumerate files: {ex.Message}")]));
+            return [];
         }
     }
 
     private ValidationReport ValidateFile(string path, SlugIndex slugIndex)
     {
+        MarkdownFile markdownFile;
         try
         {
-            MarkdownFile markdownFile;
-            try
-            {
-                markdownFile = _postManager.Markdown.LoadFile(path);
-            }
-            catch (Exception ex)
-            {
-                // Front matter that doesn't parse short-circuits every other check for this
-                // file — the body is still readable but the brief scopes this to a single
-                // finding rather than guessing at a broken file's intent.
-                return new ValidationReport(path, [FrontMatterParseFinding(ex)]);
-            }
+            markdownFile = _postManager.Markdown.LoadFile(path);
+        }
+        catch (Exception ex)
+        {
+            // Front matter that doesn't parse short-circuits every other check for this
+            // file — the body is still readable but the brief scopes this to a single
+            // finding rather than guessing at a broken file's intent.
+            return new ValidationReport(path, [FrontMatterParseFinding(ex)]);
+        }
 
+        try
+        {
             var findings = new List<ValidationFinding>();
             var bodyLines = ExtractBodyLines(_fileSystem.File.ReadAllLines(path));
 
@@ -126,10 +149,19 @@ public sealed class PostValidator : IPostValidator
         {
             // Belt-and-braces: nothing above should throw once front matter parses, but a
             // sweep across an entire blog must never die on one file (Phase-1 precedent).
-            return new ValidationReport(path, [FrontMatterParseFinding(ex)]);
+            // Distinct Check id from the LoadFile catch above — this is an unexpected
+            // failure in a later check (image/link/placeholder), not a front-matter parse
+            // problem, so it shouldn't be mislabelled as one.
+            return new ValidationReport(path, [ValidatorErrorFinding($"unexpected error validating file: {ex.Message}")]);
         }
     }
 
+    // Deliberate limitation: this returns every line after the front-matter delimiters,
+    // including fenced code blocks (```...```). Image/link/placeholder checks therefore run
+    // inside code samples too — a code snippet showing `![alt](/missing.png)` as example
+    // markdown, or a comment containing "TODO", can produce a false-positive finding. We
+    // don't track fence state here; keeping the line-scan simple was judged worth the
+    // occasional false positive over a fuller markdown-aware pass.
     private static List<(int LineNumber, string Text)> ExtractBodyLines(string[] lines)
     {
         var body = new List<(int, string)>();
@@ -287,7 +319,27 @@ public sealed class PostValidator : IPostValidator
         target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
         target.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Builds the slug index, degrading to an empty index on any IO failure (e.g. a
+    /// directory-level error enumerating _posts) rather than throwing. An empty index is a
+    /// conservative failure mode: every root-relative internal-link check then reports
+    /// "unresolved" (Warning) and every {% post_url %} check reports "not found" (Error) —
+    /// false positives instead of an escaping exception, which fits ValidateBlog/ValidatePost's
+    /// "never throws" contract.
+    /// </summary>
     private SlugIndex BuildSlugIndex()
+    {
+        try
+        {
+            return BuildSlugIndexCore();
+        }
+        catch (Exception)
+        {
+            return new SlugIndex([], []);
+        }
+    }
+
+    private SlugIndex BuildSlugIndexCore()
     {
         var slugs = new HashSet<string>();
         var postFileNames = new HashSet<string>();

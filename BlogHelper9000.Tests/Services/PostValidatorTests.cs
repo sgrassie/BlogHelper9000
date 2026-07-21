@@ -1,3 +1,4 @@
+using System.IO;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using BlogHelper9000.Core;
@@ -6,6 +7,7 @@ using BlogHelper9000.Core.Services;
 using BlogHelper9000.TestHelpers;
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using NSubstitute;
 
 namespace BlogHelper9000.Tests.Services;
 
@@ -416,5 +418,117 @@ public class PostValidatorTests
         reports.Should().ContainSingle(r => r.FilePath.Contains("broken.md") && !r.IsValid &&
             r.Findings.Single().Check == "front-matter");
         reports.Where(r => !r.FilePath.Contains("broken.md")).Should().OnlyContain(r => r.IsValid);
+    }
+
+    [Fact]
+    public void ValidateBlog_Survives_Directory_Enumeration_Failure_And_Degrades_SlugIndex()
+    {
+        // Simulates a directory-level IO failure (permissions, concurrent delete) while
+        // enumerating _posts. Both guards under test share this one fault: ValidateBlog's
+        // file-collection guard (which must turn the failure into a finding instead of an
+        // escaping exception) and BuildSlugIndex's guard (which also enumerates _posts and
+        // must degrade to an empty index rather than throw, since it runs on the same call).
+        var inner = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/linker.md", new MockFileData(
+                "---\ntitle: T\ndescription: D\ntags: [a]\n---\n\n" +
+                "See {% post_url 2024-05-01-real-post %} for details.\n"))
+            .BuildFileSystem();
+        var fileSystem = CreateFileSystemThrowingOnDirectoryEnumeration(inner, JekyllBlogFilesystemBuilder.Posts);
+        var sut = CreateSut(fileSystem);
+
+        var reports = sut.ValidateBlog();
+
+        reports.Should().HaveCount(2);
+
+        var directoryFailureReport = reports.Should().ContainSingle(r => r.FilePath == JekyllBlogFilesystemBuilder.Posts).Subject;
+        directoryFailureReport.Findings.Should().ContainSingle(f =>
+            f.Severity == ValidationSeverity.Error && f.Check == "validator-error");
+
+        // BuildSlugIndex degraded to an empty index (rather than throwing), so the
+        // post_url check — which would otherwise resolve against real _posts filenames —
+        // now conservatively reports every reference as unresolved.
+        var draftReport = reports.Single(r => r.FilePath.Contains("linker.md"));
+        draftReport.Findings.Should().ContainSingle(f =>
+            f.Severity == ValidationSeverity.Error && f.Check == "liquid-link");
+    }
+
+    [Fact]
+    public void ValidateFile_Unexpected_Exception_In_Later_Checks_Gets_ValidatorError_Not_FrontMatter()
+    {
+        // The featured_image existence check (run well after front matter has already
+        // parsed successfully) is where we inject the fault, so the outer catch — not the
+        // LoadFile-specific one — must be the one that handles it, and it must be labelled
+        // distinctly from a front-matter parse failure.
+        var inner = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/bad-image.md", new MockFileData(
+                "---\ntitle: T\ndescription: D\ntags: [a]\nfeatured_image: /assets/images/x.webp\n---\n\nBody."))
+            .BuildFileSystem();
+        var failingPath = inner.Path.Combine("/blog", "assets/images/x.webp");
+        var fileSystem = CreateFileSystemThrowingOnFileExists(inner, failingPath);
+        var sut = CreateSut(fileSystem);
+
+        var reports = sut.ValidateBlog();
+
+        var report = reports.Should().ContainSingle().Subject;
+        var finding = report.Findings.Should().ContainSingle().Subject;
+        finding.Severity.Should().Be(ValidationSeverity.Error);
+        finding.Check.Should().Be("validator-error");
+        finding.Message.Should().NotContain("front matter");
+    }
+
+    // --- Fault-injection helpers -------------------------------------------------------
+    // NSubstitute wrappers around a real MockFileSystem: delegate everything to the inner
+    // filesystem except the one call site under test, which throws. Only the members
+    // PostManager/PostValidator actually touch need configuring.
+
+    private static IFileSystem CreateFileSystemThrowingOnDirectoryEnumeration(MockFileSystem inner, string failingDirectory)
+    {
+        var fakeFs = Substitute.For<IFileSystem>();
+        fakeFs.Path.Returns(inner.Path);
+        fakeFs.File.Returns(inner.File);
+        fakeFs.FileInfo.Returns(inner.FileInfo);
+        fakeFs.DirectoryInfo.Returns(inner.DirectoryInfo);
+        fakeFs.FileStream.Returns(inner.FileStream);
+        fakeFs.FileSystemWatcher.Returns(inner.FileSystemWatcher);
+        fakeFs.DriveInfo.Returns(inner.DriveInfo);
+
+        var throwingDirectory = Substitute.For<IDirectory>();
+        throwingDirectory.Exists(Arg.Any<string>()).Returns(ci => inner.Directory.Exists(ci.Arg<string>()));
+        throwingDirectory.EnumerateFiles(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<SearchOption>())
+            .Returns(ci =>
+            {
+                var path = ci.ArgAt<string>(0);
+                if (path == failingDirectory)
+                    throw new IOException($"simulated failure enumerating '{path}'");
+                return inner.Directory.EnumerateFiles(path, ci.ArgAt<string>(1), ci.ArgAt<SearchOption>(2));
+            });
+
+        fakeFs.Directory.Returns(throwingDirectory);
+        return fakeFs;
+    }
+
+    private static IFileSystem CreateFileSystemThrowingOnFileExists(MockFileSystem inner, string failingPath)
+    {
+        var fakeFs = Substitute.For<IFileSystem>();
+        fakeFs.Path.Returns(inner.Path);
+        fakeFs.Directory.Returns(inner.Directory);
+        fakeFs.FileInfo.Returns(inner.FileInfo);
+        fakeFs.DirectoryInfo.Returns(inner.DirectoryInfo);
+        fakeFs.FileStream.Returns(inner.FileStream);
+        fakeFs.FileSystemWatcher.Returns(inner.FileSystemWatcher);
+        fakeFs.DriveInfo.Returns(inner.DriveInfo);
+
+        var throwingFile = Substitute.For<IFile>();
+        throwingFile.Exists(Arg.Any<string>()).Returns(ci =>
+        {
+            var path = ci.Arg<string>();
+            if (path == failingPath)
+                throw new IOException($"simulated failure checking existence of '{path}'");
+            return inner.File.Exists(path);
+        });
+        throwingFile.ReadAllLines(Arg.Any<string>()).Returns(ci => inner.File.ReadAllLines(ci.Arg<string>()));
+
+        fakeFs.File.Returns(throwingFile);
+        return fakeFs;
     }
 }
