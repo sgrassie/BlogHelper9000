@@ -49,7 +49,8 @@ public sealed record UpdatePostResult(string FilePath, IReadOnlyList<string> Upd
 
 public sealed record SeriesStatsDto(
     string Series, int Planned, int Published, int Remaining, double PercentDone,
-    string? LatestPostedTitle, string? NextPlannedTitle, string? NextSlot, DateOnly? LastPostedOn);
+    string? LatestPostedTitle, string? NextPlannedTitle, string? NextSlot, DateOnly? LastPostedOn,
+    int OverdueCount);
 
 public sealed record ListSeriesResult(IReadOnlyList<SeriesStatsDto> Series);
 
@@ -82,3 +83,20 @@ public sealed record TagCountDto(string Tag, int Total, int Published, int Draft
 
 public sealed record GetTagsResult(IReadOnlyList<TagCountDto> Tags,
     IReadOnlyList<string> NormalisationRules);
+
+public sealed record UpdateScheduleEntryResult(string Series, ScheduleEntryDto Entry);
+
+public sealed record RemoveScheduleEntryResult(
+    string DraftFilename, string Series, int Position, bool DryRun, bool Removed);
+
+public sealed record RenameSeriesResult(string OldName, string NewName);
+
+public sealed record DeleteSeriesResult(string Name, bool DryRun, bool Deleted);
+
+public sealed record SetSeriesCadenceResult(string Series, string CadenceDay, string CadenceStart);
+
+public sealed record DuePostDto(
+    string Series, string Title, string DraftFilename, string DueDate,
+    bool Overdue, int DaysOverdue, int? Week, int Position);
+
+public sealed record GetDuePostsResult(IReadOnlyList<DuePostDto> Due);

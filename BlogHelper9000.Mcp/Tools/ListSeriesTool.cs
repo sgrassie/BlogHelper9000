@@ -24,5 +24,5 @@ public static class ListSeriesTool
 
     internal static SeriesStatsDto ToDto(SeriesStats s) => new(
         s.Series, s.Planned, s.Published, s.Remaining, s.PercentDone,
-        s.LatestPostedTitle, s.NextPlannedTitle, s.NextSlot, s.LastPostedOn);
+        s.LatestPostedTitle, s.NextPlannedTitle, s.NextSlot, s.LastPostedOn, s.OverdueCount);
 }
