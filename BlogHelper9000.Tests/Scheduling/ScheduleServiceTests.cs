@@ -1,4 +1,7 @@
+using System.IO.Abstractions.TestingHelpers;
+using BlogHelper9000.Core;
 using BlogHelper9000.Core.Scheduling;
+using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
 namespace BlogHelper9000.Tests.Scheduling;
@@ -115,6 +118,32 @@ public class ScheduleServiceTests : IDisposable
 
         _service.GetNextUnpublished()!
             .DraftFilename.Should().Be("traefik-in-the-homelab-one-proxy-for-everything.md");
+    }
+
+    [Fact]
+    public void FindEntry_Found_NormalisesADatePrefixedFilename()
+    {
+        var entry = _service.FindEntry("_posts/2026/2026-07-09-traefik-in-the-homelab-one-proxy-for-everything.md");
+
+        entry.Should().NotBeNull();
+        entry!.DraftFilename.Should().Be("traefik-in-the-homelab-one-proxy-for-everything.md");
+        entry.Series.Should().Be("Traefik in the homelab");
+    }
+
+    [Fact]
+    public void FindEntry_NotFound_ReturnsNull()
+    {
+        _service.FindEntry("not-on-the-schedule.md").Should().BeNull();
+    }
+
+    [Fact]
+    public void FindEntry_WhenNoDatabase_ReturnsNull()
+    {
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var noDbService = new ScheduleService(options, new MockFileSystem(), _time);
+
+        noDbService.DatabaseExists.Should().BeFalse();
+        noDbService.FindEntry("routers-services-and-entrypoints.md").Should().BeNull();
     }
 
     public void Dispose() => _db.Dispose();

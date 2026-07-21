@@ -173,6 +173,51 @@ public class BlogService : IBlogService
             .ToList();
     }
 
+    public IReadOnlyList<DraftDetail> GetDraftDetails()
+    {
+        var draftsPath = _postManager.Drafts;
+        if (!_fileSystem.Directory.Exists(draftsPath))
+            return [];
+
+        return _fileSystem.Directory
+            .EnumerateFiles(draftsPath, "*.md", SearchOption.AllDirectories)
+            .Select(BuildDraftDetail)
+            .OrderByDescending(d => d.LastModified)
+            .ToList();
+    }
+
+    private DraftDetail BuildDraftDetail(string path)
+    {
+        var fileName = _fileSystem.Path.GetFileName(path);
+        var lastModified = _fileSystem.FileInfo.New(path).LastWriteTime;
+
+        MarkdownFile markdownFile;
+        try
+        {
+            markdownFile = _postManager.Markdown.LoadFile(path);
+        }
+        catch (Exception ex)
+        {
+            // One broken draft's front matter shouldn't fail the whole list_drafts call — report
+            // it with best-effort metadata instead, mirroring the FixMetadata skip-and-report
+            // precedent.
+            _logger.LogWarning(ex, "Skipping front matter for {File} — could not parse", path);
+            return new DraftDetail(fileName, path, null, 0, lastModified, false, ["unparseable front matter"]);
+        }
+
+        var body = _postManager.Markdown.GetBody(path);
+        var wordCount = body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+
+        return new DraftDetail(
+            fileName,
+            path,
+            markdownFile.Metadata.Title,
+            wordCount,
+            lastModified,
+            !string.IsNullOrWhiteSpace(markdownFile.Metadata.FeaturedImage),
+            ContentMarkers.FindMarkers(body));
+    }
+
     private void FixPublishedStatus(MarkdownFile file)
     {
         var rawFileName = _fileSystem.Path.GetFileName(file.FilePath);

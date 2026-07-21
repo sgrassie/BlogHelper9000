@@ -35,4 +35,10 @@ public interface IBlogService
     /// Lists draft file paths.
     /// </summary>
     IReadOnlyList<string> ListDrafts();
+
+    /// <summary>
+    /// Per-draft triage metadata (title, word count, last modified, readiness flags),
+    /// ordered by most recently modified first.
+    /// </summary>
+    IReadOnlyList<DraftDetail> GetDraftDetails();
 }
