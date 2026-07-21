@@ -91,6 +91,29 @@ public class ScheduleServiceEditingTests : IDisposable
     }
 
     [Fact]
+    public void UpdateEntry_MoveToAnotherSeriesWithExplicitPosition_InsertsAtPositionAndRenumbersBothSeriesDensely()
+    {
+        var alphaId = _repository.AddSeries("Alpha");
+        AddEntry(alphaId, "A1", "a1.md");
+        AddEntry(alphaId, "A2", "a2.md");
+        AddEntry(alphaId, "A3", "a3.md");
+        var betaId = _repository.AddSeries("Beta");
+        AddEntry(betaId, "B1", "b1.md");
+        AddEntry(betaId, "B2", "b2.md");
+
+        var result = _service.UpdateEntry("a2.md", series: "Beta", position: 2);
+
+        result.Outcome.Should().Be(UpdateEntryOutcome.Updated);
+        result.Entry!.Series.Should().Be("Beta");
+        result.Entry.Position.Should().Be(2);
+
+        _service.GetSeriesEntries("Alpha").Select(e => (e.DraftFilename, e.Position))
+            .Should().Equal(("a1.md", 1), ("a3.md", 2));
+        _service.GetSeriesEntries("Beta").Select(e => (e.DraftFilename, e.Position))
+            .Should().Equal(("b1.md", 1), ("a2.md", 2), ("b2.md", 3));
+    }
+
+    [Fact]
     public void UpdateEntry_UnknownTargetSeries_ReturnsSeriesNotFound()
     {
         var seriesId = _repository.AddSeries("Alpha");

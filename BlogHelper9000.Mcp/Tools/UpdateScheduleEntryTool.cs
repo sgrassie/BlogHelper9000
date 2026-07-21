@@ -33,6 +33,17 @@ public static class UpdateScheduleEntryTool
                 "Nothing to update — supply at least one of series/position/week/publishDate/title/tags/notes, " +
                 "or set clearWeek/clearPublishDate.");
 
+        if (week is not null && clearWeek)
+            return ToolResponse<UpdateScheduleEntryResult>.Fail(
+                "week and clearWeek are contradictory — supply a new week or clear it, not both.");
+
+        if (publishDate is not null && clearPublishDate)
+            return ToolResponse<UpdateScheduleEntryResult>.Fail(
+                "publishDate and clearPublishDate are contradictory — supply a new publishDate or clear it, not both.");
+
+        if (week is < 1)
+            return ToolResponse<UpdateScheduleEntryResult>.Fail("week must be 1 or greater.");
+
         DateOnly? date = null;
         if (publishDate is not null)
         {

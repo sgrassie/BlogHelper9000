@@ -86,4 +86,36 @@ public class UpdateScheduleEntryToolTests
         UpdateScheduleEntryTool.UpdateScheduleEntry(_scheduleService, "title.md", week: 1)
             .Error.Should().Contain("schedule-import");
     }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void UpdateScheduleEntry_WeekLessThanOne_FailsWithoutCallingService(int week)
+    {
+        var result = UpdateScheduleEntryTool.UpdateScheduleEntry(_scheduleService, "title.md", week: week);
+
+        result.Success.Should().BeFalse();
+        _scheduleService.DidNotReceiveWithAnyArgs().UpdateEntry(default!);
+    }
+
+    [Fact]
+    public void UpdateScheduleEntry_WeekAndClearWeekBothSupplied_FailsWithoutCallingService()
+    {
+        var result = UpdateScheduleEntryTool.UpdateScheduleEntry(_scheduleService, "title.md", week: 3, clearWeek: true);
+
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("week").And.Contain("clearWeek");
+        _scheduleService.DidNotReceiveWithAnyArgs().UpdateEntry(default!);
+    }
+
+    [Fact]
+    public void UpdateScheduleEntry_PublishDateAndClearPublishDateBothSupplied_FailsWithoutCallingService()
+    {
+        var result = UpdateScheduleEntryTool.UpdateScheduleEntry(
+            _scheduleService, "title.md", publishDate: "2026-07-21", clearPublishDate: true);
+
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("publishDate").And.Contain("clearPublishDate");
+        _scheduleService.DidNotReceiveWithAnyArgs().UpdateEntry(default!);
+    }
 }

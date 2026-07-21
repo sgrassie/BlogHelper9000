@@ -53,6 +53,28 @@ public class SeriesAdminToolsTests
         SeriesAdminTools.RenameSeries(_scheduleService, "Old", "New").Error.Should().Contain("schedule-import");
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void RenameSeries_EmptyOrWhitespaceNewName_FailsWithoutCallingService(string newName)
+    {
+        var result = SeriesAdminTools.RenameSeries(_scheduleService, "Old", newName);
+
+        result.Success.Should().BeFalse();
+        _scheduleService.DidNotReceiveWithAnyArgs().RenameSeries(default!, default!);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void RenameSeries_EmptyOrWhitespaceOldName_FailsWithoutCallingService(string oldName)
+    {
+        var result = SeriesAdminTools.RenameSeries(_scheduleService, oldName, "New");
+
+        result.Success.Should().BeFalse();
+        _scheduleService.DidNotReceiveWithAnyArgs().RenameSeries(default!, default!);
+    }
+
     // delete_series
 
     [Fact]

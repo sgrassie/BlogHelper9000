@@ -17,6 +17,12 @@ public static class SeriesAdminTools
         if (!scheduleService.DatabaseExists)
             return ToolResponse<RenameSeriesResult>.Fail(ListSeriesTool.NoDatabaseError);
 
+        if (string.IsNullOrWhiteSpace(oldName))
+            return ToolResponse<RenameSeriesResult>.Fail("oldName is required and cannot be blank.");
+
+        if (string.IsNullOrWhiteSpace(newName))
+            return ToolResponse<RenameSeriesResult>.Fail("newName is required and cannot be blank.");
+
         var outcome = scheduleService.RenameSeries(oldName, newName);
         return outcome switch
         {
