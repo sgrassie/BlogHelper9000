@@ -76,3 +76,9 @@ public sealed record SearchMatchDto(string FileName, string? Title, bool IsDraft
     DateTime? PublishedOn, IReadOnlyList<string> Tags, IReadOnlyList<SnippetDto> Snippets);
 
 public sealed record SearchPostsResult(IReadOnlyList<SearchMatchDto> Matches, int TotalMatches);
+
+public sealed record TagCountDto(string Tag, int Total, int Published, int Drafts,
+    IReadOnlyList<string> Variants);
+
+public sealed record GetTagsResult(IReadOnlyList<TagCountDto> Tags,
+    IReadOnlyList<string> NormalisationRules);
