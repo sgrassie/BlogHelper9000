@@ -33,6 +33,7 @@ builder.Services.AddSingleton<MarkdownHandler>();
 builder.Services.AddSingleton<PostManager>();
 builder.Services.AddSingleton<TimeProvider>(TimeProvider.System);
 builder.Services.AddSingleton<IBlogService, BlogService>();
+builder.Services.AddSingleton<IPostSearchService, PostSearchService>();
 builder.Services.AddSingleton<IScheduleService, ScheduleService>();
 builder.Services.AddSingleton(_ =>
 {

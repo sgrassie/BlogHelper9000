@@ -65,3 +65,10 @@ public sealed record MarkScheduledResult(string DraftFilename, string Outcome);
 
 public sealed record NextScheduledResult(
     string Series, string Title, string DraftFilename, int? Week, DateOnly? PublishDate);
+
+public sealed record SnippetDto(int Line, string Text);
+
+public sealed record SearchMatchDto(string FileName, string? Title, bool IsDraft,
+    DateTime? PublishedOn, IReadOnlyList<string> Tags, IReadOnlyList<SnippetDto> Snippets);
+
+public sealed record SearchPostsResult(IReadOnlyList<SearchMatchDto> Matches, int TotalMatches);
