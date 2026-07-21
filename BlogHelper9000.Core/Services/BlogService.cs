@@ -103,6 +103,91 @@ public class BlogService : IBlogService
         return new PublishPostResult(PublishOutcome.Published, replacementPath);
     }
 
+    public UnpublishPostResult UnpublishPostDetailed(string postName, bool dryRun = false)
+    {
+        if (!_postManager.TryFindPost(postName, out var postMarkdown))
+        {
+            _logger.LogError("Could not find {Post} to unpublish", postName);
+            return new UnpublishPostResult(UnpublishOutcome.NotFound, null);
+        }
+
+        var currentPath = postMarkdown.FilePath;
+        var fileName = _fileSystem.Path.GetFileName(currentPath);
+
+        if (!IsPathUnder(currentPath, _postManager.Posts) || !AlreadyPublishedFileNamePattern.IsMatch(fileName))
+        {
+            _logger.LogWarning("{Post} does not appear to be published", postName);
+            return new UnpublishPostResult(UnpublishOutcome.NotPublished, null);
+        }
+
+        var draftFileName = AlreadyPublishedFileNamePattern.Replace(fileName, string.Empty);
+        var targetPath = _fileSystem.Path.Combine(_postManager.Drafts, draftFileName);
+
+        if (_fileSystem.File.Exists(targetPath))
+        {
+            _logger.LogError("A draft already exists at {Target}", targetPath);
+            return new UnpublishPostResult(UnpublishOutcome.TargetExists, null);
+        }
+
+        if (dryRun)
+        {
+            return new UnpublishPostResult(UnpublishOutcome.Unpublished, targetPath);
+        }
+
+        postMarkdown.Metadata.IsPublished = false;
+        postMarkdown.Metadata.PublishedOn = null;
+        _postManager.Markdown.UpdateFile(postMarkdown);
+
+        _logger.LogInformation("Unpublishing {FileName} to {Target}", fileName, targetPath);
+        _fileSystem.File.Move(currentPath, targetPath);
+
+        return new UnpublishPostResult(UnpublishOutcome.Unpublished, targetPath);
+    }
+
+    public DeleteDraftResult DeleteDraft(string postName, bool dryRun = false)
+    {
+        if (!_postManager.TryFindPost(postName, out var postMarkdown))
+        {
+            _logger.LogError("Could not find {Post} to delete", postName);
+            return new DeleteDraftResult(DeleteDraftOutcome.NotFound, null);
+        }
+
+        var currentPath = postMarkdown.FilePath;
+
+        if (!IsPathUnder(currentPath, _postManager.Drafts))
+        {
+            _logger.LogWarning("{Post} is not a draft", postName);
+            return new DeleteDraftResult(DeleteDraftOutcome.NotADraft, null);
+        }
+
+        if (dryRun)
+        {
+            return new DeleteDraftResult(DeleteDraftOutcome.Deleted, currentPath);
+        }
+
+        _logger.LogInformation("Deleting draft {File}", currentPath);
+        _fileSystem.File.Delete(currentPath);
+
+        return new DeleteDraftResult(DeleteDraftOutcome.Deleted, currentPath);
+    }
+
+    /// <summary>
+    /// Mirrors <see cref="BlogPathResolver.TryResolveWithinBase"/>'s containment check to test
+    /// whether a resolved path lives under a given root (e.g. Drafts or Posts).
+    /// </summary>
+    private bool IsPathUnder(string fullPath, string root)
+    {
+        var normalizedRoot = _fileSystem.Path.GetFullPath(root);
+        var normalizedCandidate = _fileSystem.Path.GetFullPath(fullPath);
+
+        var rootWithSeparator = normalizedRoot.EndsWith(_fileSystem.Path.DirectorySeparatorChar)
+            ? normalizedRoot
+            : normalizedRoot + _fileSystem.Path.DirectorySeparatorChar;
+
+        return normalizedCandidate.Equals(normalizedRoot, StringComparison.Ordinal) ||
+               normalizedCandidate.StartsWith(rootWithSeparator, StringComparison.Ordinal);
+    }
+
     public FixMetadataResult FixMetadata(bool fixStatus, bool fixDescription, bool fixTags, bool dryRun = false)
     {
         var result = new FixMetadataResult();

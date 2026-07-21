@@ -319,4 +319,205 @@ public class BlogServiceTests
         fine.Title.Should().Be("Fine");
         fine.ReadinessFlags.Should().NotContain("unparseable front matter");
     }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_RoundTrip_With_PublishPostDetailed()
+    {
+        var fakeTimeProvider = new FakeTimeProvider();
+        fakeTimeProvider.SetUtcNow(new DateTimeOffset(new DateTime(2024, 11, 1)));
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var sut = CreateSut(fileSystem, fakeTimeProvider);
+
+        var addedPath = sut.AddPost("A Post", isDraft: true, content: "Body text.");
+        addedPath.Should().NotBeNull();
+
+        var publishResult = sut.PublishPostDetailed("a-post.md");
+        publishResult.Outcome.Should().Be(Core.Models.PublishOutcome.Published);
+
+        var unpublishResult = sut.UnpublishPostDetailed("2024-11-01-a-post.md");
+
+        unpublishResult.Outcome.Should().Be(Core.Models.UnpublishOutcome.Unpublished);
+        unpublishResult.DraftPath.Should().Be("/blog/_drafts/a-post.md");
+        fileSystem.File.Exists("/blog/_drafts/a-post.md").Should().BeTrue();
+        fileSystem.File.Exists(publishResult.PublishedPath!).Should().BeFalse();
+
+        // The custom serialiser omits null values entirely, so the `published:` date key
+        // disappears once PublishedOn is cleared; `ispublished:` remains as an explicit
+        // `False` because IsPublished is a non-null bool the rest of the app relies on
+        // (e.g. GetBlogInfo's `IsPublished == false` filter) to distinguish drafts from posts.
+        var lines = fileSystem.File.ReadAllLines("/blog/_drafts/a-post.md");
+        lines.Should().NotContain(l => l.Trim().StartsWith("published:"));
+        lines.Should().Contain(l => l.Trim() == "ispublished: False");
+
+        var handler = new MarkdownHandler(fileSystem);
+        handler.GetBody("/blog/_drafts/a-post.md").Should().Be("Body text.");
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_Unpublish_NestedYearPost()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-05-01-old-post.md", new MockFileData("---\ntitle: Old post\npublished: 01/05/2024\nispublished: true\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("2024-05-01-old-post.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.Unpublished);
+        result.DraftPath.Should().Be("/blog/_drafts/old-post.md");
+        fileSystem.File.Exists("/blog/_drafts/old-post.md").Should().BeTrue();
+        fileSystem.File.Exists("/blog/_posts/2024/2024-05-01-old-post.md").Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_Report_NotFound()
+    {
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("nonexistent.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.NotFound);
+        result.DraftPath.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_Report_NotPublished_ForDraft()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/a-draft.md", new MockFileData("---\ntitle: A draft\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("a-draft.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.NotPublished);
+        result.DraftPath.Should().BeNull();
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_Report_NotPublished_ForUndatedPostFile()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/undated.md", new MockFileData("---\ntitle: Undated\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("undated.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.NotPublished);
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_Report_TargetExists()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-11-01-a-post.md", new MockFileData("---\ntitle: A post\npublished: 01/11/2024\nispublished: true\n---"))
+            .AddFile("/blog/_drafts/a-post.md", new MockFileData("---\ntitle: Existing draft\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("2024-11-01-a-post.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.TargetExists);
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_DryRun_Should_ReportTarget_WithoutTouchingAnything()
+    {
+        const string original = "---\ntitle: A post\npublished: 01/11/2024\nispublished: true\n---";
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-11-01-a-post.md", new MockFileData(original))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.UnpublishPostDetailed("2024-11-01-a-post.md", dryRun: true);
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.Unpublished);
+        result.DraftPath.Should().Be("/blog/_drafts/a-post.md");
+        fileSystem.File.Exists("/blog/_posts/2024/2024-11-01-a-post.md").Should().BeTrue();
+        fileSystem.File.Exists("/blog/_drafts/a-post.md").Should().BeFalse();
+        fileSystem.File.ReadAllText("/blog/_posts/2024/2024-11-01-a-post.md").Should().Be(original);
+    }
+
+    [Fact]
+    public void DeleteDraft_Should_Delete_DraftFile()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/a-draft.md", new MockFileData("---\ntitle: A draft\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("a-draft.md");
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.Deleted);
+        result.FilePath.Should().Be("/blog/_drafts/a-draft.md");
+        fileSystem.File.Exists("/blog/_drafts/a-draft.md").Should().BeFalse();
+    }
+
+    [Fact]
+    public void DeleteDraft_Should_Report_NotFound()
+    {
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("nonexistent.md");
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.NotFound);
+        result.FilePath.Should().BeNull();
+    }
+
+    [Fact]
+    public void DeleteDraft_Should_Report_NotADraft_ForPublishedPost_ByBareName()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-01-01-a-post.md", new MockFileData("---\ntitle: A post\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("2024-01-01-a-post.md");
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.NotADraft);
+        fileSystem.File.Exists("/blog/_posts/2024/2024-01-01-a-post.md").Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeleteDraft_Should_Report_NotADraft_ForPublishedPost_ByPath()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-01-01-a-post.md", new MockFileData("---\ntitle: A post\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("/blog/_posts/2024/2024-01-01-a-post.md");
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.NotADraft);
+        fileSystem.File.Exists("/blog/_posts/2024/2024-01-01-a-post.md").Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeleteDraft_DryRun_Should_LeaveFile_OnDisk()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/a-draft.md", new MockFileData("---\ntitle: A draft\n---"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("a-draft.md", dryRun: true);
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.Deleted);
+        result.FilePath.Should().Be("/blog/_drafts/a-draft.md");
+        fileSystem.File.Exists("/blog/_drafts/a-draft.md").Should().BeTrue();
+    }
+
+    [Fact]
+    public void DeleteDraft_Should_Report_NotFound_ForPathOutsideBlogRoot()
+    {
+        var fileSystem = new JekyllBlogFilesystemBuilder().BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.DeleteDraft("/etc/passwd");
+
+        result.Outcome.Should().Be(Core.Models.DeleteDraftOutcome.NotFound);
+    }
 }
