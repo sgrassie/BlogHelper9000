@@ -61,8 +61,8 @@ const string serverInstructions = """
     _posts/, and paths outside the blog root are rejected.
 
     Typical workflow: get_blog_info -> list_drafts/list_posts -> search_posts (check for
-    prior coverage / find posts to link to) -> add_post -> get_post -> publish_post ->
-    add_featured_image.
+    prior coverage / find posts to link to) -> add_post -> get_post -> validate_post ->
+    publish_post -> add_featured_image.
 
     Conventions: titles are slugified to lowercase-hyphenated filenames; tags are supplied
     as a comma-separated string (e.g. 'csharp, dotnet'); in front matter, 'published:' holds
@@ -81,6 +81,13 @@ const string serverInstructions = """
     Caution: fix_metadata rewrites every post under _posts/ in one call — call it with
     dryRun=true first to preview the change before applying it. add_featured_image performs
     network calls to Unsplash and requires credentials configured on the host machine.
+
+    Recommended pre-publish flow: validate_post before publish_post — validate, fix any
+    findings via patch_post/update_post, re-validate, then publish. validate_blog runs the
+    same checks across the whole site for periodic sweeps; pass minimumSeverity to cut noise.
+    Findings are severity-ranked: Error means the post would break the Jekyll build or
+    embarrass you if published as-is, Warning means it's probably wrong, and Info means the
+    validator can't verify it either way.
 
     The publishing schedule lives in a SQLite database at .bloghelper.db in the blog root
     (dot-prefixed so Jekyll does not copy it into the generated site). It records post
