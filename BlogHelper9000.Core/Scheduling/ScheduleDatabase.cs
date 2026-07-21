@@ -48,6 +48,12 @@ public sealed class ScheduleDatabase : IDisposable
 
     private void Migrate()
     {
+        MigrateTo1();
+        MigrateTo2();
+    }
+
+    private void MigrateTo1()
+    {
         if (SchemaVersion >= 1) return;
 
         using var transaction = _connection.BeginTransaction();
@@ -82,6 +88,27 @@ public sealed class ScheduleDatabase : IDisposable
             CREATE INDEX ix_schedule_entries_filename ON schedule_entries(draft_filename);
 
             PRAGMA user_version = 1;
+            """;
+        command.ExecuteNonQuery();
+        transaction.Commit();
+    }
+
+    /// <summary>
+    /// Adds the series cadence columns: <c>cadence_day</c> is the (int)DayOfWeek the
+    /// series publishes on (0=Sunday), and <c>cadence_start</c> is the yyyy-MM-dd date
+    /// of week 1. Both are nullable — a series without a cadence has neither set.
+    /// </summary>
+    private void MigrateTo2()
+    {
+        if (SchemaVersion >= 2) return;
+
+        using var transaction = _connection.BeginTransaction();
+        using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            ALTER TABLE series ADD COLUMN cadence_day   INTEGER NULL;  -- (int)DayOfWeek, 0=Sunday
+            ALTER TABLE series ADD COLUMN cadence_start TEXT NULL;     -- yyyy-MM-dd date of week 1
+            PRAGMA user_version = 2;
             """;
         command.ExecuteNonQuery();
         transaction.Commit();

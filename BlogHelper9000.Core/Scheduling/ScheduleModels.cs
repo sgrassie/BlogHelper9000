@@ -1,6 +1,7 @@
 namespace BlogHelper9000.Core.Scheduling;
 
-public sealed record SeriesInfo(long Id, string Name, int SortOrder);
+public sealed record SeriesInfo(long Id, string Name, int SortOrder,
+    DayOfWeek? CadenceDay = null, DateOnly? CadenceStart = null);
 
 public sealed record ScheduleEntry(
     long Id,
@@ -38,7 +39,8 @@ public sealed record SeriesStats(
     string? LatestPostedTitle,
     string? NextPlannedTitle,
     string? NextSlot,
-    DateOnly? LastPostedOn);
+    DateOnly? LastPostedOn,
+    int OverdueCount);
 
 public sealed record ScheduleDashboard(
     int BaselinePublished,
@@ -57,3 +59,42 @@ public enum MarkPublishedOutcome
     NotScheduled,
     Unmarked
 }
+
+public sealed record UpdateEntryResult(UpdateEntryOutcome Outcome, ScheduleEntry? Entry);
+
+public enum UpdateEntryOutcome
+{
+    Updated,
+    NotScheduled,
+    SeriesNotFound,
+    InvalidPosition
+}
+
+public enum RemoveEntryOutcome
+{
+    Removed,
+    NotScheduled
+}
+
+public enum RenameSeriesOutcome
+{
+    Renamed,
+    NotFound,
+    NameTaken
+}
+
+public enum DeleteSeriesOutcome
+{
+    Deleted,
+    NotFound,
+    NotEmpty
+}
+
+public enum SetCadenceOutcome
+{
+    Set,
+    SeriesNotFound,
+    DayMismatch
+}
+
+public sealed record DuePost(ScheduleEntry Entry, DateOnly DueDate, bool Overdue, int DaysOverdue);

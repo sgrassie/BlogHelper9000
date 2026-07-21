@@ -24,6 +24,12 @@ public class ScheduleToolsTests
         GetSeriesTool.GetSeries(_scheduleService, "x").Success.Should().BeFalse();
         GetScheduleStatsTool.GetScheduleStats(_scheduleService).Success.Should().BeFalse();
         GetNextScheduledPostTool.GetNextScheduledPost(_scheduleService, null).Success.Should().BeFalse();
+        UpdateScheduleEntryTool.UpdateScheduleEntry(_scheduleService, "x", week: 1).Success.Should().BeFalse();
+        RemoveScheduleEntryTool.RemoveScheduleEntry(_scheduleService, "x").Success.Should().BeFalse();
+        SeriesAdminTools.RenameSeries(_scheduleService, "a", "b").Success.Should().BeFalse();
+        SeriesAdminTools.DeleteSeries(_scheduleService, "a").Success.Should().BeFalse();
+        SeriesAdminTools.SetSeriesCadence(_scheduleService, "a", "Monday", "2026-07-06").Success.Should().BeFalse();
+        GetDuePostsTool.GetDuePosts(_scheduleService, null).Success.Should().BeFalse();
 
         ListSeriesTool.ListSeries(_scheduleService).Error.Should().Contain("schedule-import");
     }
@@ -32,12 +38,13 @@ public class ScheduleToolsTests
     public void ListSeries_MapsDashboardSeriesStats()
     {
         _scheduleService.GetDashboard().Returns(new ScheduleDashboard(243, null, 1, 244, 2, 1, 0.5,
-            [new SeriesStats("S", 2, 1, 1, 0.5, "A", "B", "Week 2", null)]));
+            [new SeriesStats("S", 2, 1, 1, 0.5, "A", "B", "Week 2", null, 3)]));
 
         var result = ListSeriesTool.ListSeries(_scheduleService);
 
         result.Success.Should().BeTrue();
-        result.Data!.Series.Should().ContainSingle(s => s.Series == "S" && s.NextSlot == "Week 2");
+        result.Data!.Series.Should().ContainSingle(s =>
+            s.Series == "S" && s.NextSlot == "Week 2" && s.OverdueCount == 3);
     }
 
     [Fact]

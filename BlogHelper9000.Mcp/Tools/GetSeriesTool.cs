@@ -22,8 +22,9 @@ public static class GetSeriesTool
             return ToolResponse<GetSeriesResult>.Fail(
                 $"No series named '{series}' (or it has no entries). Call list_series for valid names.");
 
-        return ToolResponse<GetSeriesResult>.Ok(new GetSeriesResult(series, entries.Select(e =>
-            new ScheduleEntryDto(e.Position, e.Week, e.PublishDate, e.Topic, e.Title,
-                e.DraftFilename, e.Tags, e.Published, e.PublishedOn, e.Notes)).ToList()));
+        return ToolResponse<GetSeriesResult>.Ok(new GetSeriesResult(series, entries.Select(ToDto).ToList()));
     }
+
+    internal static ScheduleEntryDto ToDto(ScheduleEntry e) => new(e.Position, e.Week, e.PublishDate, e.Topic,
+        e.Title, e.DraftFilename, e.Tags, e.Published, e.PublishedOn, e.Notes);
 }

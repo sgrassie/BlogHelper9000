@@ -91,6 +91,18 @@ const string serverInstructions = """
     get_next_scheduled_post -> get_post (review) -> publish_post. If the schedule tools
     report that no database exists, the user must create it with
     'bloghelper schedule-import <xlsx>'.
+
+    The schedule is not append-only: update_schedule_entry applies a partial update to an
+    entry (move it between series, reorder it, change its week/publish date/title/tags/
+    notes, or clear week/publish date), remove_schedule_entry drops an entry and densely
+    renumbers the rest, rename_series/delete_series manage series themselves, and
+    set_series_cadence assigns a series a weekly cadence (day of week + the date of week 1)
+    so week-numbered entries resolve to calendar dates. For "what should I publish today?",
+    prefer get_due_posts over walking get_series by hand — it resolves each entry's due date
+    (explicit or cadence-projected) and flags overdue ones with DaysOverdue. As with
+    fix_metadata, call remove_schedule_entry and delete_series with dryRun=true (the default)
+    first to preview a destructive change before applying it; delete_series additionally
+    refuses to delete a series that still has entries.
     """;
 
 builder.Services.AddMcpServer(options =>
