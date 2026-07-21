@@ -82,7 +82,13 @@ const string serverInstructions = """
 
     Caution: fix_metadata rewrites every post under _posts/ in one call — call it with
     dryRun=true first to preview the change before applying it. add_featured_image performs
-    network calls to Unsplash and requires credentials configured on the host machine.
+    network calls to Unsplash and requires credentials configured on the host machine; if
+    the post already has a featured image, pass replace=true to regenerate it — photoId
+    alone does not authorize overwriting an existing image — and pass photoId to pin the
+    exact Unsplash photo instead of a search result. The result includes the photographer's
+    name/profile and a ready-to-paste attribution string; add it to the post. To find
+    published posts still missing a featured image, call list_posts with
+    missingFeaturedImage=true.
 
     Recommended pre-publish flow: validate_post before publish_post — validate, fix any
     findings via patch_post/update_post, re-validate, then publish. validate_blog runs the
