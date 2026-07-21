@@ -196,21 +196,29 @@ public sealed class PostValidator : IPostValidator
 
     private void ValidateImages(YamlHeader header, List<(int LineNumber, string Text)> bodyLines, List<ValidationFinding> findings)
     {
-        CheckImageTarget(header.FeaturedImage, null, findings);
-        CheckImageTarget(header.Image, null, findings);
+        // featured_image / image / featured_image_thumbnail commonly point at the same
+        // file (e.g. a thumbnail reused as the featured image) — dedupe front-matter
+        // targets so an identical missing target doesn't produce repeat findings.
+        var seenFrontMatterTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CheckImageTarget(header.FeaturedImage, null, findings, seenFrontMatterTargets);
+        CheckImageTarget(header.Image, null, findings, seenFrontMatterTargets);
+        CheckImageTarget(header.FeaturedImageThumbnail, null, findings, seenFrontMatterTargets);
 
         foreach (var (lineNumber, text) in bodyLines)
         {
             foreach (Match match in ImageRegex.Matches(text))
             {
-                CheckImageTarget(match.Groups[1].Value.Trim(), lineNumber, findings);
+                CheckImageTarget(match.Groups[1].Value.Trim(), lineNumber, findings, null);
             }
         }
     }
 
-    private void CheckImageTarget(string? target, int? line, List<ValidationFinding> findings)
+    private void CheckImageTarget(string? target, int? line, List<ValidationFinding> findings, HashSet<string>? seenTargets)
     {
         if (string.IsNullOrWhiteSpace(target))
+            return;
+
+        if (seenTargets is not null && !seenTargets.Add(target))
             return;
 
         if (IsHttpUrl(target))
@@ -312,7 +320,7 @@ public sealed class PostValidator : IPostValidator
             return true;
 
         var lastSegment = path.Contains('/') ? path[(path.LastIndexOf('/') + 1)..] : path;
-        return slugs.Contains(lastSegment) || slugs.Any(slug => path.EndsWith(slug, StringComparison.Ordinal));
+        return slugs.Contains(lastSegment) || slugs.Any(slug => path.EndsWith("/" + slug, StringComparison.Ordinal));
     }
 
     private static bool IsHttpUrl(string target) =>

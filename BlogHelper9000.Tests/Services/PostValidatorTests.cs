@@ -164,6 +164,49 @@ public class PostValidatorTests
     }
 
     [Fact]
+    public void ValidatePost_FeaturedImage_And_Image_Same_Missing_Target_Yields_Single_Finding()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/dup-image.md", new MockFileData(
+                "---\n" +
+                "title: T\n" +
+                "description: D\n" +
+                "tags: [a]\n" +
+                "featured_image: /assets/images/x.webp\n" +
+                "image: /assets/images/x.webp\n" +
+                "---\n\n" +
+                "Body text."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var report = sut.ValidatePost("dup-image.md");
+
+        report.Findings.Should().ContainSingle(f =>
+            f.Severity == ValidationSeverity.Error && f.Check == "image-missing" && f.Message.Contains("/assets/images/x.webp"));
+    }
+
+    [Fact]
+    public void ValidatePost_Missing_FeaturedImageThumbnail_Is_Error()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/bad-thumb.md", new MockFileData(
+                "---\n" +
+                "title: T\n" +
+                "description: D\n" +
+                "tags: [a]\n" +
+                "featured_image_thumbnail: /assets/images/thumb.webp\n" +
+                "---\n\n" +
+                "Body text."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var report = sut.ValidatePost("bad-thumb.md");
+
+        report.Findings.Should().ContainSingle(f =>
+            f.Severity == ValidationSeverity.Error && f.Check == "image-missing" && f.Message.Contains("/assets/images/thumb.webp"));
+    }
+
+    [Fact]
     public void ValidatePost_Https_FeaturedImage_Is_Skipped()
     {
         var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
@@ -245,6 +288,24 @@ public class PostValidatorTests
             .AddFile("/blog/_drafts/linker.md", new MockFileData(
                 "---\ntitle: T\ndescription: D\ntags: [a]\n---\n\n" +
                 "Check out [this post](/does-not-exist/) for details.\n"))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var report = sut.ValidatePost("linker.md");
+
+        report.Findings.Should().ContainSingle(f =>
+            f.Severity == ValidationSeverity.Warning && f.Check == "internal-link");
+    }
+
+    [Fact]
+    public void ValidatePost_Internal_Link_Segment_Merely_Ending_With_Slug_Is_Warning()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_posts/2024/2024-05-01-real-post.md", new MockFileData(
+                "---\ntitle: Real Post\ndescription: D\ntags: [a]\npublished: 01/05/2024\n---\n\nContent."))
+            .AddFile("/blog/_drafts/linker.md", new MockFileData(
+                "---\ntitle: T\ndescription: D\ntags: [a]\n---\n\n" +
+                "Check out [this post](/anything-real-post/) for details.\n"))
             .BuildFileSystem();
         var sut = CreateSut(fileSystem);
 
