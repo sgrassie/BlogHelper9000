@@ -26,7 +26,7 @@ internal sealed class RecordingProcessRunner : IProcessRunner
 
     public void ThrowOnNextInvocation(Exception exception) => _throwOnNextInvocation = exception;
 
-    public ProcessResult Run(string fileName, string arguments, string workingDirectory, int timeoutMs = 5000)
+    public ProcessResult Run(string fileName, IReadOnlyList<string> arguments, string workingDirectory, int timeoutMs = 5000)
     {
         Invocations.Add(new GitInvocation(fileName, arguments, workingDirectory, timeoutMs));
 
@@ -38,8 +38,8 @@ internal sealed class RecordingProcessRunner : IProcessRunner
 
         return _results.Count > 0
             ? _results.Dequeue()
-            : throw new InvalidOperationException($"No canned ProcessResult queued for invocation: {fileName} {arguments}");
+            : throw new InvalidOperationException($"No canned ProcessResult queued for invocation: {fileName} {string.Join(' ', arguments)}");
     }
 }
 
-internal sealed record GitInvocation(string FileName, string Arguments, string WorkingDirectory, int TimeoutMs);
+internal sealed record GitInvocation(string FileName, IReadOnlyList<string> Arguments, string WorkingDirectory, int TimeoutMs);

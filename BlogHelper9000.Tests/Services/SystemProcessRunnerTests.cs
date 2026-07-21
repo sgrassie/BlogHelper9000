@@ -16,7 +16,7 @@ public class SystemProcessRunnerTests
     {
         var sut = new SystemProcessRunner();
 
-        var result = sut.Run("git", "--version", workingDirectory: Path.GetTempPath());
+        var result = sut.Run("git", ["--version"], workingDirectory: Path.GetTempPath());
 
         result.ExitCode.Should().Be(0);
         result.TimedOut.Should().BeFalse();

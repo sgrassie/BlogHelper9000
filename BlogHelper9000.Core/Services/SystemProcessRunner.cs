@@ -10,14 +10,13 @@ namespace BlogHelper9000.Core.Services;
 /// </summary>
 public sealed class SystemProcessRunner : IProcessRunner
 {
-    public ProcessResult Run(string fileName, string arguments, string workingDirectory, int timeoutMs = 5000)
+    public ProcessResult Run(string fileName, IReadOnlyList<string> arguments, string workingDirectory, int timeoutMs = 5000)
     {
         using var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = arguments,
                 WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
@@ -25,6 +24,14 @@ public sealed class SystemProcessRunner : IProcessRunner
                 CreateNoWindow = true
             }
         };
+
+        // ArgumentList passes each element straight through as one argv entry — no shell
+        // quoting/parsing, so embedded quotes, spaces, or flag-like text in a commit message
+        // or filename can never be reinterpreted as extra arguments.
+        foreach (var argument in arguments)
+        {
+            process.StartInfo.ArgumentList.Add(argument);
+        }
 
         var standardOutput = new StringBuilder();
         var standardError = new StringBuilder();

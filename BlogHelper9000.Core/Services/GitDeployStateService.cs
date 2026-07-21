@@ -26,47 +26,21 @@ public sealed class GitDeployStateService : IDeployStateService
         _logger = logger;
     }
 
-    public DeployState GetDeployState()
-    {
-        var revParse = RunGit("rev-parse --is-inside-work-tree");
-        if (revParse.ExitCode != 0 || revParse.TimedOut)
-        {
-            _logger.LogWarning("{Directory} is not a git repository, or git is unavailable", _baseDirectory);
-            return new DeployState(false, false, [], 0, [], []);
-        }
-
-        var status = RunGit("status --porcelain=v1");
-        var uncommittedFiles = ParsePorcelainStatus(status.StandardOutput);
-
-        var revList = RunGit("rev-list --count @{upstream}..HEAD");
-        var hasUpstream = revList.ExitCode == 0 && !revList.TimedOut;
-
-        var unpushedCommits = 0;
-        IReadOnlyList<string> unpushedFiles = [];
-
-        if (hasUpstream)
-        {
-            unpushedCommits = int.TryParse(revList.StandardOutput.Trim(), out var count) ? count : 0;
-
-            var diff = RunGit("diff --name-only @{upstream}..HEAD");
-            unpushedFiles = ParseNameOnlyLines(diff.StandardOutput);
-        }
-
-        var pendingPostFiles = uncommittedFiles
-            .Concat(unpushedFiles)
-            .Where(IsPublishRelated)
-            .Distinct()
-            .ToList();
-
-        return new DeployState(true, hasUpstream, uncommittedFiles, unpushedCommits, unpushedFiles, pendingPostFiles);
-    }
+    public DeployState GetDeployState() => Probe().State;
 
     public DeployResult Deploy(bool dryRun = true, string? message = null)
     {
-        var state = GetDeployState();
+        var (state, failedCommand) = Probe();
 
         if (!state.IsGitRepo)
             return new DeployResult(DeployOutcome.NotARepo, dryRun, [], null, false, null);
+
+        // A broken `status`/`diff` means the picture we have of the repo can't be trusted —
+        // surfacing NothingToDeploy or a bogus staged-file list here would be worse than
+        // failing loudly. GetDeployState() itself only logs a warning and reports what it
+        // knows (see Probe), since it has no failure outcome to return; Deploy does.
+        if (failedCommand is not null)
+            return new DeployResult(DeployOutcome.GitFailed, dryRun, [], null, false, failedCommand.StandardError);
 
         if (!state.HasUpstream)
             return new DeployResult(DeployOutcome.NoUpstream, dryRun, [], null, false, null);
@@ -83,14 +57,14 @@ public sealed class GitDeployStateService : IDeployStateService
 
         if (stageable.Count > 0)
         {
-            var add = RunGit(BuildAddArguments(stageable));
+            var add = RunGit(["add", "-A", "--", .. stageable]);
             if (add.ExitCode != 0)
             {
                 _logger.LogError("git add failed: {Error}", add.StandardError);
                 return new DeployResult(DeployOutcome.GitFailed, false, stageable, commitMessage, false, add.StandardError);
             }
 
-            var commit = RunGit($"commit -m {QuoteArg(commitMessage!)}");
+            var commit = RunGit(["commit", "-m", commitMessage!]);
             if (commit.ExitCode != 0)
             {
                 _logger.LogError("git commit failed: {Error}", commit.StandardError);
@@ -98,7 +72,7 @@ public sealed class GitDeployStateService : IDeployStateService
             }
         }
 
-        var push = RunGit("push");
+        var push = RunGit(["push"]);
         if (push.ExitCode != 0)
         {
             _logger.LogError("git push failed: {Error}", push.StandardError);
@@ -109,7 +83,66 @@ public sealed class GitDeployStateService : IDeployStateService
         return new DeployResult(DeployOutcome.Deployed, false, stageable, commitMessage, true, null);
     }
 
-    private ProcessResult RunGit(string arguments)
+    /// <summary>
+    /// Runs the read-only status commands and reports both the resulting <see cref="DeployState"/>
+    /// and, if <c>status</c> or <c>diff</c> failed (non-zero exit or timeout), the failed
+    /// <see cref="ProcessResult"/> so <see cref="Deploy"/> can refuse to act on an unreliable
+    /// picture of the repo. <see cref="GetDeployState"/> deliberately discards that second
+    /// value — it has no failure outcome to report, so it logs a warning and returns whatever
+    /// it could determine (untrustworthy fields come back empty, exactly like <c>NotARepo</c>).
+    /// </summary>
+    private (DeployState State, ProcessResult? FailedCommand) Probe()
+    {
+        var revParse = RunGit(["rev-parse", "--is-inside-work-tree"]);
+        if (revParse.ExitCode != 0 || revParse.TimedOut)
+        {
+            _logger.LogWarning("{Directory} is not a git repository, or git is unavailable", _baseDirectory);
+            return (new DeployState(false, false, [], 0, [], []), null);
+        }
+
+        var status = RunGit(["status", "--porcelain=v1"]);
+        if (status.ExitCode != 0 || status.TimedOut)
+        {
+            _logger.LogWarning("git status failed in {Directory}: {Error}", _baseDirectory, status.StandardError);
+            return (new DeployState(true, false, [], 0, [], []), status);
+        }
+
+        var uncommittedFiles = ParsePorcelainStatus(status.StandardOutput);
+
+        var revList = RunGit(["rev-list", "--count", "@{upstream}..HEAD"]);
+        var hasUpstream = revList.ExitCode == 0 && !revList.TimedOut;
+
+        var unpushedCommits = 0;
+        IReadOnlyList<string> unpushedFiles = [];
+        ProcessResult? failedCommand = null;
+
+        if (hasUpstream)
+        {
+            unpushedCommits = int.TryParse(revList.StandardOutput.Trim(), out var count) ? count : 0;
+
+            var diff = RunGit(["diff", "--name-only", "@{upstream}..HEAD"]);
+            if (diff.ExitCode != 0 || diff.TimedOut)
+            {
+                _logger.LogWarning("git diff failed in {Directory}: {Error}", _baseDirectory, diff.StandardError);
+                failedCommand = diff;
+            }
+            else
+            {
+                unpushedFiles = ParseNameOnlyLines(diff.StandardOutput);
+            }
+        }
+
+        var pendingPostFiles = uncommittedFiles
+            .Concat(unpushedFiles)
+            .Where(IsPublishRelated)
+            .Distinct()
+            .ToList();
+
+        var state = new DeployState(true, hasUpstream, uncommittedFiles, unpushedCommits, unpushedFiles, pendingPostFiles);
+        return (state, failedCommand);
+    }
+
+    private ProcessResult RunGit(IReadOnlyList<string> arguments)
     {
         try
         {
@@ -117,7 +150,7 @@ public sealed class GitDeployStateService : IDeployStateService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "git invocation failed: git {Arguments}", arguments);
+            _logger.LogWarning(ex, "git invocation failed: git {Arguments}", string.Join(' ', arguments));
             return new ProcessResult(-1, string.Empty, ex.Message, false);
         }
     }
@@ -137,15 +170,17 @@ public sealed class GitDeployStateService : IDeployStateService
             : "publish: blog content update";
     }
 
-    private static string BuildAddArguments(IReadOnlyList<string> paths) =>
-        $"add -A -- {string.Join(' ', paths.Select(QuoteArg))}";
-
-    private static string QuoteArg(string value) => $"\"{value}\"";
-
     /// <summary>
     /// Parses `git status --porcelain=v1` output. Each line is <c>XY PATH</c> (path starts
-    /// at column 4); rename/copy lines are <c>XY OLDPATH -&gt; NEWPATH</c>, from which we take
-    /// the new path. Paths git wraps in double quotes (for special characters) are unwrapped.
+    /// at column 4). Only rename/copy lines — identified by an <c>R</c> or <c>C</c> in either
+    /// status column, per the porcelain v1 format, never by sniffing the path text — are
+    /// <c>OLDPATH -&gt; NEWPATH</c>; for those we split on the LAST " -&gt; " (an old path can
+    /// itself legitimately contain a literal " -&gt; ", e.g. from a previous rename, so the
+    /// final occurrence is the only one guaranteed to precede the real new path) and take the
+    /// new path. Non-rename lines are never split on " -&gt; ", even if the filename happens to
+    /// contain that text. Paths git wraps in double quotes (for special characters) are
+    /// unwrapped — this strips only the surrounding quote characters; any C-style backslash
+    /// escapes git introduced inside the quoted text (e.g. `\"`, `\\`) are left intact as-is.
     /// </summary>
     private static IReadOnlyList<string> ParsePorcelainStatus(string output)
     {
@@ -156,9 +191,20 @@ public sealed class GitDeployStateService : IDeployStateService
             var line = rawLine.TrimEnd('\r');
             if (line.Length < 4) continue;
 
+            var isRenameOrCopy = line[0] is 'R' or 'C' || line[1] is 'R' or 'C';
             var pathPart = line[3..];
-            var arrowIndex = pathPart.IndexOf(" -> ", StringComparison.Ordinal);
-            var path = arrowIndex >= 0 ? pathPart[(arrowIndex + 4)..] : pathPart;
+
+            string path;
+            if (isRenameOrCopy)
+            {
+                var arrowIndex = pathPart.LastIndexOf(" -> ", StringComparison.Ordinal);
+                path = arrowIndex >= 0 ? pathPart[(arrowIndex + 4)..] : pathPart;
+            }
+            else
+            {
+                path = pathPart;
+            }
+
             path = StripQuotes(path);
 
             if (path.Length > 0) results.Add(path);
@@ -173,6 +219,12 @@ public sealed class GitDeployStateService : IDeployStateService
             .Where(line => line.Length > 0)
             .ToList();
 
+    /// <summary>
+    /// Strips the surrounding double quotes git adds around a porcelain path when it contains
+    /// special characters. Only the outer quote characters are removed — any C-style escapes
+    /// git introduced inside (e.g. `\"` for an embedded quote, `\\` for a literal backslash)
+    /// are left exactly as git printed them, unescaped.
+    /// </summary>
     private static string StripQuotes(string value) =>
         value.Length >= 2 && value[0] == '"' && value[^1] == '"' ? value[1..^1] : value;
 }

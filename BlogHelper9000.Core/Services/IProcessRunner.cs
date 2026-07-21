@@ -16,5 +16,13 @@ public interface IProcessRunner
     /// non-zero exit code; a timeout is reported via <see cref="ProcessResult.TimedOut"/>
     /// rather than an exception.
     /// </summary>
-    ProcessResult Run(string fileName, string arguments, string workingDirectory, int timeoutMs = 5000);
+    /// <remarks>
+    /// <paramref name="arguments"/> is an argument vector, not a shell command line: each
+    /// element becomes exactly one argv entry (via <c>ProcessStartInfo.ArgumentList</c> in
+    /// <see cref="SystemProcessRunner"/>), with no quoting, escaping, or splitting performed
+    /// by this seam or its caller. This is deliberate — a single concatenated-and-quoted
+    /// string is how argument injection happens (a commit message or filename containing
+    /// `" --amend "` or an embedded quote must never be able to smuggle in extra flags).
+    /// </remarks>
+    ProcessResult Run(string fileName, IReadOnlyList<string> arguments, string workingDirectory, int timeoutMs = 5000);
 }
