@@ -4,6 +4,7 @@ using BlogHelper9000.Imaging;
 using BlogHelper9000.Mcp.Tools;
 using FluentAssertions;
 using NSubstitute;
+using NSubstitute.ExceptionExtensions;
 using System.IO.Abstractions.TestingHelpers;
 using Microsoft.Extensions.Options;
 using BlogHelper9000.Core;
@@ -150,6 +151,9 @@ public class AddFeaturedImageToolTests
         result.Success.Should().BeFalse();
         result.Error.Should().Contain("replace=true");
         result.Error.Should().Contain("photoId");
+        result.Error.Should().Be(
+            "Post already has a featured image ('/assets/images/my-post.webp') — " +
+            "pass replace=true to regenerate (optionally with photoId to pin a specific Unsplash photo).");
         await unsplashClient.DidNotReceive().LoadImageAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 
@@ -238,5 +242,39 @@ public class AddFeaturedImageToolTests
         result.Success.Should().BeTrue();
         result.Data!.PhotoId.Should().Be("photo-42");
         await unsplashClient.Received(1).LoadImageAsync("nature", "photo-42", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AddFeaturedImage_WhenUnsplashRequestFails_ReturnsFailureEnvelopeNamingThePhotoId()
+    {
+        // Arrange — an invalid/unknown photoId causes UnsplashClient to throw HttpRequestException
+        // (via EnsureSuccessStatusCode) instead of returning null; the tool must not let it escape
+        // the ToolResponse envelope.
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddDirectory("/blog/_drafts");
+        fileSystem.AddFile("/blog/_drafts/my-post.md", new MockFileData("---\ntitle: My Post\n---\n\nContent"));
+
+        var options = Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" });
+        var markdownHandler = new MarkdownHandler(fileSystem);
+        var postManager = new PostManager(fileSystem, markdownHandler, options);
+
+        var unsplashClient = Substitute.For<IUnsplashClient>();
+        var imageProcessor = Substitute.For<IImageProcessor>();
+
+        unsplashClient.LoadImageAsync("nature", "not-a-real-photo-id", Arg.Any<CancellationToken>())
+            .Throws(new HttpRequestException(
+                "Response status code does not indicate success: 404 (Not Found).",
+                null,
+                System.Net.HttpStatusCode.NotFound));
+
+        // Act
+        var result = await AddFeaturedImageTool.AddFeaturedImage(
+            postManager, unsplashClient, imageProcessor, "/blog/_drafts/my-post.md", "nature",
+            photoId: "not-a-real-photo-id");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("not-a-real-photo-id");
+        result.Error.Should().Contain("404");
     }
 }

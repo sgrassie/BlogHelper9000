@@ -115,4 +115,19 @@ public class ListDraftsToolTests
         dto.WordCount.Should().Be(123);
         dto.ReadinessFlags.Should().Equal("TODO", "[placeholder");
     }
+
+    [Fact]
+    public void ListDrafts_ReportsHasFeaturedImage_PerDraft()
+    {
+        _blogService.GetDraftDetails().Returns([
+            Draft("with-image.md", "With Image", hasFeaturedImage: true),
+            Draft("without-image.md", "Without Image", hasFeaturedImage: false)
+        ]);
+        _scheduleService.FindEntry(Arg.Any<string>()).Returns((ScheduleEntry?)null);
+
+        var result = ListDraftsTool.ListDrafts(_blogService, _scheduleService);
+
+        result.Data!.Drafts.Should().ContainSingle(d => d.Title == "With Image" && d.HasFeaturedImage);
+        result.Data.Drafts.Should().ContainSingle(d => d.Title == "Without Image" && !d.HasFeaturedImage);
+    }
 }

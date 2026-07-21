@@ -37,14 +37,26 @@ public static class AddFeaturedImageTool
             {
                 return ToolResponse<AddImageResult>.Fail(
                     $"Post already has a featured image ('{markdownFile.Metadata.FeaturedImage}') — " +
-                    "pass replace=true to regenerate, or photoId to use a specific Unsplash photo.");
+                    "pass replace=true to regenerate (optionally with photoId to pin a specific Unsplash photo).");
             }
 
             var effectiveQuery = string.IsNullOrWhiteSpace(imageQuery)
                 ? DeriveQueryFromTitle(markdownFile.Metadata.Title)
                 : imageQuery;
 
-            var result = await unsplashClient.LoadImageAsync(effectiveQuery, photoId, cancellationToken);
+            UnsplashImageResult? result;
+            try
+            {
+                result = await unsplashClient.LoadImageAsync(effectiveQuery, photoId, cancellationToken);
+            }
+            catch (HttpRequestException ex)
+            {
+                var idHint = string.IsNullOrWhiteSpace(photoId) ? string.Empty : $" (photo id '{photoId}'?)";
+                var detail = ex.StatusCode is { } status ? $"{(int)status} {status}" : ex.Message;
+                return ToolResponse<AddImageResult>.Fail(
+                    $"Unsplash request failed{idHint}: {detail} — check the id or retry.");
+            }
+
             if (result is null)
             {
                 return ToolResponse<AddImageResult>.Fail("Failed to load image from Unsplash. Check that credentials are configured.");

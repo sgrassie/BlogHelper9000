@@ -22,7 +22,7 @@ public sealed record ListDraftsResult(IReadOnlyList<DraftDetailDto> Drafts, int 
 
 public sealed record DraftDetailDto(string FileName, string? Title, int WordCount,
     DateTime LastModified, string? Series, string? ScheduleSlot,
-    IReadOnlyList<string> ReadinessFlags);
+    IReadOnlyList<string> ReadinessFlags, bool HasFeaturedImage);
 
 public sealed record AddImageResult(
     string PostTitle, string ImagePath, string PhotoId, string PhotographerName,
