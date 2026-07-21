@@ -51,7 +51,7 @@ public class AddFeaturedImageToolTests
         var unsplashClient = Substitute.For<IUnsplashClient>();
         var imageProcessor = Substitute.For<IImageProcessor>();
 
-        unsplashClient.LoadImageAsync("nature").Returns((Stream?)null);
+        unsplashClient.LoadImageAsync("nature").Returns((UnsplashImageResult?)null);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -78,7 +78,9 @@ public class AddFeaturedImageToolTests
         var imageProcessor = Substitute.For<IImageProcessor>();
 
         await using var imageStream = new MemoryStream();
-        unsplashClient.LoadImageAsync("nature").Returns(imageStream);
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("nature").Returns(unsplashResult);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -87,7 +89,7 @@ public class AddFeaturedImageToolTests
         // Assert
         result.Success.Should().BeTrue();
         result.Data!.PostTitle.Should().Be("My Post");
-        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), imageStream, null);
+        await imageProcessor.Received(1).Process(Arg.Any<MarkdownFile>(), imageStream, null, "Photo by Jane Doe on Unsplash");
     }
 
     [Fact]
@@ -106,7 +108,9 @@ public class AddFeaturedImageToolTests
         var imageProcessor = Substitute.For<IImageProcessor>();
 
         await using var imageStream = new MemoryStream();
-        unsplashClient.LoadImageAsync("Dynamic Port Assignment").Returns(imageStream);
+        var unsplashResult = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        unsplashClient.LoadImageAsync("Dynamic Port Assignment").Returns(unsplashResult);
 
         // Act
         var result = await AddFeaturedImageTool.AddFeaturedImage(
@@ -114,6 +118,6 @@ public class AddFeaturedImageToolTests
 
         // Assert
         result.Success.Should().BeTrue();
-        await unsplashClient.Received(1).LoadImageAsync("Dynamic Port Assignment", Arg.Any<CancellationToken>());
+        await unsplashClient.Received(1).LoadImageAsync("Dynamic Port Assignment", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 }

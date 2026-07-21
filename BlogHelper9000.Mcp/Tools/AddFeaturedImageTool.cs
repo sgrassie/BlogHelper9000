@@ -32,13 +32,14 @@ public static class AddFeaturedImageTool
                 ? DeriveQueryFromTitle(markdownFile.Metadata.Title)
                 : imageQuery;
 
-            await using var imageStream = await unsplashClient.LoadImageAsync(effectiveQuery, cancellationToken);
-            if (imageStream is null)
+            var result = await unsplashClient.LoadImageAsync(effectiveQuery, cancellationToken: cancellationToken);
+            if (result is null)
             {
                 return ToolResponse<AddImageResult>.Fail("Failed to load image from Unsplash. Check that credentials are configured.");
             }
 
-            await imageProcessor.Process(markdownFile, imageStream, brandingPath: null);
+            await using var imageStream = result.Image;
+            await imageProcessor.Process(markdownFile, imageStream, brandingPath: null, result.Attribution);
 
             var (_, savePath) = postManager.CreateImageFilePathForPost(markdownFile);
             return ToolResponse<AddImageResult>.Ok(new AddImageResult(markdownFile.Metadata.Title, savePath));

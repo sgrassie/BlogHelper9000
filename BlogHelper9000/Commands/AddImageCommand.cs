@@ -22,14 +22,15 @@ public class AddImageCommand : ICommand<Unit>
             {
                 if (postManager.TryFindAuthorBranding(request.AuthorBranding, out var brandingPath))
                 {
-                    await using var stream = await unsplashClient.LoadImageAsync(request.ImageQuery);
-                    if (stream is null)
+                    var result = await unsplashClient.LoadImageAsync(request.ImageQuery);
+                    if (result is null)
                     {
                         logger.LogError("Could not load an Unsplash image for query '{ImageQuery}'", request.ImageQuery);
                     }
                     else
                     {
-                        await imageProcessor.Process(postMarkdown, stream, brandingPath);
+                        await using var stream = result.Image;
+                        await imageProcessor.Process(postMarkdown, stream, brandingPath, result.Attribution);
                     }
                 }
                 else

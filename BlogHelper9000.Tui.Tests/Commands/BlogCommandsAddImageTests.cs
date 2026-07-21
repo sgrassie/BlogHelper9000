@@ -80,7 +80,9 @@ public class BlogCommandsAddImageTests
         _fs.AddFile(postPath, new MockFileData(postContent));
 
         var imageStream = new MemoryStream([0x89, 0x50, 0x4E, 0x47]);
-        _unsplashClient.LoadImageAsync("coding").Returns(imageStream);
+        var result = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        _unsplashClient.LoadImageAsync("coding").Returns(result);
 
         var sut = CreateSut();
 
@@ -92,7 +94,7 @@ public class BlogCommandsAddImageTests
         await sut.LastAddImageTask!;
 
         await _unsplashClient.Received(1).LoadImageAsync("coding");
-        await _imageProcessor.Received(1).Process(markdownFile!, imageStream, null);
+        await _imageProcessor.Received(1).Process(markdownFile!, imageStream, null, "Photo by Jane Doe on Unsplash");
     }
 
     [Fact]
@@ -124,7 +126,9 @@ public class BlogCommandsAddImageTests
             Options.Create(optionsWithBranding));
 
         var imageStream = new MemoryStream([0x89, 0x50, 0x4E, 0x47]);
-        _unsplashClient.LoadImageAsync("coding").Returns(imageStream);
+        var result = new UnsplashImageResult(imageStream, "photo-1", "https://unsplash.com/photos/photo-1",
+            "Jane Doe", "janedoe", "https://unsplash.com/@janedoe", "A description");
+        _unsplashClient.LoadImageAsync("coding").Returns(result);
 
         var sut = new BlogCommands(
             _blogService, _fs, _logger,
@@ -138,6 +142,6 @@ public class BlogCommandsAddImageTests
 
         await sut.LastAddImageTask!;
 
-        await _imageProcessor.Received(1).Process(markdownFile!, imageStream, brandingFile);
+        await _imageProcessor.Received(1).Process(markdownFile!, imageStream, brandingFile, "Photo by Jane Doe on Unsplash");
     }
 }
