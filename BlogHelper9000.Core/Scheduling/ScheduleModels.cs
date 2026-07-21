@@ -1,6 +1,7 @@
 namespace BlogHelper9000.Core.Scheduling;
 
-public sealed record SeriesInfo(long Id, string Name, int SortOrder);
+public sealed record SeriesInfo(long Id, string Name, int SortOrder,
+    DayOfWeek? CadenceDay = null, DateOnly? CadenceStart = null);
 
 public sealed record ScheduleEntry(
     long Id,
