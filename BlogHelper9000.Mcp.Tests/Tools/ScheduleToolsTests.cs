@@ -32,7 +32,7 @@ public class ScheduleToolsTests
     public void ListSeries_MapsDashboardSeriesStats()
     {
         _scheduleService.GetDashboard().Returns(new ScheduleDashboard(243, null, 1, 244, 2, 1, 0.5,
-            [new SeriesStats("S", 2, 1, 1, 0.5, "A", "B", "Week 2", null)]));
+            [new SeriesStats("S", 2, 1, 1, 0.5, "A", "B", "Week 2", null, 0)]));
 
         var result = ListSeriesTool.ListSeries(_scheduleService);
 

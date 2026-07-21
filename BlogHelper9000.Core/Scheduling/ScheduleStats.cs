@@ -3,7 +3,7 @@ namespace BlogHelper9000.Core.Scheduling;
 public static class ScheduleStats
 {
     /// <summary>Entries must be ordered by position (as returned by ScheduleRepository.GetEntries).</summary>
-    public static SeriesStats ForSeries(string seriesName, IReadOnlyList<ScheduleEntry> entries)
+    public static SeriesStats ForSeries(SeriesInfo series, IReadOnlyList<ScheduleEntry> entries, DateOnly today)
     {
         var planned = entries.Count;
         var published = entries.Count(e => e.Published);
@@ -26,7 +26,10 @@ public static class ScheduleStats
             .Where(d => d is not null)
             .Max();
 
-        return new SeriesStats(seriesName, planned, published, remaining, percentDone,
-            latestPosted?.Title, next?.Title, nextSlot, lastPostedOn);
+        var overdueCount = entries.Count(e =>
+            !e.Published && ScheduleService.ResolveDueDate(series, e) is { } due && due < today);
+
+        return new SeriesStats(series.Name, planned, published, remaining, percentDone,
+            latestPosted?.Title, next?.Title, nextSlot, lastPostedOn, overdueCount);
     }
 }
