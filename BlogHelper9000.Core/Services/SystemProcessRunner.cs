@@ -52,8 +52,22 @@ public sealed class SystemProcessRunner : IProcessRunner
         if (!process.WaitForExit(timeoutMs))
         {
             TryKill(process);
-            // Give the (now-dying) process a moment to release the redirected streams.
-            process.WaitForExit(1000);
+
+            // Kill() races the async OutputDataReceived/ErrorDataReceived handlers, which can
+            // still be appending to the (non-thread-safe) StringBuilders below. The timed
+            // WaitForExit(ms) overload previously used here gives no guarantee those handlers
+            // have finished; only the parameterless WaitForExit() blocks until the redirected
+            // streams have fully drained. Wrapped in try/catch since Kill() is best-effort and
+            // may have failed if the process had already exited.
+            try
+            {
+                process.WaitForExit();
+            }
+            catch
+            {
+                // Best effort — nothing useful to do if the wait itself fails here.
+            }
+
             return new ProcessResult(-1, standardOutput.ToString(), standardError.ToString(), TimedOut: true);
         }
 

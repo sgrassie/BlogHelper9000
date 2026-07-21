@@ -15,6 +15,12 @@ public sealed class GitDeployStateService : IDeployStateService
 {
     private static readonly string[] PublishPrefixes = ["_posts/", "_drafts/", "assets/images/"];
 
+    // The read-only status probes are cheap local reads and default to IProcessRunner's 5s
+    // timeout. `commit`/`push` mutate the repo and, for `push` especially, can carry image
+    // assets over the network — a generous timeout keeps a slow link from getting the transfer
+    // killed mid-flight.
+    private const int MutatingCommandTimeoutMs = 60000;
+
     private readonly IProcessRunner _runner;
     private readonly string _baseDirectory;
     private readonly ILogger<GitDeployStateService> _logger;
@@ -64,7 +70,7 @@ public sealed class GitDeployStateService : IDeployStateService
                 return new DeployResult(DeployOutcome.GitFailed, false, stageable, commitMessage, false, add.StandardError);
             }
 
-            var commit = RunGit(["commit", "-m", commitMessage!]);
+            var commit = RunGit(["commit", "-m", commitMessage!], MutatingCommandTimeoutMs);
             if (commit.ExitCode != 0)
             {
                 _logger.LogError("git commit failed: {Error}", commit.StandardError);
@@ -72,7 +78,7 @@ public sealed class GitDeployStateService : IDeployStateService
             }
         }
 
-        var push = RunGit(["push"]);
+        var push = RunGit(["push"], MutatingCommandTimeoutMs);
         if (push.ExitCode != 0)
         {
             _logger.LogError("git push failed: {Error}", push.StandardError);
@@ -142,11 +148,11 @@ public sealed class GitDeployStateService : IDeployStateService
         return (state, failedCommand);
     }
 
-    private ProcessResult RunGit(IReadOnlyList<string> arguments)
+    private ProcessResult RunGit(IReadOnlyList<string> arguments, int timeoutMs = 5000)
     {
         try
         {
-            return _runner.Run("git", arguments, _baseDirectory);
+            return _runner.Run("git", arguments, _baseDirectory, timeoutMs);
         }
         catch (Exception ex)
         {

@@ -501,4 +501,57 @@ public class GitDeployStateServiceTests
         addInvocation.Arguments.Should().Equal("add", "-A", "--", expectedPath);
         addInvocation.Arguments.Should().HaveCount(4, "the quote-bearing path must arrive as one argv element, not be split into extra arguments");
     }
+
+    // ----- Timeouts -----
+    // A real `git push` carrying image assets over a slow link must not be killed mid-transfer
+    // by the same short timeout used for cheap read-only status probes.
+
+    [Fact]
+    public void Deploy_Real_Should_Give_Commit_And_Push_A_Longer_Timeout_Than_The_ReadOnly_Probes()
+    {
+        var runner = new RecordingProcessRunner();
+        runner.EnqueueSuccess("true\n");
+        runner.EnqueueSuccess(" M _posts/2026/2026-07-21-x.md\n?? _drafts/y.md\n M README.md\n");
+        runner.EnqueueSuccess("0\n");
+        runner.EnqueueSuccess(string.Empty);
+        runner.EnqueueSuccess(); // add
+        runner.EnqueueSuccess(); // commit
+        runner.EnqueueSuccess(); // push
+        var sut = CreateSut(runner);
+
+        var result = sut.Deploy(dryRun: false);
+
+        result.Outcome.Should().Be(DeployOutcome.Deployed);
+
+        var probeInvocations = runner.Invocations.Take(4);
+        probeInvocations.Should().OnlyContain(i => i.TimeoutMs == 5000);
+
+        var addInvocation = runner.Invocations.Single(i => i.Arguments.Count > 0 && i.Arguments[0] == "add");
+        addInvocation.TimeoutMs.Should().Be(5000);
+
+        var commitInvocation = runner.Invocations.Single(i => i.Arguments.Count > 0 && i.Arguments[0] == "commit");
+        commitInvocation.TimeoutMs.Should().Be(60000);
+
+        var pushInvocation = runner.Invocations.Single(i => i.Arguments.Count > 0 && i.Arguments[0] == "push");
+        pushInvocation.TimeoutMs.Should().Be(60000);
+    }
+
+    [Fact]
+    public void Deploy_Real_With_Nothing_Stageable_But_Unpushed_Commits_Should_Give_Push_A_Longer_Timeout()
+    {
+        var runner = new RecordingProcessRunner();
+        runner.EnqueueSuccess("true\n");
+        runner.EnqueueSuccess(string.Empty);
+        runner.EnqueueSuccess("2\n");
+        runner.EnqueueSuccess("README.md\n");
+        runner.EnqueueSuccess(); // push
+        var sut = CreateSut(runner);
+
+        var result = sut.Deploy(dryRun: false);
+
+        result.Outcome.Should().Be(DeployOutcome.Deployed);
+
+        var pushInvocation = runner.Invocations.Single(i => i.Arguments.Count > 0 && i.Arguments[0] == "push");
+        pushInvocation.TimeoutMs.Should().Be(60000);
+    }
 }

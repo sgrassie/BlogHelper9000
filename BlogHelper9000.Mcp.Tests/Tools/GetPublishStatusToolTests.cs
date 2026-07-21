@@ -64,4 +64,16 @@ public class GetPublishStatusToolTests
         result.Data!.HasUpstream.Should().BeFalse();
         result.Data.Summary.Should().ContainEquivalentOf("upstream");
     }
+
+    [Fact]
+    public void GetPublishStatus_CleanButNoUpstream_ReportsBothInSummary()
+    {
+        _deployService.GetDeployState().Returns(new DeployState(true, false, [], 0, [], []));
+
+        var result = GetPublishStatusTool.GetPublishStatus(_deployService);
+
+        result.Success.Should().BeTrue();
+        result.Data!.HasUpstream.Should().BeFalse();
+        result.Data.Summary.Should().Be("No uncommitted changes. No upstream is configured.");
+    }
 }
