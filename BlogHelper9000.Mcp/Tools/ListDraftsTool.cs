@@ -19,22 +19,25 @@ public static class ListDraftsTool
         IScheduleService scheduleService,
         [Description("Maximum number of drafts to return")] int limit = 50)
     {
-        var allDrafts = blogService.GetDraftDetails();
+        return ToolGate.RunExclusive(() =>
+        {
+            var allDrafts = blogService.GetDraftDetails();
 
-        var mapped = allDrafts
-            .Select(d =>
-            {
-                var entry = scheduleService.FindEntry(d.FileName);
-                var slot = entry?.PublishDate is { } publishDate
-                    ? publishDate.ToString("yyyy-MM-dd")
-                    : entry?.Week is { } week ? $"Week {week}" : null;
+            var mapped = allDrafts
+                .Select(d =>
+                {
+                    var entry = scheduleService.FindEntry(d.FileName);
+                    var slot = entry?.PublishDate is { } publishDate
+                        ? publishDate.ToString("yyyy-MM-dd")
+                        : entry?.Week is { } week ? $"Week {week}" : null;
 
-                return new DraftDetailDto(d.FileName, d.Title, d.WordCount, d.LastModified,
-                    entry?.Series, slot, d.ReadinessFlags);
-            })
-            .Take(limit)
-            .ToList();
+                    return new DraftDetailDto(d.FileName, d.Title, d.WordCount, d.LastModified,
+                        entry?.Series, slot, d.ReadinessFlags);
+                })
+                .Take(limit)
+                .ToList();
 
-        return ToolResponse<ListDraftsResult>.Ok(new ListDraftsResult(mapped, allDrafts.Count));
+            return ToolResponse<ListDraftsResult>.Ok(new ListDraftsResult(mapped, allDrafts.Count));
+        });
     }
 }

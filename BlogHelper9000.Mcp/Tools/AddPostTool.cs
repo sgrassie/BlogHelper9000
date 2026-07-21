@@ -19,14 +19,17 @@ public static class AddPostTool
         [Description("Optional comma-separated list of tags, e.g. 'csharp, dotnet'")] string? tags = null,
         [Description("Optional markdown body for the post, written below the front matter")] string? content = null)
     {
-        var tagList = string.IsNullOrWhiteSpace(tags)
-            ? null
-            : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        return ToolGate.RunExclusive(() =>
+        {
+            var tagList = string.IsNullOrWhiteSpace(tags)
+                ? null
+                : tags.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 
-        var filePath = blogService.AddPost(title, isDraft, isFeatured, isHidden, featuredImage, tagList, content);
+            var filePath = blogService.AddPost(title, isDraft, isFeatured, isHidden, featuredImage, tagList, content);
 
-        return filePath is null
-            ? ToolResponse<AddPostResult>.Fail($"Could not create {(isDraft ? "draft" : "post")} '{title}' — a post already exists at the target path. Choose a different title or edit the existing post.")
-            : ToolResponse<AddPostResult>.Ok(new AddPostResult(filePath, isDraft));
+            return filePath is null
+                ? ToolResponse<AddPostResult>.Fail($"Could not create {(isDraft ? "draft" : "post")} '{title}' — a post already exists at the target path. Choose a different title or edit the existing post.")
+                : ToolResponse<AddPostResult>.Ok(new AddPostResult(filePath, isDraft));
+        });
     }
 }

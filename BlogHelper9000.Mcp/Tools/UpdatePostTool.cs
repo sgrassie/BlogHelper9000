@@ -48,83 +48,86 @@ public static class UpdatePostTool
                      "featured_image_thumbnail, featured, hidden, published, ispublished, series) or with the " +
                      "internally-managed originalFilename/lastUpdated keys are rejected.")] string? extraFrontMatter = null)
     {
-        if (!postManager.TryFindPost(postPath, out var markdownFile))
+        return ToolGate.RunExclusive(() =>
         {
-            return ToolResponse<UpdatePostResult>.Fail($"Could not find post '{postPath}'.");
-        }
-
-        var updatedFields = new List<string>();
-
-        if (title is not null)
-        {
-            markdownFile.Metadata.Title = title;
-            updatedFields.Add("title");
-        }
-
-        if (description is not null)
-        {
-            markdownFile.Metadata.Description = description;
-            updatedFields.Add("description");
-        }
-
-        if (tags is not null)
-        {
-            markdownFile.Metadata.Tags = tags
-                .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
-                .ToList();
-            updatedFields.Add("tags");
-        }
-
-        if (featured is not null)
-        {
-            markdownFile.Metadata.IsFeatured = featured;
-            updatedFields.Add("featured");
-        }
-
-        if (hidden is not null)
-        {
-            markdownFile.Metadata.IsHidden = hidden;
-            updatedFields.Add("hidden");
-        }
-
-        if (publishedOn is not null)
-        {
-            if (!DateOnly.TryParseExact(publishedOn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+            if (!postManager.TryFindPost(postPath, out var markdownFile))
             {
-                return ToolResponse<UpdatePostResult>.Fail($"'{publishedOn}' is not a valid yyyy-MM-dd date.");
+                return ToolResponse<UpdatePostResult>.Fail($"Could not find post '{postPath}'.");
             }
 
-            markdownFile.Metadata.PublishedOn = parsedDate.ToDateTime(TimeOnly.MinValue);
-            updatedFields.Add("publishedOn");
-        }
+            var updatedFields = new List<string>();
 
-        if (extraFrontMatter is not null)
-        {
-            var applyExtrasError = ApplyExtraFrontMatter(markdownFile, extraFrontMatter, updatedFields);
-            if (applyExtrasError is not null)
+            if (title is not null)
             {
-                return ToolResponse<UpdatePostResult>.Fail(applyExtrasError);
+                markdownFile.Metadata.Title = title;
+                updatedFields.Add("title");
             }
-        }
 
-        try
-        {
-            if (body is not null)
+            if (description is not null)
             {
-                postManager.Markdown.UpdateFile(markdownFile, body);
-                updatedFields.Add("body");
+                markdownFile.Metadata.Description = description;
+                updatedFields.Add("description");
             }
-            else if (updatedFields.Count > 0)
-            {
-                postManager.UpdateMarkdown(markdownFile);
-            }
-        }
-        catch (Exception ex)
-        {
-            return ToolResponse<UpdatePostResult>.Fail($"Could not update '{postPath}': {ex.Message}");
-        }
 
-        return ToolResponse<UpdatePostResult>.Ok(new UpdatePostResult(markdownFile.FilePath, updatedFields));
+            if (tags is not null)
+            {
+                markdownFile.Metadata.Tags = tags
+                    .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                    .ToList();
+                updatedFields.Add("tags");
+            }
+
+            if (featured is not null)
+            {
+                markdownFile.Metadata.IsFeatured = featured;
+                updatedFields.Add("featured");
+            }
+
+            if (hidden is not null)
+            {
+                markdownFile.Metadata.IsHidden = hidden;
+                updatedFields.Add("hidden");
+            }
+
+            if (publishedOn is not null)
+            {
+                if (!DateOnly.TryParseExact(publishedOn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+                {
+                    return ToolResponse<UpdatePostResult>.Fail($"'{publishedOn}' is not a valid yyyy-MM-dd date.");
+                }
+
+                markdownFile.Metadata.PublishedOn = parsedDate.ToDateTime(TimeOnly.MinValue);
+                updatedFields.Add("publishedOn");
+            }
+
+            if (extraFrontMatter is not null)
+            {
+                var applyExtrasError = ApplyExtraFrontMatter(markdownFile, extraFrontMatter, updatedFields);
+                if (applyExtrasError is not null)
+                {
+                    return ToolResponse<UpdatePostResult>.Fail(applyExtrasError);
+                }
+            }
+
+            try
+            {
+                if (body is not null)
+                {
+                    postManager.Markdown.UpdateFile(markdownFile, body);
+                    updatedFields.Add("body");
+                }
+                else if (updatedFields.Count > 0)
+                {
+                    postManager.UpdateMarkdown(markdownFile);
+                }
+            }
+            catch (Exception ex)
+            {
+                return ToolResponse<UpdatePostResult>.Fail($"Could not update '{postPath}': {ex.Message}");
+            }
+
+            return ToolResponse<UpdatePostResult>.Ok(new UpdatePostResult(markdownFile.FilePath, updatedFields));
+        });
     }
 
     /// <summary>

@@ -26,4 +26,8 @@
         <ProjectReference Include="..\BlogHelper9000.Imaging\BlogHelper9000.Imaging.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="BlogHelper9000.Mcp.Tests" />
+    </ItemGroup>
+
 </Project>

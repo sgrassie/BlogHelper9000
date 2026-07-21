@@ -16,21 +16,24 @@ public static class SearchPostsTool
         [Description("Include drafts in the search")] bool includeDrafts = true,
         [Description("Maximum number of matches to return, most recently published first")] int limit = 20)
     {
-        if (string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(tag))
-            return ToolResponse<SearchPostsResult>.Fail("Provide a query and/or a tag to search for.");
+        return ToolGate.RunExclusive(() =>
+        {
+            if (string.IsNullOrWhiteSpace(query) && string.IsNullOrWhiteSpace(tag))
+                return ToolResponse<SearchPostsResult>.Fail("Provide a query and/or a tag to search for.");
 
-        var results = searchService.Search(query, tag, includeDrafts, limit);
+            var results = searchService.Search(query, tag, includeDrafts, limit);
 
-        var matches = results.Matches
-            .Select(m => new SearchMatchDto(
-                m.FileName,
-                m.Title,
-                m.IsDraft,
-                m.PublishedOn,
-                m.Tags,
-                m.Snippets.Select(s => new SnippetDto(s.Line, s.Text)).ToList()))
-            .ToList();
+            var matches = results.Matches
+                .Select(m => new SearchMatchDto(
+                    m.FileName,
+                    m.Title,
+                    m.IsDraft,
+                    m.PublishedOn,
+                    m.Tags,
+                    m.Snippets.Select(s => new SnippetDto(s.Line, s.Text)).ToList()))
+                .ToList();
 
-        return ToolResponse<SearchPostsResult>.Ok(new SearchPostsResult(matches, results.TotalMatches));
+            return ToolResponse<SearchPostsResult>.Ok(new SearchPostsResult(matches, results.TotalMatches));
+        });
     }
 }

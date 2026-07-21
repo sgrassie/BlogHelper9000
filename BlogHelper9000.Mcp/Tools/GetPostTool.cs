@@ -14,25 +14,28 @@ public static class GetPostTool
         PostManager postManager,
         [Description("Filename (e.g. 'my-post.md') or path of the post/draft to read. Bare filenames are resolved against _drafts/ then _posts/; paths outside the blog root are rejected.")] string postPath)
     {
-        if (!postManager.TryFindPost(postPath, out var markdownFile))
+        return ToolGate.RunExclusive(() =>
         {
-            return ToolResponse<GetPostResult>.Fail($"Could not find post '{postPath}'.");
-        }
+            if (!postManager.TryFindPost(postPath, out var markdownFile))
+            {
+                return ToolResponse<GetPostResult>.Fail($"Could not find post '{postPath}'.");
+            }
 
-        string body;
-        try
-        {
-            body = postManager.GetPostBody(markdownFile.FilePath);
-        }
-        catch (Exception ex)
-        {
-            return ToolResponse<GetPostResult>.Fail($"Could not read '{postPath}': {ex.Message}");
-        }
+            string body;
+            try
+            {
+                body = postManager.GetPostBody(markdownFile.FilePath);
+            }
+            catch (Exception ex)
+            {
+                return ToolResponse<GetPostResult>.Fail($"Could not read '{postPath}': {ex.Message}");
+            }
 
-        var isDraft = markdownFile.FilePath.StartsWith(postManager.Drafts, StringComparison.Ordinal);
-        var frontMatter = BuildFrontMatter(markdownFile.Metadata);
+            var isDraft = markdownFile.FilePath.StartsWith(postManager.Drafts, StringComparison.Ordinal);
+            var frontMatter = BuildFrontMatter(markdownFile.Metadata);
 
-        return ToolResponse<GetPostResult>.Ok(new GetPostResult(markdownFile.FilePath, isDraft, frontMatter, body));
+            return ToolResponse<GetPostResult>.Ok(new GetPostResult(markdownFile.FilePath, isDraft, frontMatter, body));
+        });
     }
 
     private static Dictionary<string, string?> BuildFrontMatter(BlogHelper9000.Core.YamlParsing.YamlHeader metadata)

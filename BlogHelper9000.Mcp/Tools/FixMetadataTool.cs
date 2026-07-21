@@ -17,15 +17,18 @@ public static class FixMetadataTool
         [Description("Fix/normalize tags")] bool fixTags = false,
         [Description("Preview the change without writing any files. Defaults to true — set false to apply.")] bool dryRun = true)
     {
-        try
+        return ToolGate.RunExclusive(() =>
         {
-            var result = blogService.FixMetadata(fixStatus, fixDescription, fixTags, dryRun);
-            var skipped = result.Skipped.Select(s => new FixMetadataSkipDto(s.FilePath, s.Reason)).ToList();
-            return ToolResponse<FixMetadataToolResult>.Ok(new FixMetadataToolResult(result.Updated, skipped, dryRun));
-        }
-        catch (Exception ex)
-        {
-            return ToolResponse<FixMetadataToolResult>.Fail($"Failed to fix metadata: {ex.Message}");
-        }
+            try
+            {
+                var result = blogService.FixMetadata(fixStatus, fixDescription, fixTags, dryRun);
+                var skipped = result.Skipped.Select(s => new FixMetadataSkipDto(s.FilePath, s.Reason)).ToList();
+                return ToolResponse<FixMetadataToolResult>.Ok(new FixMetadataToolResult(result.Updated, skipped, dryRun));
+            }
+            catch (Exception ex)
+            {
+                return ToolResponse<FixMetadataToolResult>.Fail($"Failed to fix metadata: {ex.Message}");
+            }
+        });
     }
 }

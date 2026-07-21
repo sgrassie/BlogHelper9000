@@ -15,29 +15,32 @@ public static class GetBlogInfoTool
                  "Call this first in a session to confirm the server is pointed at the right blog.")]
     public static ToolResponse<BlogInfoResult> GetBlogInfo(IBlogService blogService, IOptions<BlogHelperOptions> options, IFileSystem fileSystem)
     {
-        var baseDirectory = options.Value.BaseDirectory;
-        var looksLikeJekyllBlog = fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_posts"))
-            || fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_drafts"));
+        return ToolGate.RunExclusive(() =>
+        {
+            var baseDirectory = options.Value.BaseDirectory;
+            var looksLikeJekyllBlog = fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_posts"))
+                || fileSystem.Directory.Exists(fileSystem.Path.Combine(baseDirectory, "_drafts"));
 
-        var info = blogService.GetBlogInfo();
+            var info = blogService.GetBlogInfo();
 
-        var latestPosts = (info.LatestPosts ?? [])
-            .Select(p => new RecentPostDto(p.Title, p.PublishedOn, p.Tags ?? []))
-            .ToList();
+            var latestPosts = (info.LatestPosts ?? [])
+                .Select(p => new RecentPostDto(p.Title, p.PublishedOn, p.Tags ?? []))
+                .ToList();
 
-        var unpublished = (info.Unpublished ?? [])
-            .Select(p => new DraftSummaryDto(p.Title, p.Extras.GetValueOrDefault("originalFilename")))
-            .ToList();
+            var unpublished = (info.Unpublished ?? [])
+                .Select(p => new DraftSummaryDto(p.Title, p.Extras.GetValueOrDefault("originalFilename")))
+                .ToList();
 
-        var result = new BlogInfoResult(
-            baseDirectory,
-            looksLikeJekyllBlog,
-            info.PostCount,
-            info.UnPublishedCount,
-            info.DaysSinceLastPost?.Days,
-            latestPosts,
-            unpublished);
+            var result = new BlogInfoResult(
+                baseDirectory,
+                looksLikeJekyllBlog,
+                info.PostCount,
+                info.UnPublishedCount,
+                info.DaysSinceLastPost?.Days,
+                latestPosts,
+                unpublished);
 
-        return ToolResponse<BlogInfoResult>.Ok(result);
+            return ToolResponse<BlogInfoResult>.Ok(result);
+        });
     }
 }

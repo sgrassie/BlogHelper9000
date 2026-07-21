@@ -19,16 +19,19 @@ public static class PublishPostTool
         IScheduleService scheduleService,
         [Description("Filename (e.g. 'my-draft.md') or path of the draft to publish. Bare filenames are resolved against _drafts/ then _posts/; paths outside the blog root are rejected.")] string postName)
     {
-        var result = blogService.PublishPostDetailed(postName);
-
-        return result.Outcome switch
+        return ToolGate.RunExclusive(() =>
         {
-            PublishOutcome.Published => ToolResponse<PublishResult>.Ok(new PublishResult(
-                result.PublishedPath, scheduleService.MarkPublished(postName).ToString())),
-            PublishOutcome.NotFound => ToolResponse<PublishResult>.Fail($"No draft named '{postName}' was found in _drafts/ or _posts/."),
-            PublishOutcome.AlreadyPublished => ToolResponse<PublishResult>.Fail($"'{postName}' already has a date prefix and appears to be published. Publishing is idempotent-safe: no action was taken."),
-            PublishOutcome.TargetExists => ToolResponse<PublishResult>.Fail("A published post already exists at the target path for today's date."),
-            _ => ToolResponse<PublishResult>.Fail("Unknown publish outcome.")
-        };
+            var result = blogService.PublishPostDetailed(postName);
+
+            return result.Outcome switch
+            {
+                PublishOutcome.Published => ToolResponse<PublishResult>.Ok(new PublishResult(
+                    result.PublishedPath, scheduleService.MarkPublished(postName).ToString())),
+                PublishOutcome.NotFound => ToolResponse<PublishResult>.Fail($"No draft named '{postName}' was found in _drafts/ or _posts/."),
+                PublishOutcome.AlreadyPublished => ToolResponse<PublishResult>.Fail($"'{postName}' already has a date prefix and appears to be published. Publishing is idempotent-safe: no action was taken."),
+                PublishOutcome.TargetExists => ToolResponse<PublishResult>.Fail("A published post already exists at the target path for today's date."),
+                _ => ToolResponse<PublishResult>.Fail("Unknown publish outcome.")
+            };
+        });
     }
 }
