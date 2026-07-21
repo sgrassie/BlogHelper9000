@@ -188,13 +188,28 @@ public class BlogService : IBlogService
 
     private DraftDetail BuildDraftDetail(string path)
     {
-        var markdownFile = _postManager.Markdown.LoadFile(path);
-        var body = _postManager.Markdown.GetBody(path);
-        var wordCount = body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+        var fileName = _fileSystem.Path.GetFileName(path);
         var lastModified = _fileSystem.FileInfo.New(path).LastWriteTime;
 
+        MarkdownFile markdownFile;
+        try
+        {
+            markdownFile = _postManager.Markdown.LoadFile(path);
+        }
+        catch (Exception ex)
+        {
+            // One broken draft's front matter shouldn't fail the whole list_drafts call — report
+            // it with best-effort metadata instead, mirroring the FixMetadata skip-and-report
+            // precedent.
+            _logger.LogWarning(ex, "Skipping front matter for {File} — could not parse", path);
+            return new DraftDetail(fileName, path, null, 0, lastModified, false, ["unparseable front matter"]);
+        }
+
+        var body = _postManager.Markdown.GetBody(path);
+        var wordCount = body.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length;
+
         return new DraftDetail(
-            _fileSystem.Path.GetFileName(path),
+            fileName,
             path,
             markdownFile.Metadata.Title,
             wordCount,

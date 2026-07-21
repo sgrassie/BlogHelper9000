@@ -52,6 +52,27 @@ public class GetTagsToolTests
     }
 
     [Fact]
+    public void GetTags_CaseInsensitiveGrouping_TieBreaksOnOrdinalLexicographicOrder_WhenCountsEqual()
+    {
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile("/blog/_drafts/draft-one.md",
+            new MockFileData("---\ntitle: Draft One\ntags: [Csharp]\n---\n\nBody."));
+        fileSystem.AddFile("/blog/_drafts/draft-two.md",
+            new MockFileData("---\ntitle: Draft Two\ntags: [csharp]\n---\n\nBody."));
+        var postManager = CreatePostManager(fileSystem);
+
+        var result = GetTagsTool.GetTags(postManager);
+
+        // Equal counts (one each) for "Csharp" and "csharp" — Ordinal comparison sorts
+        // upper-case 'C' (0x43) before lower-case 'c' (0x63), so "Csharp" wins the tie-break.
+        var tag = result.Data!.Tags.Should()
+            .ContainSingle(t => string.Equals(t.Tag, "csharp", StringComparison.OrdinalIgnoreCase)).Subject;
+        tag.Tag.Should().Be("Csharp");
+        tag.Total.Should().Be(2);
+        tag.Variants.Should().Equal("csharp");
+    }
+
+    [Fact]
     public void GetTags_QuotedTagsGroupWithUnquotedTag()
     {
         var fileSystem = new MockFileSystem();

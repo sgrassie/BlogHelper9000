@@ -222,4 +222,39 @@ public class PostSearchServiceTests
         result.Matches.Should().BeEmpty();
         result.TotalMatches.Should().Be(0);
     }
+
+    [Fact]
+    public void Search_Skips_Draft_With_Unparseable_FrontMatter_But_Still_Matches_Others()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/broken.md",
+                new MockFileData("---\ntitle: Broken\nThis has no closing delimiter, mentions kubernetes."))
+            .AddFile("/blog/_drafts/fine.md",
+                new MockFileData("---\ntitle: Fine\n---\n\nAbout kubernetes networking."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.Search("kubernetes");
+
+        result.Matches.Should().ContainSingle(m => m.FileName == "fine.md");
+        result.TotalMatches.Should().Be(1);
+    }
+
+    [Fact]
+    public void Search_TagFilter_Trims_StrayWhitespace_Trapped_Inside_Quoted_Tag()
+    {
+        // Front matter authored as tags: [' csharp'] — the space sits inside the quotes, right
+        // after the opening quote, so the YAML list parser's TrimEntries (which only trims
+        // whitespace at the token's outer edge) can't remove it; the stored tag value is
+        // literally "' csharp'".
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/csharp-post.md",
+                new MockFileData("---\ntitle: Csharp Post\ntags: [' csharp']\n---\n\nBody."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.Search(string.Empty, tag: "csharp");
+
+        result.Matches.Should().ContainSingle(m => m.FileName == "csharp-post.md");
+    }
 }

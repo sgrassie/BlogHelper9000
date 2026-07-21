@@ -293,4 +293,30 @@ public class BlogServiceTests
 
         result.Should().BeEmpty();
     }
+
+    [Fact]
+    public void GetDraftDetails_Should_FlagUnparseableFrontMatter_WithoutThrowing_AndStillReturnOtherDrafts()
+    {
+        var fileSystem = (MockFileSystem)new JekyllBlogFilesystemBuilder()
+            .AddFile("/blog/_drafts/broken.md",
+                new MockFileData("---\ntitle: Broken\nThis has no closing delimiter."))
+            .AddFile("/blog/_drafts/fine.md",
+                new MockFileData("---\ntitle: Fine\n---\n\nSome words here."))
+            .BuildFileSystem();
+        var sut = CreateSut(fileSystem);
+
+        var result = sut.GetDraftDetails();
+
+        result.Should().HaveCount(2);
+
+        var broken = result.Single(d => d.FileName == "broken.md");
+        broken.Title.Should().BeNull();
+        broken.WordCount.Should().Be(0);
+        broken.HasFeaturedImage.Should().BeFalse();
+        broken.ReadinessFlags.Should().Contain("unparseable front matter");
+
+        var fine = result.Single(d => d.FileName == "fine.md");
+        fine.Title.Should().Be("Fine");
+        fine.ReadinessFlags.Should().NotContain("unparseable front matter");
+    }
 }

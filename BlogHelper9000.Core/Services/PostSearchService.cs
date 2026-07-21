@@ -1,5 +1,6 @@
 using System.IO.Abstractions;
 using BlogHelper9000.Core.Helpers;
+using BlogHelper9000.Core.YamlParsing;
 
 namespace BlogHelper9000.Core.Services;
 
@@ -59,7 +60,18 @@ public class PostSearchService : IPostSearchService
 
     private PostSearchMatch? TryMatch(string path, bool isDraft, string trimmedQuery, string? trimmedTag)
     {
-        var header = _postManager.Markdown.LoadFile(path).Metadata;
+        YamlHeader header;
+        try
+        {
+            header = _postManager.Markdown.LoadFile(path).Metadata;
+        }
+        catch (Exception)
+        {
+            // A search can't rank what it can't read — skip files with unparseable front matter
+            // rather than failing the whole search.
+            return null;
+        }
+
         var tags = header.Tags ?? [];
 
         if (!string.IsNullOrEmpty(trimmedTag) &&
@@ -114,5 +126,9 @@ public class PostSearchService : IPostSearchService
         return line.Substring(start, SnippetLength);
     }
 
-    private static string TrimQuotes(string value) => value.Trim('\'', '"');
+    // Trim, then strip surrounding quotes, then trim again: whitespace can sit outside the quotes
+    // (e.g. " 'csharp'") or be trapped just inside them (e.g. "' csharp'") when front matter is
+    // hand-edited with stray spacing; a single Trim(quotes) call only strips the quote characters
+    // themselves and leaves stray whitespace behind either way.
+    private static string TrimQuotes(string value) => value.Trim().Trim('\'', '"').Trim();
 }
