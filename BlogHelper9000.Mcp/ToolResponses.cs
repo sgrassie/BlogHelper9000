@@ -47,6 +47,10 @@ public sealed record ListPostsResult(IReadOnlyList<PostSummary> Posts);
 
 public sealed record UpdatePostResult(string FilePath, IReadOnlyList<string> UpdatedFields);
 
+public sealed record PatchPostResult(string FilePath, bool Applied);
+
+public sealed record AppendToPostResult(string FilePath);
+
 public sealed record SeriesStatsDto(
     string Series, int Planned, int Published, int Remaining, double PercentDone,
     string? LatestPostedTitle, string? NextPlannedTitle, string? NextSlot, DateOnly? LastPostedOn,
