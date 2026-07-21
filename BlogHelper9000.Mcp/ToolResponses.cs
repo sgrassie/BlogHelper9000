@@ -92,6 +92,9 @@ public sealed record GetTagsResult(IReadOnlyList<TagCountDto> Tags,
 
 public sealed record UpdateScheduleEntryResult(string Series, ScheduleEntryDto Entry);
 
+public sealed record RebaseSeriesToolResult(
+    string Series, int EntriesMoved, DateOnly OldStartDate, DateOnly NewStartDate);
+
 public sealed record RemoveScheduleEntryResult(
     string DraftFilename, string Series, int Position, bool DryRun, bool Removed);
 

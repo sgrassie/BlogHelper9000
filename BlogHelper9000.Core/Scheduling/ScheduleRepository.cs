@@ -230,6 +230,25 @@ public sealed class ScheduleRepository(ScheduleDatabase database)
         transaction.Commit();
     }
 
+    /// <summary>
+    /// Shifts the publish_date of every unpublished, dated entry in the series by
+    /// <paramref name="deltaDays"/> days (negative shifts earlier) as a single UPDATE,
+    /// so the whole move is atomic. Published entries and entries without a publish_date
+    /// are untouched. Returns the number of rows moved.
+    /// </summary>
+    public int ShiftUnpublishedEntryDates(long seriesId, int deltaDays)
+    {
+        using var command = Connection.CreateCommand();
+        command.CommandText = """
+            UPDATE schedule_entries
+            SET publish_date = date(publish_date, $delta)
+            WHERE series_id = $series AND published = 0 AND publish_date IS NOT NULL;
+            """;
+        command.Parameters.AddWithValue("$delta", $"{deltaDays} days");
+        command.Parameters.AddWithValue("$series", seriesId);
+        return command.ExecuteNonQuery();
+    }
+
     public void SetMeta(string key, string value)
     {
         using var command = Connection.CreateCommand();

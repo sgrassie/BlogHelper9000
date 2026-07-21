@@ -113,7 +113,11 @@ const string serverInstructions = """
     notes, or clear week/publish date), remove_schedule_entry drops an entry and densely
     renumbers the rest, rename_series/delete_series manage series themselves, and
     set_series_cadence assigns a series a weekly cadence (day of week + the date of week 1)
-    so week-numbered entries resolve to calendar dates. For "what should I publish today?",
+    so week-numbered entries resolve to calendar dates. When a whole series has slipped,
+    rebase_series pushes back (or pulls forward) every unpublished dated entry in one atomic
+    move, preserving relative spacing — give it a newStartDate, a days/weeks delta, or
+    nothing to snap to the next occurrence of the series' weekday after today; published
+    entries and entries without a publish date are never touched. For "what should I publish today?",
     prefer get_due_posts over walking get_series by hand — it resolves each entry's due date
     (explicit or cadence-projected) and flags overdue ones with DaysOverdue. As with
     fix_metadata, call remove_schedule_entry and delete_series with dryRun=true (the default)

@@ -90,6 +90,16 @@ public enum DeleteSeriesOutcome
     NotEmpty
 }
 
+public sealed record RebaseSeriesResult(RebaseSeriesOutcome Outcome, int EntriesMoved,
+    DateOnly? OldStartDate, DateOnly? NewStartDate);
+
+public enum RebaseSeriesOutcome
+{
+    Rebased,
+    SeriesNotFound,
+    NothingToMove
+}
+
 public enum SetCadenceOutcome
 {
     Set,

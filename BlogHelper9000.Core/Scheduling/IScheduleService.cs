@@ -67,6 +67,23 @@ public interface IScheduleService
     SetCadenceOutcome SetSeriesCadence(string series, DayOfWeek day, DateOnly startDate);
 
     /// <summary>
+    /// Moves the series' start date — the earliest publish date among its unpublished
+    /// entries — to <paramref name="newStartDate"/>, shifting every other unpublished dated
+    /// entry by the same delta so relative spacing is preserved. Published entries and
+    /// entries without a publish date are never touched. When <paramref name="newStartDate"/>
+    /// is null it defaults to the next occurrence of the start date's weekday strictly
+    /// after today. Runs as a single atomic update.
+    /// </summary>
+    RebaseSeriesResult RebaseSeries(string series, DateOnly? newStartDate = null);
+
+    /// <summary>
+    /// Shifts every unpublished dated entry of the series by <paramref name="days"/> days
+    /// (negative pulls the schedule forward). Same guarantees as
+    /// <see cref="RebaseSeries"/>.
+    /// </summary>
+    RebaseSeriesResult ShiftSeries(string series, int days);
+
+    /// <summary>
     /// Unpublished entries whose resolved due date (explicit publish date, or cadence
     /// projected from week number) falls on or before <paramref name="asOf"/> (defaults to
     /// today), ordered by due date then series then position.

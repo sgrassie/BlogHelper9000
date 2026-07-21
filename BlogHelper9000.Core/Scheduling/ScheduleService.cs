@@ -276,6 +276,35 @@ public sealed partial class ScheduleService : IScheduleService, IDisposable
         return SetCadenceOutcome.Set;
     }
 
+    public RebaseSeriesResult RebaseSeries(string series, DateOnly? newStartDate = null)
+        => Rebase(series, oldStart =>
+            newStartDate ?? NextOccurrenceStrictlyAfter(oldStart.DayOfWeek, Today));
+
+    public RebaseSeriesResult ShiftSeries(string series, int days)
+        => Rebase(series, oldStart => oldStart.AddDays(days));
+
+    private RebaseSeriesResult Rebase(string series, Func<DateOnly, DateOnly> newStartFor)
+    {
+        var repository = Repository;
+        var found = repository.FindSeries(series);
+        if (found is null)
+            return new RebaseSeriesResult(RebaseSeriesOutcome.SeriesNotFound, 0, null, null);
+
+        var oldStart = repository.GetEntries(found.Id)
+            .Where(e => !e.Published && e.PublishDate is not null)
+            .Min(e => e.PublishDate);
+        if (oldStart is null)
+            return new RebaseSeriesResult(RebaseSeriesOutcome.NothingToMove, 0, null, null);
+
+        var newStart = newStartFor(oldStart.Value);
+        var moved = repository.ShiftUnpublishedEntryDates(found.Id,
+            newStart.DayNumber - oldStart.Value.DayNumber);
+        return new RebaseSeriesResult(RebaseSeriesOutcome.Rebased, moved, oldStart, newStart);
+    }
+
+    private static DateOnly NextOccurrenceStrictlyAfter(DayOfWeek day, DateOnly after)
+        => after.AddDays((day - after.DayOfWeek + 6) % 7 + 1);
+
     public IReadOnlyList<DuePost> GetDuePosts(DateOnly? asOf = null)
     {
         var due = asOf ?? Today;
