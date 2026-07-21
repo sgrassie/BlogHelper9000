@@ -1,8 +1,13 @@
+using System.IO.Abstractions.TestingHelpers;
+using BlogHelper9000.Core;
+using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.Models;
 using BlogHelper9000.Core.Scheduling;
 using BlogHelper9000.Core.Services;
 using BlogHelper9000.Mcp.Tools;
 using FluentAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 
 namespace BlogHelper9000.Mcp.Tests.Tools;
@@ -211,5 +216,33 @@ public class UnpublishPostToolTests
         result.Success.Should().BeTrue();
         result.Data!.ScheduleOutcome.Should().BeNull();
         scheduleService.DidNotReceive().FindEntry(Arg.Any<string>());
+    }
+
+    // Pattern (a) integration test: wired to the REAL BlogService (MockFileSystem + real
+    // PostManager), with NSubstitute only for IScheduleService. This is the collision test
+    // that a fully-mocked IBlogService can't catch: the mock in
+    // UnpublishPost_WhenTargetExists_ReturnsFailureNamingTheTarget above encodes DraftPath as
+    // non-null by hand, which stayed green even when BlogService.UnpublishPostDetailed itself
+    // returned null for that field. Exercising the real service closes that mock-drift hole.
+    [Fact]
+    public void UnpublishPost_RealBlogService_WhenTargetExists_MessageContainsTheRealDraftPath()
+    {
+        // Arrange
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile("/blog/_posts/2024/2024-11-01-a-post.md",
+            new MockFileData("---\ntitle: A post\npublished: 01/11/2024\nispublished: true\n---"));
+        fileSystem.AddFile("/blog/_drafts/a-post.md", new MockFileData("---\ntitle: Existing draft\n---"));
+
+        var postManager = new PostManager(fileSystem, new MarkdownHandler(fileSystem),
+            Options.Create(new BlogHelperOptions { BaseDirectory = "/blog" }));
+        var blogService = new BlogService(postManager, fileSystem, TimeProvider.System, NullLogger<BlogService>.Instance);
+        var scheduleService = Substitute.For<IScheduleService>();
+
+        // Act
+        var result = UnpublishPostTool.UnpublishPost(blogService, scheduleService, "2024-11-01-a-post.md");
+
+        // Assert
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("a draft named '/blog/_drafts/a-post.md' already exists");
     }
 }

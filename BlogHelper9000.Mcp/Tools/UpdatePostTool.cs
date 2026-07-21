@@ -2,6 +2,7 @@ using BlogHelper9000.Core.Helpers;
 using BlogHelper9000.Core.YamlParsing;
 using ModelContextProtocol.Server;
 using System.ComponentModel;
+using System.Globalization;
 using System.Reflection;
 
 namespace BlogHelper9000.Mcp.Tools;
@@ -88,7 +89,7 @@ public static class UpdatePostTool
 
         if (publishedOn is not null)
         {
-            if (!DateOnly.TryParse(publishedOn, out var parsedDate))
+            if (!DateOnly.TryParseExact(publishedOn, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
             {
                 return ToolResponse<UpdatePostResult>.Fail($"'{publishedOn}' is not a valid yyyy-MM-dd date.");
             }

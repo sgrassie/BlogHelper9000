@@ -420,6 +420,27 @@ public class BlogServiceTests
         var result = sut.UnpublishPostDetailed("2024-11-01-a-post.md");
 
         result.Outcome.Should().Be(Core.Models.UnpublishOutcome.TargetExists);
+        result.DraftPath.Should().Be("/blog/_drafts/a-post.md");
+    }
+
+    [Fact]
+    public void UnpublishPostDetailed_Should_CreateDraftsDirectory_WhenMissing()
+    {
+        // The blog root and _posts/ exist, but _drafts/ has never been created (e.g. a blog
+        // with no drafts yet). Unpublishing should create it, mirroring how PublishPostDetailed
+        // creates the target _posts/<year>/ folder on demand.
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFile("/blog/_posts/2024/2024-11-01-a-post.md",
+            new MockFileData("---\ntitle: A post\npublished: 01/11/2024\nispublished: true\n---"));
+        var sut = CreateSut(fileSystem);
+
+        fileSystem.Directory.Exists("/blog/_drafts").Should().BeFalse();
+
+        var result = sut.UnpublishPostDetailed("2024-11-01-a-post.md");
+
+        result.Outcome.Should().Be(Core.Models.UnpublishOutcome.Unpublished);
+        result.DraftPath.Should().Be("/blog/_drafts/a-post.md");
+        fileSystem.File.Exists("/blog/_drafts/a-post.md").Should().BeTrue();
     }
 
     [Fact]

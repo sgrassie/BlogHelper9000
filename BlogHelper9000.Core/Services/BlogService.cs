@@ -126,7 +126,7 @@ public class BlogService : IBlogService
         if (_fileSystem.File.Exists(targetPath))
         {
             _logger.LogError("A draft already exists at {Target}", targetPath);
-            return new UnpublishPostResult(UnpublishOutcome.TargetExists, null);
+            return new UnpublishPostResult(UnpublishOutcome.TargetExists, targetPath);
         }
 
         if (dryRun)
@@ -137,6 +137,11 @@ public class BlogService : IBlogService
         postMarkdown.Metadata.IsPublished = false;
         postMarkdown.Metadata.PublishedOn = null;
         _postManager.Markdown.UpdateFile(postMarkdown);
+
+        if (!_fileSystem.Directory.Exists(_postManager.Drafts))
+        {
+            _fileSystem.Directory.CreateDirectory(_postManager.Drafts);
+        }
 
         _logger.LogInformation("Unpublishing {FileName} to {Target}", fileName, targetPath);
         _fileSystem.File.Move(currentPath, targetPath);

@@ -138,6 +138,24 @@ public class UpdatePostToolTests
     }
 
     [Fact]
+    public void UpdatePost_PublishedOn_SlashFormat_FailsRegardlessOfCurrentCulture()
+    {
+        // DateOnly.TryParse is culture-sensitive (e.g. "03/04/2024" is 3 Apr under en-GB but
+        // 4 Mar under en-US) — publishedOn must be parsed strictly as invariant yyyy-MM-dd so
+        // the same input always means the same date no matter which locale the server runs in.
+        var fileSystem = new MockFileSystem();
+        const string original = "---\ntitle: Original\npublished: 01/01/2024\nispublished: true\n---\n\nBody.";
+        fileSystem.AddFile("/blog/_posts/2024/2024-01-01-my-post.md", new MockFileData(original));
+        var postManager = CreatePostManager(fileSystem);
+
+        var result = UpdatePostTool.UpdatePost(postManager, "2024-01-01-my-post.md", publishedOn: "03/04/2024");
+
+        result.Success.Should().BeFalse();
+        result.Error.Should().Contain("not a valid yyyy-MM-dd date");
+        fileSystem.File.ReadAllText("/blog/_posts/2024/2024-01-01-my-post.md").Should().Be(original);
+    }
+
+    [Fact]
     public void UpdatePost_ExtraFrontMatter_AddsNewKey()
     {
         var fileSystem = new MockFileSystem();

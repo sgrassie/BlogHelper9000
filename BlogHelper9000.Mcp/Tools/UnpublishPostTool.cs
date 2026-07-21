@@ -12,8 +12,8 @@ public static class UnpublishPostTool
     [McpServerTool(Name = "unpublish_post", Title = "Unpublish a post", UseStructuredContent = true, ReadOnly = false, Destructive = true, Idempotent = false),
      Description("Reverses publishing a post: clears the published metadata and moves it back to _drafts/ with its " +
                  "date prefix stripped. If the post has a publishing-schedule entry, it is un-ticked too; the result's " +
-                 "scheduleOutcome reports Unmarked/NotScheduled. Defaults to a dry run that reports what would happen " +
-                 "without changing anything.")]
+                 "scheduleOutcome reports Unmarked/NotScheduled (or, in a dry run, WouldUnmark/NotScheduled to preview " +
+                 "the same change). Defaults to a dry run that reports what would happen without changing anything.")]
     public static ToolResponse<UnpublishResult> UnpublishPost(
         IBlogService blogService,
         IScheduleService scheduleService,
