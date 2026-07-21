@@ -103,6 +103,15 @@ const string serverInstructions = """
     fix_metadata, call remove_schedule_entry and delete_series with dryRun=true (the default)
     first to preview a destructive change before applying it; delete_series additionally
     refuses to delete a series that still has entries.
+
+    For small body edits, prefer patch_post over update_post's body parameter: patch_post
+    replaces a single, verifiable occurrence of some text without requiring you to reproduce
+    the whole post, and it fails cleanly (leaving the file unchanged) if the match is missing
+    or ambiguous, whereas update_post's body parameter overwrites the entire post and silently
+    accepts whatever you send. Use append_to_post to add a new section without touching the
+    rest. The lifecycle tools delete_draft and unpublish_post both default dryRun=true —
+    preview before applying with dryRun=false. unpublish_post is the inverse of publish_post:
+    it moves a published post back to _drafts/ and un-ticks its schedule entry.
     """;
 
 builder.Services.AddMcpServer(options =>
