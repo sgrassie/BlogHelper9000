@@ -16,30 +16,33 @@ public static class AppendToPostTool
         [Description("Filename (e.g. 'my-post.md') or path of the post/draft to append to. Bare filenames are resolved against _drafts/ then _posts/; paths outside the blog root are rejected.")] string postPath,
         [Description("Markdown content to append to the end of the body.")] string content)
     {
-        if (!postManager.TryFindPost(postPath, out var markdownFile))
+        return ToolGate.RunExclusive(() =>
         {
-            return ToolResponse<AppendToPostResult>.Fail($"Could not find post '{postPath}'.");
-        }
+            if (!postManager.TryFindPost(postPath, out var markdownFile))
+            {
+                return ToolResponse<AppendToPostResult>.Fail($"Could not find post '{postPath}'.");
+            }
 
-        if (string.IsNullOrWhiteSpace(content))
-        {
-            return ToolResponse<AppendToPostResult>.Fail("'content' must not be empty.");
-        }
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return ToolResponse<AppendToPostResult>.Fail("'content' must not be empty.");
+            }
 
-        var existingBody = postManager.GetPostBody(markdownFile.FilePath);
-        var newBody = string.IsNullOrWhiteSpace(existingBody)
-            ? content
-            : existingBody.TrimEnd('\n') + "\n\n" + content;
+            var existingBody = postManager.GetPostBody(markdownFile.FilePath);
+            var newBody = string.IsNullOrWhiteSpace(existingBody)
+                ? content
+                : existingBody.TrimEnd('\n') + "\n\n" + content;
 
-        try
-        {
-            postManager.Markdown.UpdateFile(markdownFile, newBody);
-        }
-        catch (Exception ex)
-        {
-            return ToolResponse<AppendToPostResult>.Fail($"Could not append to '{postPath}': {ex.Message}");
-        }
+            try
+            {
+                postManager.Markdown.UpdateFile(markdownFile, newBody);
+            }
+            catch (Exception ex)
+            {
+                return ToolResponse<AppendToPostResult>.Fail($"Could not append to '{postPath}': {ex.Message}");
+            }
 
-        return ToolResponse<AppendToPostResult>.Ok(new AppendToPostResult(markdownFile.FilePath));
+            return ToolResponse<AppendToPostResult>.Ok(new AppendToPostResult(markdownFile.FilePath));
+        });
     }
 }

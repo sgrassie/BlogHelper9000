@@ -21,60 +21,63 @@ public static class GetTagsTool
      Description("Lists every tag in use across drafts and published posts, with counts and the normalisation rules fix_metadata applies to tags.")]
     public static ToolResponse<GetTagsResult> GetTags(PostManager postManager)
     {
-        var aggregates = new Dictionary<string, TagAggregate>(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var header in postManager.LoadYamlHeaderForAllPosts())
+        return ToolGate.RunExclusive(() =>
         {
-            var isPublished = header.IsPublished == true;
+            var aggregates = new Dictionary<string, TagAggregate>(StringComparer.OrdinalIgnoreCase);
 
-            // Dedupe case-insensitively within this header first, so a post carrying the
-            // same tag twice (even under different casing/quoting) counts once.
-            var casingsInHeader = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var rawTag in header.Tags ?? [])
+            foreach (var header in postManager.LoadYamlHeaderForAllPosts())
             {
-                var trimmed = rawTag.Trim().Trim('\'', '"');
-                if (string.IsNullOrWhiteSpace(trimmed)) continue;
-                if (!casingsInHeader.ContainsKey(trimmed))
+                var isPublished = header.IsPublished == true;
+
+                // Dedupe case-insensitively within this header first, so a post carrying the
+                // same tag twice (even under different casing/quoting) counts once.
+                var casingsInHeader = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var rawTag in header.Tags ?? [])
                 {
-                    casingsInHeader[trimmed] = trimmed;
+                    var trimmed = rawTag.Trim().Trim('\'', '"');
+                    if (string.IsNullOrWhiteSpace(trimmed)) continue;
+                    if (!casingsInHeader.ContainsKey(trimmed))
+                    {
+                        casingsInHeader[trimmed] = trimmed;
+                    }
+                }
+
+                foreach (var casing in casingsInHeader.Values)
+                {
+                    if (!aggregates.TryGetValue(casing, out var aggregate))
+                    {
+                        aggregate = new TagAggregate();
+                        aggregates[casing] = aggregate;
+                    }
+
+                    aggregate.Total++;
+                    if (isPublished) aggregate.Published++;
+                    aggregate.CasingCounts[casing] = aggregate.CasingCounts.GetValueOrDefault(casing) + 1;
                 }
             }
 
-            foreach (var casing in casingsInHeader.Values)
-            {
-                if (!aggregates.TryGetValue(casing, out var aggregate))
+            var tags = aggregates.Values
+                .Select(aggregate =>
                 {
-                    aggregate = new TagAggregate();
-                    aggregates[casing] = aggregate;
-                }
+                    var canonical = aggregate.CasingCounts
+                        .OrderByDescending(kv => kv.Value)
+                        .ThenBy(kv => kv.Key, StringComparer.Ordinal)
+                        .First().Key;
 
-                aggregate.Total++;
-                if (isPublished) aggregate.Published++;
-                aggregate.CasingCounts[casing] = aggregate.CasingCounts.GetValueOrDefault(casing) + 1;
-            }
-        }
+                    var variants = aggregate.CasingCounts.Keys
+                        .Where(casing => !string.Equals(casing, canonical, StringComparison.Ordinal))
+                        .OrderBy(casing => casing, StringComparer.Ordinal)
+                        .ToList();
 
-        var tags = aggregates.Values
-            .Select(aggregate =>
-            {
-                var canonical = aggregate.CasingCounts
-                    .OrderByDescending(kv => kv.Value)
-                    .ThenBy(kv => kv.Key, StringComparer.Ordinal)
-                    .First().Key;
+                    return new TagCountDto(canonical, aggregate.Total, aggregate.Published,
+                        aggregate.Total - aggregate.Published, variants);
+                })
+                .OrderByDescending(tag => tag.Total)
+                .ThenBy(tag => tag.Tag, StringComparer.Ordinal)
+                .ToList();
 
-                var variants = aggregate.CasingCounts.Keys
-                    .Where(casing => !string.Equals(casing, canonical, StringComparison.Ordinal))
-                    .OrderBy(casing => casing, StringComparer.Ordinal)
-                    .ToList();
-
-                return new TagCountDto(canonical, aggregate.Total, aggregate.Published,
-                    aggregate.Total - aggregate.Published, variants);
-            })
-            .OrderByDescending(tag => tag.Total)
-            .ThenBy(tag => tag.Tag, StringComparer.Ordinal)
-            .ToList();
-
-        return ToolResponse<GetTagsResult>.Ok(new GetTagsResult(tags, NormalisationRules));
+            return ToolResponse<GetTagsResult>.Ok(new GetTagsResult(tags, NormalisationRules));
+        });
     }
 
     private sealed class TagAggregate

@@ -19,34 +19,37 @@ public static class DeleteDraftTool
         [Description("Filename (e.g. 'my-draft.md') or path of the draft to delete. Bare filenames are resolved against _drafts/; paths outside the blog root are rejected.")] string postPath,
         [Description("Preview the deletion without changing anything. Defaults to true — set false to actually delete.")] bool dryRun = true)
     {
-        var result = blogService.DeleteDraft(postPath, dryRun);
-
-        switch (result.Outcome)
+        return ToolGate.RunExclusive(() =>
         {
-            case DeleteDraftOutcome.NotFound:
-                return ToolResponse<DeleteDraftToolResult>.Fail($"Could not find draft '{postPath}'.");
-            case DeleteDraftOutcome.NotADraft:
-                return ToolResponse<DeleteDraftToolResult>.Fail(
-                    $"'{postPath}' is not a draft. Only drafts can be deleted; published posts must be unpublished first (see unpublish_post).");
-            case DeleteDraftOutcome.Deleted:
-                break;
-            default:
-                return ToolResponse<DeleteDraftToolResult>.Fail("Unknown delete-draft outcome.");
-        }
+            var result = blogService.DeleteDraft(postPath, dryRun);
 
-        string? scheduleEntry = null;
-        if (scheduleService.DatabaseExists)
-        {
-            var entry = scheduleService.FindEntry(postPath);
-            if (entry is not null)
+            switch (result.Outcome)
             {
-                scheduleEntry = $"Series '{entry.Series}' position {entry.Position}";
-                if (!dryRun)
-                    scheduleService.RemoveEntry(postPath);
+                case DeleteDraftOutcome.NotFound:
+                    return ToolResponse<DeleteDraftToolResult>.Fail($"Could not find draft '{postPath}'.");
+                case DeleteDraftOutcome.NotADraft:
+                    return ToolResponse<DeleteDraftToolResult>.Fail(
+                        $"'{postPath}' is not a draft. Only drafts can be deleted; published posts must be unpublished first (see unpublish_post).");
+                case DeleteDraftOutcome.Deleted:
+                    break;
+                default:
+                    return ToolResponse<DeleteDraftToolResult>.Fail("Unknown delete-draft outcome.");
             }
-        }
 
-        return ToolResponse<DeleteDraftToolResult>.Ok(
-            new DeleteDraftToolResult(result.FilePath!, dryRun, Deleted: !dryRun, scheduleEntry));
+            string? scheduleEntry = null;
+            if (scheduleService.DatabaseExists)
+            {
+                var entry = scheduleService.FindEntry(postPath);
+                if (entry is not null)
+                {
+                    scheduleEntry = $"Series '{entry.Series}' position {entry.Position}";
+                    if (!dryRun)
+                        scheduleService.RemoveEntry(postPath);
+                }
+            }
+
+            return ToolResponse<DeleteDraftToolResult>.Ok(
+                new DeleteDraftToolResult(result.FilePath!, dryRun, Deleted: !dryRun, scheduleEntry));
+        });
     }
 }

@@ -18,49 +18,52 @@ public static class PatchPostTool
         [Description("Exact text to find in the body — must occur exactly once, or the patch is rejected.")] string find,
         [Description("Text to replace the match with. May be empty to delete the matched text.")] string replace)
     {
-        if (!postManager.TryFindPost(postPath, out var markdownFile))
+        return ToolGate.RunExclusive(() =>
         {
-            return ToolResponse<PatchPostResult>.Fail($"Could not find post '{postPath}'.");
-        }
+            if (!postManager.TryFindPost(postPath, out var markdownFile))
+            {
+                return ToolResponse<PatchPostResult>.Fail($"Could not find post '{postPath}'.");
+            }
 
-        if (string.IsNullOrEmpty(find))
-        {
-            return ToolResponse<PatchPostResult>.Fail("'find' must not be empty.");
-        }
+            if (string.IsNullOrEmpty(find))
+            {
+                return ToolResponse<PatchPostResult>.Fail("'find' must not be empty.");
+            }
 
-        if (find == replace)
-        {
-            return ToolResponse<PatchPostResult>.Fail("'find' and 'replace' are identical — this would change nothing.");
-        }
+            if (find == replace)
+            {
+                return ToolResponse<PatchPostResult>.Fail("'find' and 'replace' are identical — this would change nothing.");
+            }
 
-        var body = postManager.GetPostBody(markdownFile.FilePath);
-        var occurrences = CountOccurrences(body, find);
+            var body = postManager.GetPostBody(markdownFile.FilePath);
+            var occurrences = CountOccurrences(body, find);
 
-        if (occurrences == 0)
-        {
-            return ToolResponse<PatchPostResult>.Fail(
-                $"'find' was not found in the body — body unchanged. Call get_post to read the current content.");
-        }
+            if (occurrences == 0)
+            {
+                return ToolResponse<PatchPostResult>.Fail(
+                    $"'find' was not found in the body — body unchanged. Call get_post to read the current content.");
+            }
 
-        if (occurrences > 1)
-        {
-            return ToolResponse<PatchPostResult>.Fail(
-                $"Found {occurrences} occurrences of 'find' — provide more surrounding context so the match is unique. Body unchanged.");
-        }
+            if (occurrences > 1)
+            {
+                return ToolResponse<PatchPostResult>.Fail(
+                    $"Found {occurrences} occurrences of 'find' — provide more surrounding context so the match is unique. Body unchanged.");
+            }
 
-        var index = body.IndexOf(find, StringComparison.Ordinal);
-        var newBody = string.Concat(body.AsSpan(0, index), replace, body.AsSpan(index + find.Length));
+            var index = body.IndexOf(find, StringComparison.Ordinal);
+            var newBody = string.Concat(body.AsSpan(0, index), replace, body.AsSpan(index + find.Length));
 
-        try
-        {
-            postManager.Markdown.UpdateFile(markdownFile, newBody);
-        }
-        catch (Exception ex)
-        {
-            return ToolResponse<PatchPostResult>.Fail($"Could not patch '{postPath}': {ex.Message}");
-        }
+            try
+            {
+                postManager.Markdown.UpdateFile(markdownFile, newBody);
+            }
+            catch (Exception ex)
+            {
+                return ToolResponse<PatchPostResult>.Fail($"Could not patch '{postPath}': {ex.Message}");
+            }
 
-        return ToolResponse<PatchPostResult>.Ok(new PatchPostResult(markdownFile.FilePath, true));
+            return ToolResponse<PatchPostResult>.Ok(new PatchPostResult(markdownFile.FilePath, true));
+        });
     }
 
     private static int CountOccurrences(string haystack, string needle)

@@ -21,25 +21,28 @@ public static class AddFeaturedImageTool
         [Description("Search query for the Unsplash image (e.g., 'programming', 'nature'). Derived from the post title if omitted.")] string? imageQuery = null,
         CancellationToken cancellationToken = default)
     {
-        if (!postManager.TryFindPost(postPath, out var markdownFile))
+        return await ToolGate.RunExclusiveAsync(async () =>
         {
-            return ToolResponse<AddImageResult>.Fail($"Could not find post '{postPath}'.");
-        }
+            if (!postManager.TryFindPost(postPath, out var markdownFile))
+            {
+                return ToolResponse<AddImageResult>.Fail($"Could not find post '{postPath}'.");
+            }
 
-        var effectiveQuery = string.IsNullOrWhiteSpace(imageQuery)
-            ? DeriveQueryFromTitle(markdownFile.Metadata.Title)
-            : imageQuery;
+            var effectiveQuery = string.IsNullOrWhiteSpace(imageQuery)
+                ? DeriveQueryFromTitle(markdownFile.Metadata.Title)
+                : imageQuery;
 
-        await using var imageStream = await unsplashClient.LoadImageAsync(effectiveQuery, cancellationToken);
-        if (imageStream is null)
-        {
-            return ToolResponse<AddImageResult>.Fail("Failed to load image from Unsplash. Check that credentials are configured.");
-        }
+            await using var imageStream = await unsplashClient.LoadImageAsync(effectiveQuery, cancellationToken);
+            if (imageStream is null)
+            {
+                return ToolResponse<AddImageResult>.Fail("Failed to load image from Unsplash. Check that credentials are configured.");
+            }
 
-        await imageProcessor.Process(markdownFile, imageStream, brandingPath: null);
+            await imageProcessor.Process(markdownFile, imageStream, brandingPath: null);
 
-        var (_, savePath) = postManager.CreateImageFilePathForPost(markdownFile);
-        return ToolResponse<AddImageResult>.Ok(new AddImageResult(markdownFile.Metadata.Title, savePath));
+            var (_, savePath) = postManager.CreateImageFilePathForPost(markdownFile);
+            return ToolResponse<AddImageResult>.Ok(new AddImageResult(markdownFile.Metadata.Title, savePath));
+        }, cancellationToken);
     }
 
     private static string DeriveQueryFromTitle(string title)
