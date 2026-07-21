@@ -104,3 +104,7 @@ public sealed record DuePostDto(
     bool Overdue, int DaysOverdue, int? Week, int Position);
 
 public sealed record GetDuePostsResult(IReadOnlyList<DuePostDto> Due);
+
+public sealed record DeleteDraftToolResult(string FilePath, bool DryRun, bool Deleted, string? ScheduleEntry);
+
+public sealed record UnpublishResult(string? DraftPath, string Outcome, string? ScheduleOutcome, bool DryRun);
