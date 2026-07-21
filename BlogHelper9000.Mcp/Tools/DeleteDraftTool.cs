@@ -28,6 +28,10 @@ public static class DeleteDraftTool
             case DeleteDraftOutcome.NotADraft:
                 return ToolResponse<DeleteDraftToolResult>.Fail(
                     $"'{postPath}' is not a draft. Only drafts can be deleted; published posts must be unpublished first (see unpublish_post).");
+            case DeleteDraftOutcome.Deleted:
+                break;
+            default:
+                return ToolResponse<DeleteDraftToolResult>.Fail("Unknown delete-draft outcome.");
         }
 
         string? scheduleEntry = null;

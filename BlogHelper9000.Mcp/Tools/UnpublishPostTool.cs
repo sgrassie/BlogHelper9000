@@ -32,6 +32,10 @@ public static class UnpublishPostTool
             case UnpublishOutcome.TargetExists:
                 return ToolResponse<UnpublishResult>.Fail(
                     $"Cannot unpublish '{postPath}': a draft named '{result.DraftPath}' already exists.");
+            case UnpublishOutcome.Unpublished:
+                break;
+            default:
+                return ToolResponse<UnpublishResult>.Fail("Unknown unpublish outcome.");
         }
 
         string? scheduleOutcome = null;
@@ -40,7 +44,7 @@ public static class UnpublishPostTool
             if (dryRun)
             {
                 var entry = scheduleService.FindEntry(postPath);
-                scheduleOutcome = entry is not null && entry.Published ? "WouldUnmark" : "NotScheduled";
+                scheduleOutcome = entry is not null ? "WouldUnmark" : "NotScheduled";
             }
             else
             {

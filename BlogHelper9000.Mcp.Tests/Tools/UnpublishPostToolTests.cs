@@ -79,6 +79,29 @@ public class UnpublishPostToolTests
     }
 
     [Fact]
+    public void UnpublishPost_DryRunDefault_WhenScheduledEntryNotYetPublished_StillPreviewsWouldUnmark()
+    {
+        // Arrange — MarkPublished(unmark: true) unmarks ANY found entry regardless of its
+        // current Published state, so the dry-run preview must match: any found entry
+        // previews "WouldUnmark", not just ones already marked Published.
+        var blogService = Substitute.For<IBlogService>();
+        var scheduleService = Substitute.For<IScheduleService>();
+        blogService.UnpublishPostDetailed("2024-01-01-a-post.md", true)
+            .Returns(new UnpublishPostResult(UnpublishOutcome.Unpublished, "/blog/_drafts/a-post.md"));
+        scheduleService.DatabaseExists.Returns(true);
+        scheduleService.FindEntry("2024-01-01-a-post.md")
+            .Returns(new ScheduleEntry(1, "FootballData", 3, null, null, null, "A Post",
+                "a-post.md", null, null, false, null, null));
+
+        // Act
+        var result = UnpublishPostTool.UnpublishPost(blogService, scheduleService, "2024-01-01-a-post.md");
+
+        // Assert
+        result.Success.Should().BeTrue();
+        result.Data!.ScheduleOutcome.Should().Be("WouldUnmark");
+    }
+
+    [Fact]
     public void UnpublishPost_DryRunDefault_WhenEntryNotFound_PreviewsNotScheduled()
     {
         // Arrange
