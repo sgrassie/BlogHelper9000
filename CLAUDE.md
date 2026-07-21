@@ -31,7 +31,7 @@ BlogHelper9000.sln
 - A post is identified by filename (e.g. `my-post.md`) or path; bare filenames resolve against `_drafts/` then `_posts/` (including nested year folders). Paths outside the blog root are rejected.
 - Titles are slugified to lowercase-hyphenated filenames.
 - In front matter, `published:` holds a date (or a draft/true/false placeholder); a separate internal boolean tracks publish state. Blog stats count only published posts.
-- The publishing schedule (post series, per-post entries, publish ticks) lives in a SQLite database at `.bloghelper.db` in the blog root — dot-prefixed so Jekyll does not copy it into `_site`. It is created by `bloghelper schedule-import <xlsx>`; entries are keyed by draft filename (no date prefix).
+- The publishing schedule (post series, per-post entries, publish ticks) lives in a SQLite database at `.bloghelper.db` in the blog root — dot-prefixed so Jekyll does not copy it into `_site`. It is created by `bloghelper schedule-import <xlsx>`; entries are keyed by draft filename (no date prefix). A series may optionally carry a cadence (day-of-week + the date of week 1), used to resolve week-numbered entries to calendar dates.
 
 ## Build & Test Commands
 
@@ -116,6 +116,8 @@ Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `-
 - Post lookup must handle nested `_posts/<year>/` filenames — `TryFindPost` was previously broken for these (fixed in `ef99e1e`); add tests for nested paths when touching post resolution
 - SQLite bypasses `IFileSystem` — schedule tests use `ScheduleDatabase.OpenInMemory()`, never `MockFileSystem`; only existence checks go through `IFileSystem`
 - `schedule-import` replaces the whole schedule database (guarded by `--force`)
+- The destructive MCP schedule tools (`remove_schedule_entry`, `delete_series`) default `dryRun=true`, matching `fix_metadata`; `delete_series` also refuses to delete a non-empty series regardless of `dryRun`
+- `ScheduleDatabase` schema migrations are sequential, `user_version`-gated steps (`MigrateTo1`, `MigrateTo2`, …) run in order on every open; add new ones as `MigrateToN` rather than editing an existing step
 - TimeWarp.Nuru 3.0.0-beta.71: service registrations MUST go through `builder.ConfigureServices(...)` (touching `builder.Services` throws at startup); the lambda is inlined into generated code so it cannot capture locals; `[NuruRouteGroup]` is silently ignored, hence the hyphenated `schedule-*` route names
 - ClosedXML cannot LOAD workbooks in this solution (SixLabors.Fonts 3.x conflict via Imaging) — creating/saving them in tests is fine; production xlsx reading uses ExcelDataReader
 
