@@ -36,6 +36,8 @@ builder.Services.AddSingleton<IBlogService, BlogService>();
 builder.Services.AddSingleton<IPostSearchService, PostSearchService>();
 builder.Services.AddSingleton<IScheduleService, ScheduleService>();
 builder.Services.AddSingleton<IPostValidator, PostValidator>();
+builder.Services.AddSingleton<IProcessRunner, SystemProcessRunner>();
+builder.Services.AddSingleton<IDeployStateService, GitDeployStateService>();
 builder.Services.AddSingleton(_ =>
 {
     var client = new HttpClient();
