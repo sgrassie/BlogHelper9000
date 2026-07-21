@@ -114,3 +114,10 @@ public sealed record ValidationFindingDto(string Severity, string Check, string 
 public sealed record ValidatePostResult(string FilePath, bool Valid, IReadOnlyList<ValidationFindingDto> Findings);
 
 public sealed record ValidateBlogResult(int FilesChecked, int Errors, int Warnings, IReadOnlyList<ValidatePostResult> Files);
+
+public sealed record PublishStatusResult(
+    bool IsGitRepo, bool HasUpstream, IReadOnlyList<string> UncommittedFiles, int UnpushedCommits,
+    IReadOnlyList<string> UnpushedFiles, IReadOnlyList<string> PendingPostFiles, string Summary);
+
+public sealed record DeployToolResult(
+    string Outcome, bool DryRun, IReadOnlyList<string> StagedFiles, string? CommitMessage, bool Pushed);

@@ -36,6 +36,8 @@ builder.Services.AddSingleton<IBlogService, BlogService>();
 builder.Services.AddSingleton<IPostSearchService, PostSearchService>();
 builder.Services.AddSingleton<IScheduleService, ScheduleService>();
 builder.Services.AddSingleton<IPostValidator, PostValidator>();
+builder.Services.AddSingleton<IProcessRunner, SystemProcessRunner>();
+builder.Services.AddSingleton<IDeployStateService, GitDeployStateService>();
 builder.Services.AddSingleton(_ =>
 {
     var client = new HttpClient();
@@ -120,6 +122,14 @@ const string serverInstructions = """
     rest. The lifecycle tools delete_draft and unpublish_post both default dryRun=true —
     preview before applying with dryRun=false. unpublish_post is the inverse of publish_post:
     it moves a published post back to _drafts/ and un-ticks its schedule entry.
+
+    Deploying: publish_post only updates the post's front matter and moves the file — the
+    post is not live until the change is committed and pushed to the blog's git remote.
+    After publish_post, call get_publish_status to see the repo's deploy state (uncommitted
+    changes, unpushed commits, which pending files are publish-related), then deploy with
+    dryRun=true to preview exactly what would be staged, committed, and pushed, and
+    dryRun=false to actually ship it. Caution: deploy(dryRun=false) performs a real git
+    commit and push.
     """;
 
 builder.Services.AddMcpServer(options =>

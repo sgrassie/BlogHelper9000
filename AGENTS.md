@@ -122,6 +122,7 @@ Cake targets are `Default` (build), `Tests`, and `Pack` (invoked lowercase as `-
 - TimeWarp.Nuru 3.0.0-beta.71: service registrations MUST go through `builder.ConfigureServices(...)` (touching `builder.Services` throws at startup); the lambda is inlined into generated code so it cannot capture locals; `[NuruRouteGroup]` is silently ignored, hence the hyphenated `schedule-*` route names
 - ClosedXML cannot LOAD workbooks in this solution (SixLabors.Fonts 3.x conflict via Imaging) — creating/saving them in tests is fine; production xlsx reading uses ExcelDataReader
 - MCP file-touching tools serialise through a global gate (`BlogHelper9000.Mcp/ToolGate.cs`) — the SDK dispatches concurrent `tools/call` requests in parallel, and `PostManager`/`MarkdownHandler` open files with no sharing strategy, so unsynchronised concurrent calls can hit file-sharing violations. New file-touching tools MUST wrap their bodies in `ToolGate.RunExclusive`/`RunExclusiveAsync`; pure-SQLite schedule tools are excluded (SQLite handles its own locking)
+- Like SQLite, child processes (`IProcessRunner`/`GitDeployStateService`) bypass `IFileSystem` — tests use a recording fake runner (`RecordingProcessRunner`), never real git against a repo. Git arguments are passed as vectors (`ProcessStartInfo.ArgumentList`), never composed into a string — this is what makes the runner immune to flag/argument injection from commit messages or filenames
 
 ## Tech Stack
 - .NET 10.0 / C# latest, nullable reference types enabled
